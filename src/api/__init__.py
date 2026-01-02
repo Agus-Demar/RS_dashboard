@@ -1,0 +1,4 @@
+"""
+FastAPI REST API module.
+"""
+
