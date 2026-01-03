@@ -9,8 +9,11 @@ Prioritizes industry-level ETFs over sector-level ETFs for more granular analysi
 This module provides backward-compatible name-based lookups while also supporting
 the official GICS 8-digit code-based mappings from the data module.
 """
-
+import logging
+from functools import lru_cache
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 # Import the comprehensive GICS code-based mapping
 from src.data.gics_subindustry_etf_mapping import (
@@ -432,20 +435,154 @@ def get_subindustry_etf_info(gics_code: str) -> Optional[dict]:
     return None
 
 
-def get_tradingview_widget_url(symbol: str, interval: str = "W") -> str:
+# Common ETFs that are listed on AMEX/NYSE Arca
+AMEX_ETFS = {
+    # Sector SPDRs
+    "XLE", "XLF", "XLK", "XLV", "XLI", "XLY", "XLP", "XLB", "XLU", "XLRE", "XLC",
+    # Industry SPDRs
+    "XBI", "XHB", "XHE", "XHS", "XME", "XOP", "XPH", "XRT", "XSD", "XSW", "XTH", "XTN",
+    "KBE", "KCE", "KIE", "KRE",
+    # iShares
+    "IYW", "IYZ", "IYK", "IYM", "IYT", "IYR", "IYE", "IYF", "IYG", "IYH", "IYJ", "IYC",
+    "IBB", "IGV", "IHI", "IHF", "ITA", "ITB", "IAI", "IAK", "IAT", "IEO", "IEZ",
+    # Vanguard
+    "VGT", "VHT", "VIS", "VCR", "VDC", "VDE", "VFH", "VAW", "VNQ", "VPU", "VOX",
+    # First Trust
+    "FDN", "SKYY", "WCLD", "GRID", "FIW", "CIBR",
+    # VanEck
+    "SMH", "GDX", "GDXJ", "OIH", "XES", "MOO", "SLX", "KOL",
+    # Global X
+    "LIT", "COPX", "DRIV", "FINX", "SOCL", "ESPO",
+    # Other popular ETFs (NYSE Arca listed)
+    "SPY", "DIA", "IWM", "EFA", "EEM", "GLD", "SLV", "USO", "UNG",
+    "JETS", "ARKK", "ARKG", "ARKW", "ARKF", "AMLP", "MLPA",
+}
+
+# Known NASDAQ-listed stocks/ETFs (major tech companies and NASDAQ ETFs)
+NASDAQ_SYMBOLS = {
+    # Major NASDAQ stocks
+    "AAPL", "MSFT", "GOOGL", "GOOG", "AMZN", "META", "NVDA", "TSLA", "NFLX", "ADBE",
+    "INTC", "CSCO", "CMCSA", "PEP", "AVGO", "COST", "TXN", "QCOM", "TMUS", "AMGN",
+    "SBUX", "INTU", "ISRG", "MDLZ", "GILD", "ADI", "REGN", "VRTX", "FISV", "ATVI",
+    "PYPL", "MU", "LRCX", "KLAC", "SNPS", "CDNS", "MRVL", "AMAT", "PANW", "DXCM",
+    "NXPI", "CRWD", "FTNT", "ZS", "WDAY", "TEAM", "OKTA", "DDOG", "ZM", "DOCU",
+    "ABNB", "DASH", "COIN", "HOOD", "RBLX", "U", "PLTR", "SNOW", "NET", "MDB",
+    # NASDAQ-listed ETFs
+    "QQQ", "TQQQ", "SQQQ", "PSQ", "ONEQ", "QQQM", "QQQJ",
+}
+
+
+@lru_cache(maxsize=2000)
+def _get_exchange_from_yfinance(symbol: str) -> Optional[str]:
+    """
+    Fetch exchange information from yfinance (cached).
+    
+    Args:
+        symbol: Ticker symbol
+    
+    Returns:
+        Exchange name or None if not found
+    """
+    try:
+        import yfinance as yf
+        ticker = yf.Ticker(symbol)
+        info = ticker.info
+        exchange = info.get('exchange', '')
+        
+        # Map yfinance exchange names to TradingView prefixes
+        exchange_mapping = {
+            'NYQ': 'NYSE',
+            'NMS': 'NASDAQ',
+            'NGM': 'NASDAQ',
+            'NCM': 'NASDAQ',
+            'NYS': 'NYSE',
+            'ASE': 'AMEX',
+            'PCX': 'AMEX',  # NYSE Arca
+            'BTS': 'AMEX',  # BATS
+            'NASDAQ': 'NASDAQ',
+            'NYSE': 'NYSE',
+        }
+        
+        return exchange_mapping.get(exchange, None)
+    except Exception as e:
+        logger.debug(f"Could not fetch exchange for {symbol}: {e}")
+        return None
+
+
+def get_exchange_for_symbol(symbol: str, use_yfinance_fallback: bool = False) -> str:
+    """
+    Determine the likely exchange for a given symbol.
+    
+    TradingView requires exchange prefix for accurate symbol lookup.
+    
+    Args:
+        symbol: Ticker symbol
+        use_yfinance_fallback: If True, query yfinance for unknown symbols
+    
+    Returns:
+        Exchange prefix (NYSE, NASDAQ, AMEX, etc.)
+    """
+    symbol_upper = symbol.upper()
+    
+    # ETFs are typically on AMEX (NYSE Arca)
+    if symbol_upper in AMEX_ETFS:
+        return "AMEX"
+    
+    # Check if it's a known NASDAQ stock
+    if symbol_upper in NASDAQ_SYMBOLS:
+        return "NASDAQ"
+    
+    # ETFs with common suffixes (3-4 letter symbols starting with common ETF prefixes)
+    if len(symbol_upper) <= 4 and symbol_upper.startswith(("X", "I", "V", "S", "K")):
+        # Likely an ETF - use AMEX
+        if symbol_upper not in NASDAQ_SYMBOLS:
+            return "AMEX"
+    
+    # Try yfinance lookup for unknown symbols (optional, can be slow)
+    if use_yfinance_fallback:
+        exchange = _get_exchange_from_yfinance(symbol_upper)
+        if exchange:
+            return exchange
+    
+    # Default to NYSE for most stocks
+    return "NYSE"
+
+
+def get_tradingview_symbol(symbol: str, exchange: str = None) -> str:
+    """
+    Get the full TradingView symbol with exchange prefix.
+    
+    Args:
+        symbol: Ticker symbol
+        exchange: Optional exchange override (NYSE, NASDAQ, AMEX)
+    
+    Returns:
+        Full symbol like "NYSE:AAPL" or "NASDAQ:MSFT"
+    """
+    if exchange is None:
+        exchange = get_exchange_for_symbol(symbol)
+    
+    return f"{exchange}:{symbol.upper()}"
+
+
+def get_tradingview_widget_url(symbol: str, interval: str = "W", exchange: str = None) -> str:
     """
     Generate a TradingView widget embed URL.
     
     Args:
         symbol: Ticker symbol to display
         interval: Chart interval (D=daily, W=weekly, M=monthly)
+        exchange: Optional exchange override (NYSE, NASDAQ, AMEX)
     
     Returns:
         TradingView widget embed URL
     """
+    # Get full symbol with exchange prefix
+    full_symbol = get_tradingview_symbol(symbol, exchange)
+    
     return (
         f"https://s.tradingview.com/widgetembed/?"
-        f"symbol={symbol}&"
+        f"symbol={full_symbol}&"
         f"interval={interval}&"
         f"theme=dark&"
         f"style=1&"

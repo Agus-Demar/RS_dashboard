@@ -12,7 +12,8 @@ This application calculates and displays **Mansfield Relative Strength (RS)** fo
 
 ### Key Features
 
-- **Interactive Heatmap**: Visualize RS across ~80 sub-industries and 17+ weeks
+- **Interactive Heatmap**: Visualize RS across ~150 sub-industries and 17+ weeks
+- **Comprehensive Coverage**: ~1,500 stocks from S&P 500, S&P 400 MidCap, and S&P 600 SmallCap
 - **Real-time Filtering**: Filter by sector, sort by various criteria
 - **Weekly Calculations**: Automated RS calculations every Saturday
 - **REST API**: Full API access to RS data
@@ -57,13 +58,22 @@ cp .env.example .env
 
 ### 2. Bootstrap Data
 
-This fetches S&P 500 constituents, 2 years of price history, and calculates initial RS values:
+This fetches ~1,500 stocks from S&P indices (500 + 400 MidCap + 600 SmallCap), 2 years of price history, and calculates initial RS values:
 
 ```bash
 python -m scripts.bootstrap_data
 ```
 
-This process takes approximately 10-15 minutes depending on your internet connection.
+This process takes approximately 15-30 minutes depending on your internet connection.
+
+**Adding more stocks to an existing database:**
+```bash
+# Add S&P 400 and S&P 600 stocks to existing database
+python scripts/add_stocks.py --all --with-prices
+
+# Preview what would be added (dry run)
+python scripts/add_stocks.py --all --dry-run
+```
 
 ### 3. Start the Application
 
@@ -92,6 +102,7 @@ rs_dashboard/
 │   └── jobs/                # Scheduled tasks
 ├── scripts/
 │   ├── bootstrap_data.py    # Initial data population
+│   ├── add_stocks.py        # Add S&P 400/600 stocks to existing DB
 │   ├── backfill_rs.py       # Historical RS calculation
 │   └── run_job.py           # Manual job runner
 ├── data/                    # SQLite database (created automatically)

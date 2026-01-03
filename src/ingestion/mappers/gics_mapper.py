@@ -1,7 +1,8 @@
 """
 GICS Mapper for mapping tickers to sub-industries.
 
-Uses Wikipedia S&P 500 data as the primary source for GICS classification.
+Uses Wikipedia S&P index data (500 + 400 + 600) as the primary source for 
+GICS classification. Provides approximately 1,500 stocks with GICS data.
 Generates 8-digit GICS codes based on sub-industry names.
 """
 import hashlib
@@ -13,6 +14,15 @@ import pandas as pd
 from src.ingestion.sources.wikipedia_source import wikipedia_source
 
 logger = logging.getLogger(__name__)
+
+
+# Known GICS sub-industry to correct sector mappings
+# Some Wikipedia data has incorrect sector assignments - this fixes them
+# Format: {sub_industry_name: correct_sector_name}
+GICS_SECTOR_CORRECTIONS = {
+    # Agricultural & Farm Machinery is an Industrials sub-industry (20106015), not Materials
+    "Agricultural & Farm Machinery": "Industrials",
+}
 
 
 # GICS Sector codes (2-digit)
@@ -35,29 +45,103 @@ class GICSMapper:
     """
     Maps tickers to GICS sub-industries.
     
-    Uses Wikipedia S&P 500 data as the source of truth for GICS classification.
+    Uses Wikipedia S&P index data (S&P 500, S&P 400 MidCap, S&P 600 SmallCap)
+    as the source of truth for GICS classification.
     Generates consistent 8-digit codes for sub-industries based on hashing.
+    
+    This provides approximately 1,500 stocks with GICS sub-industry data.
     """
     
-    def __init__(self):
-        """Initialize GICS mapper."""
-        self._sp500_data: Optional[pd.DataFrame] = None
+    def __init__(self, use_all_indices: bool = True):
+        """
+        Initialize GICS mapper.
+        
+        Args:
+            use_all_indices: If True, use all S&P indices (500+400+600).
+                           If False, use only S&P 500 for backward compatibility.
+        """
+        self._all_data: Optional[pd.DataFrame] = None
         self._subindustry_codes: Dict[str, str] = {}
+        self._use_all_indices = use_all_indices
     
     def load_sp500_data(self) -> pd.DataFrame:
-        """Load S&P 500 data from Wikipedia."""
-        if self._sp500_data is None:
-            self._sp500_data = wikipedia_source.fetch_sp500_constituents()
+        """
+        Load stock data from Wikipedia.
+        
+        Note: Despite the name (kept for backward compatibility), this method
+        will load all S&P indices if use_all_indices=True was set in __init__.
+        
+        Returns:
+            DataFrame with stock data including GICS classifications
+        """
+        if self._all_data is None:
+            if self._use_all_indices:
+                logger.info("Loading all S&P index data (500 + 400 + 600)...")
+                self._all_data = wikipedia_source.fetch_all_sp_constituents()
+            else:
+                logger.info("Loading S&P 500 data only...")
+                self._all_data = wikipedia_source.fetch_sp500_constituents()
+            
+            # Apply sector corrections for known misclassifications
+            self._all_data = self._apply_sector_corrections(self._all_data)
             self._build_subindustry_codes()
-        return self._sp500_data
+        return self._all_data
+    
+    def _apply_sector_corrections(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Apply sector corrections for known GICS misclassifications in Wikipedia data.
+        
+        Some sub-industries are incorrectly assigned to the wrong sector in Wikipedia.
+        This method filters out those incorrect assignments.
+        
+        Args:
+            df: DataFrame with stock data
+        
+        Returns:
+            Cleaned DataFrame with correct sector assignments
+        """
+        if 'sub_industry' not in df.columns or 'sector' not in df.columns:
+            return df
+        
+        initial_count = len(df)
+        
+        # Remove rows where sub_industry is in the wrong sector
+        for sub_industry, correct_sector in GICS_SECTOR_CORRECTIONS.items():
+            # Find rows with this sub-industry but wrong sector
+            wrong_sector_mask = (
+                (df['sub_industry'] == sub_industry) & 
+                (df['sector'] != correct_sector)
+            )
+            wrong_count = wrong_sector_mask.sum()
+            if wrong_count > 0:
+                logger.info(
+                    f"Removing {wrong_count} stocks with incorrect sector for "
+                    f"'{sub_industry}' (keeping only '{correct_sector}')"
+                )
+                df = df[~wrong_sector_mask]
+        
+        removed = initial_count - len(df)
+        if removed > 0:
+            logger.info(f"Removed {removed} stocks with incorrect GICS sector assignments")
+        
+        return df
+    
+    def load_all_data(self) -> pd.DataFrame:
+        """
+        Load all S&P index data regardless of use_all_indices setting.
+        
+        Returns:
+            DataFrame with all S&P index constituents
+        """
+        return wikipedia_source.fetch_all_sp_constituents()
     
     def _build_subindustry_codes(self) -> None:
         """Build mapping of sub-industry names to 8-digit codes."""
-        if self._sp500_data is None:
+        if self._all_data is None:
             return
         
         # Get unique sub-industries with their sectors
-        subindustries = self._sp500_data.groupby(['sector', 'sub_industry']).size().reset_index()
+        subindustries = self._all_data.groupby(['sector', 'sub_industry']).size().reset_index()
         
         for _, row in subindustries.iterrows():
             sector = row['sector']
@@ -124,7 +208,7 @@ class GICSMapper:
         match = df[df['ticker'] == ticker.upper()]
         
         if match.empty:
-            logger.debug(f"Ticker {ticker} not found in S&P 500 data")
+            logger.debug(f"Ticker {ticker} not found in S&P index data")
             return None
         
         row = match.iloc[0]
@@ -171,7 +255,7 @@ class GICSMapper:
     
     def get_all_subindustries(self) -> pd.DataFrame:
         """
-        Get all unique sub-industries from S&P 500 data.
+        Get all unique sub-industries from S&P index data.
         
         Returns:
             DataFrame with sub-industry details including generated codes
@@ -221,8 +305,59 @@ class GICSMapper:
         
         matching = df[df['sub_industry'] == subindustry_name]
         return matching['ticker'].tolist()
+    
+    def get_all_tickers(self) -> List[str]:
+        """
+        Get all tickers from the loaded data.
+        
+        Returns:
+            List of all ticker symbols
+        """
+        df = self.load_sp500_data()
+        return df['ticker'].tolist()
+    
+    def get_stock_count_by_index(self) -> Dict[str, int]:
+        """
+        Get count of stocks by S&P index source.
+        
+        Returns:
+            Dict mapping index name to stock count
+        """
+        df = self.load_sp500_data()
+        if 'index_source' in df.columns:
+            return df['index_source'].value_counts().to_dict()
+        return {'SP500': len(df)}
+    
+    def get_coverage_stats(self) -> Dict:
+        """
+        Get comprehensive coverage statistics.
+        
+        Returns:
+            Dict with various statistics about the data
+        """
+        df = self.load_sp500_data()
+        
+        stats = {
+            'total_stocks': len(df),
+            'unique_sectors': df['sector'].nunique() if 'sector' in df.columns else 0,
+            'unique_subindustries': df['sub_industry'].nunique() if 'sub_industry' in df.columns else 0,
+            'stocks_per_subindustry_avg': 0,
+            'stocks_per_subindustry_min': 0,
+            'stocks_per_subindustry_max': 0,
+        }
+        
+        if 'sub_industry' in df.columns:
+            subindustry_counts = df['sub_industry'].value_counts()
+            stats['stocks_per_subindustry_avg'] = round(subindustry_counts.mean(), 1)
+            stats['stocks_per_subindustry_min'] = subindustry_counts.min()
+            stats['stocks_per_subindustry_max'] = subindustry_counts.max()
+        
+        if 'index_source' in df.columns:
+            stats['by_index'] = df['index_source'].value_counts().to_dict()
+        
+        return stats
 
 
-# Singleton instance
-gics_mapper = GICSMapper()
+# Singleton instance - uses all indices by default for comprehensive coverage
+gics_mapper = GICSMapper(use_all_indices=True)
 

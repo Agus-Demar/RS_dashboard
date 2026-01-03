@@ -4,9 +4,9 @@ Bootstrap Data Script
 
 Initial data population script that:
 1. Initializes the database
-2. Loads S&P 500 constituents from Wikipedia
+2. Loads S&P index constituents from Wikipedia (S&P 500 + S&P 400 + S&P 600)
 3. Creates GICS sub-industry records
-4. Creates stock records
+4. Creates stock records (~1,500 stocks with GICS classifications)
 5. Fetches 2 years of price history
 6. Calculates initial RS values
 
@@ -15,6 +15,11 @@ Usage:
     
     Or with options:
     python -m scripts.bootstrap_data --skip-prices --no-rs
+    
+Note:
+    By default, this loads stocks from all S&P indices (500+400+600) for
+    approximately 1,500 stocks with GICS sub-industry classifications.
+    This provides better coverage for sub-industry average calculations.
 """
 import argparse
 import logging

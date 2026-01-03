@@ -27,21 +27,26 @@ class InitialLoadPipeline:
     
     Steps:
     1. Initialize database tables
-    2. Fetch S&P 500 constituents from Wikipedia
+    2. Fetch S&P index constituents from Wikipedia (500 + 400 + 600)
     3. Create GICS sub-industry records
     4. Create Stock records with GICS mapping
     5. Fetch and store 2 years of price history
+    
+    This provides approximately 1,500 stocks with GICS sub-industry classifications.
     """
     
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, use_all_indices: bool = True):
         """
         Initialize pipeline.
         
         Args:
             db: SQLAlchemy database session
+            use_all_indices: If True, use all S&P indices (500+400+600).
+                           If False, use only S&P 500.
         """
         self.db = db
         self.lookback_years = settings.PRICE_HISTORY_YEARS
+        self.use_all_indices = use_all_indices
     
     def run(self) -> dict:
         """
@@ -72,7 +77,7 @@ class InitialLoadPipeline:
             
             # Step 3: Create stock records
             logger.info("Step 3: Creating stock records...")
-            stats['stocks_created'] = self._create_stock_records()
+            stats['stocks_created'] = self._create_stock_records(use_all_indices=self.use_all_indices)
             
             # Step 4: Fetch price history
             logger.info("Step 4: Fetching price history...")
@@ -93,8 +98,8 @@ class InitialLoadPipeline:
         return stats
     
     def _load_subindustries(self) -> int:
-        """Load GICS sub-industries from Wikipedia data."""
-        # Get unique sub-industries from S&P 500
+        """Load GICS sub-industries from Wikipedia data (all S&P indices)."""
+        # Get unique sub-industries from all S&P indices
         subindustries_df = gics_mapper.get_all_subindustries()
         
         count = 0
@@ -126,23 +131,45 @@ class InitialLoadPipeline:
         logger.info(f"Created {count} GICS sub-industry records")
         return count
     
-    def _create_stock_records(self) -> int:
-        """Create Stock records from S&P 500 data."""
-        sp500_df = wikipedia_source.fetch_sp500_constituents()
+    def _create_stock_records(self, use_all_indices: bool = True) -> int:
+        """
+        Create Stock records from S&P index data.
+        
+        Args:
+            use_all_indices: If True, use all S&P indices (500+400+600).
+                           If False, use only S&P 500.
+        
+        Returns:
+            Number of stock records created
+        """
+        if use_all_indices:
+            logger.info("Loading stocks from all S&P indices (500 + 400 + 600)...")
+            stocks_df = wikipedia_source.fetch_all_sp_constituents()
+        else:
+            logger.info("Loading stocks from S&P 500 only...")
+            stocks_df = wikipedia_source.fetch_sp500_constituents()
+        
+        logger.info(f"Processing {len(stocks_df)} stocks from Wikipedia...")
         
         count = 0
-        for _, row in sp500_df.iterrows():
+        skipped_no_mapping = 0
+        skipped_no_subindustry = 0
+        skipped_existing = 0
+        
+        for _, row in stocks_df.iterrows():
             ticker = row['ticker']
             
             # Check if already exists
             existing = self.db.query(Stock).filter(Stock.ticker == ticker).first()
             if existing:
+                skipped_existing += 1
                 continue
             
             # Get GICS mapping
             mapping = gics_mapper.map_ticker(ticker)
             if not mapping:
-                logger.warning(f"No GICS mapping for {ticker}, skipping")
+                logger.debug(f"No GICS mapping for {ticker}, skipping")
+                skipped_no_mapping += 1
                 continue
             
             # Verify sub-industry exists
@@ -151,7 +178,8 @@ class InitialLoadPipeline:
             ).first()
             
             if not subindustry:
-                logger.warning(f"Sub-industry {mapping['subindustry_code']} not found for {ticker}")
+                logger.debug(f"Sub-industry {mapping['subindustry_code']} not found for {ticker}")
+                skipped_no_subindustry += 1
                 continue
             
             stock = Stock(
@@ -165,6 +193,13 @@ class InitialLoadPipeline:
         
         self.db.commit()
         logger.info(f"Created {count} stock records")
+        if skipped_existing > 0:
+            logger.info(f"  Skipped {skipped_existing} existing stocks")
+        if skipped_no_mapping > 0:
+            logger.info(f"  Skipped {skipped_no_mapping} stocks without GICS mapping")
+        if skipped_no_subindustry > 0:
+            logger.info(f"  Skipped {skipped_no_subindustry} stocks without sub-industry")
+        
         return count
     
     def _fetch_price_history(self) -> int:
