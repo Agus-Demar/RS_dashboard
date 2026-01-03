@@ -1,0 +1,52 @@
+/* Custom CSS for RS Dashboard */
+
+/* Scrollable Heatmap Container */
+#heatmap-scroll-container {
+    /* Smooth scrolling */
+    scroll-behavior: smooth;
+    
+    /* Custom scrollbar styling for Webkit browsers (Chrome, Safari, Edge) */
+    scrollbar-width: thin;
+    scrollbar-color: #475569 #1e293b;
+}
+
+#heatmap-scroll-container::-webkit-scrollbar {
+    width: 10px;
+}
+
+#heatmap-scroll-container::-webkit-scrollbar-track {
+    background: #1e293b;
+    border-radius: 5px;
+}
+
+#heatmap-scroll-container::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 5px;
+    border: 2px solid #1e293b;
+}
+
+#heatmap-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* Hover effect on container - subtle highlight */
+#heatmap-scroll-container:hover {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3);
+}
+
+/* Ensure heatmap graph takes full width */
+#heatmap-scroll-container .js-plotly-plot {
+    width: 100% !important;
+}
+
+/* Loading overlay improvements */
+#initial-loading-overlay {
+    transition: opacity 0.3s ease-out;
+}
+
+/* TradingView container margin preservation */
+#tradingview-container {
+    margin-top: 2.5rem;
+}
+

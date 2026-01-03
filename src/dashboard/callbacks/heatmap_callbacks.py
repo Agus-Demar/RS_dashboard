@@ -23,6 +23,7 @@ from src.services.data_service import (
     get_data_stats,
 )
 from src.dashboard.utils.colors import get_color_scale, get_strength_label
+from src.dashboard.utils.etf_mapper import get_etf_for_subindustry, get_tradingview_widget_url
 
 logger = logging.getLogger(__name__)
 
@@ -102,16 +103,28 @@ def register_callbacks(app):
     
     @app.callback(
         Output("detail-panel", "children"),
+        Output("tradingview-container", "style"),
+        Output("tradingview-iframe", "src"),
+        Output("tradingview-title", "children"),
         Input("rs-heatmap", "clickData"),
         State("rs-data-store", "data"),
     )
     def show_detail_panel(click_data, stored_data):
-        """Show detailed information when a cell is clicked."""
+        """Show detailed information and TradingView chart when a cell is clicked."""
+        
+        # Hidden style for TradingView container
+        hidden_style = {"display": "none"}
+        visible_style = {"display": "block", "marginTop": "2.5rem", "paddingTop": "1rem"}
         
         if not click_data:
-            return html.P(
-                "Click on a cell to see detailed RS information",
-                className="text-muted text-center mb-0"
+            return (
+                html.P(
+                    "Click on a cell to see detailed RS information",
+                    className="text-muted text-center mb-0"
+                ),
+                hidden_style,
+                "",
+                ""
             )
         
         try:
@@ -120,8 +133,9 @@ def register_callbacks(app):
             week_label = point['x']
             percentile = point['z']
             
-            # Get stocks in this sub-industry
+            # Get stocks in this sub-industry and sector info
             db = SessionLocal()
+            sector_name = None
             try:
                 # We need to find the subindustry code from the name
                 from src.models import GICSSubIndustry
@@ -131,6 +145,7 @@ def register_callbacks(app):
                 
                 if subindustry:
                     stocks = get_subindustry_stocks(db, subindustry.code)
+                    sector_name = subindustry.sector_name
                 else:
                     stocks = []
             finally:
@@ -156,7 +171,12 @@ def register_callbacks(app):
             
             strength = get_strength_label(percentile) if percentile else "N/A"
             
-            return dbc.Card([
+            # Get ETF for TradingView widget
+            etf_symbol = get_etf_for_subindustry(subindustry_name, sector_name or "")
+            tradingview_url = get_tradingview_widget_url(etf_symbol)
+            tradingview_title = f"📊 {etf_symbol} - Weekly Chart ({sector_name or 'Sector'} ETF)"
+            
+            detail_card = dbc.Card([
                 dbc.CardHeader([
                     html.H5(f"📈 {subindustry_name}", className="mb-0")
                 ]),
@@ -175,6 +195,10 @@ def register_callbacks(app):
                                 html.Strong("Strength: "),
                                 strength
                             ]),
+                            html.P([
+                                html.Strong("Sector ETF: "),
+                                etf_symbol
+                            ]),
                         ], md=4),
                         dbc.Col([
                             html.P(html.Strong("Top Stocks (by Market Cap):")),
@@ -184,9 +208,16 @@ def register_callbacks(app):
                 ])
             ], className="bg-secondary")
             
+            return detail_card, visible_style, tradingview_url, tradingview_title
+            
         except Exception as e:
             logger.exception(f"Error showing detail panel: {e}")
-            return html.P(f"Error: {str(e)}", className="text-danger")
+            return (
+                html.P(f"Error: {str(e)}", className="text-danger"),
+                hidden_style,
+                "",
+                ""
+            )
 
 
 def create_heatmap_figure(df: pd.DataFrame, num_weeks: int) -> go.Figure:
@@ -208,7 +239,9 @@ def create_heatmap_figure(df: pd.DataFrame, num_weeks: int) -> go.Figure:
     )
     
     # Sort weeks: most recent FIRST (left side)
-    week_order = sorted(pivot_df.columns, key=lambda x: int(x.split('-')[1]))
+    # Week labels are in DD/MM/YY format, sort by parsing to date
+    from datetime import datetime
+    week_order = sorted(pivot_df.columns, key=lambda x: datetime.strptime(x, "%d/%m/%y"), reverse=True)
     pivot_df = pivot_df[week_order]
     
     # Keep sub-industry order from the sorted DataFrame
@@ -257,6 +290,19 @@ def create_heatmap_figure(df: pd.DataFrame, num_weeks: int) -> go.Figure:
     # Layout configuration
     num_industries = len(pivot_df)
     
+    # Calculate row height to prevent label overlap
+    # Font size 10px needs at least 18-20px row height for clear separation
+    # Using 24px per row ensures comfortable spacing with no overlap
+    row_height = 24  # Pixels per row - ensures labels don't overlap
+    chart_height = max(600, num_industries * row_height + 150)
+    
+    # Truncate long sub-industry names to prevent overflow
+    max_label_length = 45
+    y_labels = [
+        (name[:max_label_length] + "...") if len(name) > max_label_length else name
+        for name in pivot_df.index.tolist()
+    ]
+    
     fig.update_layout(
         title=dict(
             text="📊 Mansfield Relative Strength by GICS Sub-Industry",
@@ -265,24 +311,44 @@ def create_heatmap_figure(df: pd.DataFrame, num_weeks: int) -> go.Figure:
             xanchor="center"
         ),
         xaxis=dict(
-            title=dict(text="← Most Recent | Weeks | Older →", font=dict(size=12)),
+            title=None,  # Moved to annotation below main title
             tickfont=dict(size=10, color="#94a3b8"),
-            tickangle=0,
+            tickangle=45,
             side="top",
             dtick=1,
+            fixedrange=True,  # Prevent zoom on x-axis
         ),
         yaxis=dict(
-            title=dict(text="GICS Sub-Industries", font=dict(size=12)),
-            tickfont=dict(size=9, color="#94a3b8"),
+            title=None,  # Remove title to save space
+            tickfont=dict(size=10, color="#94a3b8"),
             autorange="reversed",  # First industry at top
             tickmode="linear",
-            dtick=1,
+            dtick=1,  # Show every tick
+            fixedrange=True,  # Prevent zoom on y-axis
+            ticklabelposition="outside",
         ),
+        annotations=[
+            dict(
+                text="← Most Recent | Weeks | Older →",
+                x=0.5,
+                y=1.02,  # Just below main title
+                xref="paper",
+                yref="paper",
+                showarrow=False,
+                font=dict(size=12, color="#94a3b8"),
+            )
+        ],
         paper_bgcolor="#0f172a",   # Slate 900
         plot_bgcolor="#1e293b",    # Slate 800
         font=dict(color="#e2e8f0"),
-        height=max(600, num_industries * 18 + 150),
-        margin=dict(l=280, r=80, t=100, b=50),
+        height=chart_height,
+        margin=dict(l=300, r=80, t=130, b=50),  # Wider left margin for labels
+    )
+    
+    # Update y-axis with truncated labels
+    fig.update_yaxes(
+        ticktext=y_labels,
+        tickvals=pivot_df.index.tolist(),
     )
     
     # Add grid lines

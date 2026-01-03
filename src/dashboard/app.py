@@ -3,6 +3,7 @@ Dash application initialization.
 
 Creates and configures the Plotly Dash application for the RS Dashboard.
 """
+import os
 from typing import Optional
 
 from dash import Dash
@@ -10,6 +11,9 @@ import dash_bootstrap_components as dbc
 
 from src.dashboard.layouts.main_layout import create_layout
 from src.dashboard.callbacks import register_callbacks
+
+# Get the assets folder path relative to this file
+ASSETS_PATH = os.path.join(os.path.dirname(__file__), "assets")
 
 
 def create_dash_app(server=None, routes_pathname_prefix: str = "/", requests_pathname_prefix: str = "/dashboard/") -> Dash:
@@ -36,6 +40,7 @@ def create_dash_app(server=None, routes_pathname_prefix: str = "/", requests_pat
         server=server,
         routes_pathname_prefix=routes_pathname_prefix,
         requests_pathname_prefix=requests_pathname_prefix,
+        assets_folder=ASSETS_PATH,  # Custom assets folder path
         external_stylesheets=[
             dbc.themes.DARKLY,  # Dark Bootstrap theme
             dbc.icons.FONT_AWESOME,  # Icons

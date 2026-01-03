@@ -152,17 +152,31 @@ def create_layout():
                                 ], className="text-center", style={"display": "none"})
                             ]
                         ),
-                        dcc.Graph(
-                            id="rs-heatmap",
-                            config={
-                                "displayModeBar": True,
-                                "scrollZoom": True,
-                                "displaylogo": False,
-                                "modeBarButtonsToRemove": [
-                                    "select2d", "lasso2d", "autoScale2d"
-                                ],
+                        # Fixed-height scrollable heatmap container
+                        html.Div(
+                            id="heatmap-scroll-container",
+                            style={
+                                "height": "500px",  # Fixed height (half of typical ~1000px)
+                                "overflowY": "auto",
+                                "overflowX": "hidden",
+                                "border": "1px solid #334155",
+                                "borderRadius": "8px",
+                                "backgroundColor": "#0f172a",
                             },
-                            style={"height": "800px"}
+                            children=[
+                                dcc.Graph(
+                                    id="rs-heatmap",
+                                    config={
+                                        "displayModeBar": True,
+                                        "scrollZoom": False,
+                                        "displaylogo": False,
+                                        "modeBarButtonsToRemove": [
+                                            "select2d", "lasso2d", "autoScale2d", "zoomOut2d"
+                                        ],
+                                    },
+                                    style={"minHeight": "600px"}  # Dynamic height from figure
+                                )
+                            ]
                         )
                     ]
                 )
@@ -195,6 +209,33 @@ def create_layout():
                 )
             ])
         ], className="mt-4"),
+        
+        # TradingView Chart Container (shown on cell click)
+        dbc.Row([
+            dbc.Col([
+                html.Div(
+                    id="tradingview-container",
+                    className="mt-5 pt-3",  # Increased margin for clear separation
+                    style={"display": "none"},
+                    children=[
+                        html.H5(
+                            id="tradingview-title",
+                            className="text-center mb-3"
+                        ),
+                        html.Iframe(
+                            id="tradingview-iframe",
+                            src="",
+                            style={
+                                "width": "100%",
+                                "height": "500px",
+                                "border": "1px solid #334155",
+                                "borderRadius": "8px",
+                            }
+                        )
+                    ]
+                )
+            ])
+        ]),
         
         # Data Statistics (footer)
         dbc.Row([

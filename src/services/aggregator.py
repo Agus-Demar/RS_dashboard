@@ -373,7 +373,7 @@ def get_week_ranges(months_back: int = 4, reference_date: Optional[date] = None)
         weeks.append({
             'week_start': week_start,
             'week_end': week_end,
-            'label': f"W-{i+1:02d}",
+            'label': week_end.strftime("%d/%m/%y"),
             'week_number': i + 1
         })
     
