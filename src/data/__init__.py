@@ -16,6 +16,8 @@ from src.data.gics_subindustry_etf_mapping import (
     get_etf_for_subindustry_name,
     get_all_subindustries_by_sector,
     get_unique_etfs,
+    get_etf_usage_stats,
+    get_sector_fallback_count,
 )
 
 __all__ = [
@@ -28,5 +30,7 @@ __all__ = [
     "get_etf_for_subindustry_name",
     "get_all_subindustries_by_sector",
     "get_unique_etfs",
+    "get_etf_usage_stats",
+    "get_sector_fallback_count",
 ]
 

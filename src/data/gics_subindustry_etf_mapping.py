@@ -4,6 +4,12 @@ GICS Sub-Industry to ETF/Index Mapping.
 Official GICS (Global Industry Classification Standard) sub-industry codes
 mapped to their most representative ETFs and indexes.
 
+PRIORITY SYSTEM:
+1. Sub-industry specific ETF (e.g., XBI for Biotechnology)
+2. Industry-level ETF (e.g., IBB as alternative for Biotech)
+3. Thematic ETF closely matching the sub-industry
+4. Sector ETF only as last resort (marked with is_sector_fallback=True)
+
 GICS Structure:
 - 11 Sectors (2-digit code)
 - 25 Industry Groups (4-digit code)
@@ -12,8 +18,11 @@ GICS Structure:
 
 Sources:
 - MSCI/S&P GICS Structure: https://www.msci.com/gics
-- SPDR Industry ETFs: https://www.ssga.com
-- iShares Sector ETFs: https://www.ishares.com
+- SPDR Select Industry ETFs: https://www.ssga.com
+- iShares Sector & Industry ETFs: https://www.ishares.com
+- VanEck Industry ETFs: https://www.vaneck.com
+- First Trust Thematic ETFs: https://www.ftportfolios.com
+- Global X Thematic ETFs: https://www.globalxetfs.com
 
 Last Updated: January 2026
 """
@@ -23,20 +32,21 @@ from typing import Dict, NamedTuple, Optional
 
 class SubIndustryETF(NamedTuple):
     """Sub-industry ETF mapping entry."""
-    code: str              # 8-digit GICS code
-    name: str              # Official sub-industry name
-    industry_code: str     # 6-digit industry code
-    industry_name: str     # Official industry name
-    sector_code: str       # 2-digit sector code
-    sector_name: str       # Official sector name
-    primary_etf: str       # Primary ETF ticker
-    alt_etf: Optional[str] # Alternative ETF (if available)
-    index_name: str        # Related index name
+    code: str                    # 8-digit GICS code
+    name: str                    # Official sub-industry name
+    industry_code: str           # 6-digit industry code
+    industry_name: str           # Official industry name
+    sector_code: str             # 2-digit sector code
+    sector_name: str             # Official sector name
+    primary_etf: str             # Primary ETF ticker
+    alt_etf: Optional[str]       # Alternative ETF (if available)
+    index_name: str              # Related index name
+    is_sector_fallback: bool = False  # True if using broad sector ETF
 
 
 # =============================================================================
 # GICS SUB-INDUSTRY ETF MAPPINGS
-# Organized by Sector -> Industry Group -> Industry -> Sub-Industry
+# Prioritizes unique sub-industry/industry ETFs over sector ETFs
 # =============================================================================
 
 GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
@@ -45,7 +55,6 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
     # SECTOR 10: ENERGY
     # =========================================================================
     
-    # Industry Group 1010: Energy
     # Industry 101010: Energy Equipment & Services
     "10101010": SubIndustryETF(
         code="10101010",
@@ -54,9 +63,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Energy Equipment & Services",
         sector_code="10",
         sector_name="Energy",
-        primary_etf="XES",
-        alt_etf="OIH",
-        index_name="S&P Oil & Gas Equipment & Services Select Industry Index"
+        primary_etf="OIH",      # VanEck Oil Services ETF - specific to drilling/services
+        alt_etf="XES",
+        index_name="MVIS US Listed Oil Services 25 Index"
     ),
     "10101020": SubIndustryETF(
         code="10101020",
@@ -65,8 +74,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Energy Equipment & Services",
         sector_code="10",
         sector_name="Energy",
-        primary_etf="XES",
-        alt_etf="OIH",
+        primary_etf="XES",      # SPDR S&P Oil & Gas Equipment & Services
+        alt_etf="IEZ",          # iShares U.S. Oil Equipment & Services
         index_name="S&P Oil & Gas Equipment & Services Select Industry Index"
     ),
     
@@ -78,9 +87,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Oil, Gas & Consumable Fuels",
         sector_code="10",
         sector_name="Energy",
-        primary_etf="XLE",
+        primary_etf="IEO",      # iShares U.S. Oil & Gas Exploration & Production
         alt_etf="VDE",
-        index_name="Energy Select Sector Index"
+        index_name="Dow Jones U.S. Select Oil Exploration & Production Index"
     ),
     "10102020": SubIndustryETF(
         code="10102020",
@@ -89,8 +98,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Oil, Gas & Consumable Fuels",
         sector_code="10",
         sector_name="Energy",
-        primary_etf="XOP",
-        alt_etf="FCG",
+        primary_etf="XOP",      # SPDR S&P Oil & Gas E&P - highly specific
+        alt_etf="FCG",          # First Trust Natural Gas
         index_name="S&P Oil & Gas Exploration & Production Select Industry Index"
     ),
     "10102030": SubIndustryETF(
@@ -100,9 +109,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Oil, Gas & Consumable Fuels",
         sector_code="10",
         sector_name="Energy",
-        primary_etf="CRAK",
-        alt_etf="XLE",
-        index_name="VanEck Vectors Oil Refiners ETF Index"
+        primary_etf="CRAK",     # VanEck Oil Refiners ETF - specific to refining
+        alt_etf="PXE",
+        index_name="MVIS Global Oil Refiners Index"
     ),
     "10102040": SubIndustryETF(
         code="10102040",
@@ -111,7 +120,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Oil, Gas & Consumable Fuels",
         sector_code="10",
         sector_name="Energy",
-        primary_etf="AMLP",
+        primary_etf="AMLP",     # Alerian MLP ETF - specific to midstream
         alt_etf="MLPA",
         index_name="Alerian MLP Index"
     ),
@@ -122,16 +131,15 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Oil, Gas & Consumable Fuels",
         sector_code="10",
         sector_name="Energy",
-        primary_etf="KOL",
-        alt_etf="XLE",
-        index_name="VanEck Vectors Coal ETF Index"
+        primary_etf="KOL",      # VanEck Coal ETF - specific to coal
+        alt_etf="PICK",
+        index_name="MVIS Global Coal Index"
     ),
     
     # =========================================================================
     # SECTOR 15: MATERIALS
     # =========================================================================
     
-    # Industry Group 1510: Materials
     # Industry 151010: Chemicals
     "15101010": SubIndustryETF(
         code="15101010",
@@ -140,9 +148,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Chemicals",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="XLB",
+        primary_etf="LIT",      # Global X Lithium & Battery Tech - specific commodity
         alt_etf="VAW",
-        index_name="Materials Select Sector Index"
+        index_name="Solactive Global Lithium Index"
     ),
     "15101020": SubIndustryETF(
         code="15101020",
@@ -151,9 +159,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Chemicals",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="XLB",
-        alt_etf="VAW",
-        index_name="Materials Select Sector Index"
+        primary_etf="VAW",      # Vanguard Materials - broad materials
+        alt_etf="IYM",
+        index_name="MSCI US IMI Materials 25/50 Index",
+        is_sector_fallback=True
     ),
     "15101030": SubIndustryETF(
         code="15101030",
@@ -162,9 +171,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Chemicals",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="MOO",
-        alt_etf="XLB",
-        index_name="VanEck Agribusiness ETF Index"
+        primary_etf="MOO",      # VanEck Agribusiness ETF - specific to ag
+        alt_etf="VEGI",
+        index_name="MVIS Global Agribusiness Index"
     ),
     "15101040": SubIndustryETF(
         code="15101040",
@@ -173,9 +182,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Chemicals",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="XLB",
+        primary_etf="IYM",      # iShares U.S. Basic Materials
         alt_etf="VAW",
-        index_name="Materials Select Sector Index"
+        index_name="Dow Jones U.S. Basic Materials Index",
+        is_sector_fallback=True
     ),
     "15101050": SubIndustryETF(
         code="15101050",
@@ -184,9 +194,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Chemicals",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="XLB",
+        primary_etf="PYZ",      # Invesco Dynamic Basic Materials
         alt_etf="VAW",
-        index_name="Materials Select Sector Index"
+        index_name="Dynamic Basic Materials Intellidex Index"
     ),
     
     # Industry 151020: Construction Materials
@@ -197,9 +207,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Construction Materials",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="PKB",
-        alt_etf="XLB",
-        index_name="Invesco Dynamic Building & Construction ETF Index"
+        primary_etf="PKB",      # Invesco Dynamic Building & Construction
+        alt_etf="XHB",
+        index_name="Dynamic Building & Construction Intellidex Index"
     ),
     
     # Industry 151030: Containers & Packaging
@@ -210,9 +220,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Containers & Packaging",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="XLB",
-        alt_etf="VAW",
-        index_name="Materials Select Sector Index"
+        primary_etf="VAW",      # Vanguard Materials
+        alt_etf="IYM",
+        index_name="MSCI US IMI Materials 25/50 Index",
+        is_sector_fallback=True
     ),
     "15103020": SubIndustryETF(
         code="15103020",
@@ -221,9 +232,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Containers & Packaging",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="XLB",
-        alt_etf="VAW",
-        index_name="Materials Select Sector Index"
+        primary_etf="WOOD",     # iShares Global Timber & Forestry
+        alt_etf="CUT",
+        index_name="S&P Global Timber & Forestry Index"
     ),
     
     # Industry 151040: Metals & Mining
@@ -234,9 +245,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Metals & Mining",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="XME",
-        alt_etf="PICK",
-        index_name="S&P Metals & Mining Select Industry Index"
+        primary_etf="PICK",     # iShares MSCI Global Metals & Mining Producers
+        alt_etf="XME",
+        index_name="MSCI ACWI Select Metals & Mining Producers Ex Gold & Silver IMI"
     ),
     "15104020": SubIndustryETF(
         code="15104020",
@@ -245,7 +256,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Metals & Mining",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="XME",
+        primary_etf="XME",      # SPDR S&P Metals & Mining
         alt_etf="PICK",
         index_name="S&P Metals & Mining Select Industry Index"
     ),
@@ -256,9 +267,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Metals & Mining",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="COPX",
-        alt_etf="XME",
-        index_name="Global X Copper Miners ETF Index"
+        primary_etf="COPX",     # Global X Copper Miners - highly specific
+        alt_etf="CPER",
+        index_name="Solactive Global Copper Miners Index"
     ),
     "15104030": SubIndustryETF(
         code="15104030",
@@ -267,7 +278,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Metals & Mining",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="GDX",
+        primary_etf="GDX",      # VanEck Gold Miners - highly specific
         alt_etf="GDXJ",
         index_name="NYSE Arca Gold Miners Index"
     ),
@@ -278,9 +289,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Metals & Mining",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="GDX",
-        alt_etf="SIL",
-        index_name="NYSE Arca Gold Miners Index"
+        primary_etf="GDXJ",     # VanEck Junior Gold Miners
+        alt_etf="RING",
+        index_name="MVIS Global Junior Gold Miners Index"
     ),
     "15104045": SubIndustryETF(
         code="15104045",
@@ -289,7 +300,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Metals & Mining",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="SIL",
+        primary_etf="SIL",      # Global X Silver Miners - highly specific
         alt_etf="SILJ",
         index_name="Solactive Global Silver Miners Index"
     ),
@@ -300,9 +311,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Metals & Mining",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="SLX",
+        primary_etf="SLX",      # VanEck Steel ETF - highly specific
         alt_etf="XME",
-        index_name="VanEck Vectors Steel ETF Index"
+        index_name="NYSE Arca Steel Index"
     ),
     
     # Industry 151050: Paper & Forest Products
@@ -313,9 +324,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Paper & Forest Products",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="WOOD",
-        alt_etf="CUT",
-        index_name="iShares Global Timber & Forestry ETF Index"
+        primary_etf="CUT",      # Invesco MSCI Global Timber
+        alt_etf="WOOD",
+        index_name="MSCI ACWI IMI Timber Select Capped Index"
     ),
     "15105020": SubIndustryETF(
         code="15105020",
@@ -324,16 +335,15 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Paper & Forest Products",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="WOOD",
-        alt_etf="XLB",
-        index_name="iShares Global Timber & Forestry ETF Index"
+        primary_etf="WOOD",     # iShares Global Timber & Forestry
+        alt_etf="CUT",
+        index_name="S&P Global Timber & Forestry Index"
     ),
     
     # =========================================================================
     # SECTOR 20: INDUSTRIALS
     # =========================================================================
     
-    # Industry Group 2010: Capital Goods
     # Industry 201010: Aerospace & Defense
     "20101010": SubIndustryETF(
         code="20101010",
@@ -342,9 +352,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Aerospace & Defense",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XAR",
-        alt_etf="ITA",
-        index_name="S&P Aerospace & Defense Select Industry Index"
+        primary_etf="ITA",      # iShares U.S. Aerospace & Defense
+        alt_etf="XAR",          # SPDR S&P Aerospace & Defense
+        index_name="Dow Jones U.S. Select Aerospace & Defense Index"
     ),
     
     # Industry 201020: Building Products
@@ -355,9 +365,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Building Products",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="ITB",
+        primary_etf="PKB",      # Invesco Dynamic Building & Construction
         alt_etf="XHB",
-        index_name="Dow Jones U.S. Select Home Construction Index"
+        index_name="Dynamic Building & Construction Intellidex Index"
     ),
     
     # Industry 201030: Construction & Engineering
@@ -368,9 +378,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Construction & Engineering",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="PKB",
-        alt_etf="XLI",
-        index_name="Invesco Dynamic Building & Construction ETF Index"
+        primary_etf="PAVE",     # Global X U.S. Infrastructure Development
+        alt_etf="PKB",
+        index_name="Indxx U.S. Infrastructure Development Index"
     ),
     
     # Industry 201040: Electrical Equipment
@@ -381,9 +391,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Electrical Equipment",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="GRID",
-        alt_etf="XLI",
-        index_name="NASDAQ Clean Edge Smart Grid Infrastructure Index"
+        primary_etf="GRID",     # First Trust NASDAQ Clean Edge Smart Grid
+        alt_etf="QCLN",
+        index_name="NASDAQ OMX Clean Edge Smart Grid Infrastructure Index"
     ),
     "20104020": SubIndustryETF(
         code="20104020",
@@ -392,9 +402,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Electrical Equipment",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="GRID",
-        alt_etf="XLI",
-        index_name="NASDAQ Clean Edge Smart Grid Infrastructure Index"
+        primary_etf="ICLN",     # iShares Global Clean Energy (heavy electrical for renewables)
+        alt_etf="GRID",
+        index_name="S&P Global Clean Energy Index"
     ),
     
     # Industry 201050: Industrial Conglomerates
@@ -405,9 +415,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Industrial Conglomerates",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XLI",
-        alt_etf="VIS",
-        index_name="Industrial Select Sector Index"
+        primary_etf="VIS",      # Vanguard Industrials
+        alt_etf="XLI",
+        index_name="MSCI US IMI Industrials 25/50 Index",
+        is_sector_fallback=True
     ),
     
     # Industry 201060: Machinery
@@ -418,9 +429,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Machinery",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XLI",
+        primary_etf="PAVE",     # Global X U.S. Infrastructure Development
         alt_etf="VIS",
-        index_name="Industrial Select Sector Index"
+        index_name="Indxx U.S. Infrastructure Development Index"
     ),
     "20106015": SubIndustryETF(
         code="20106015",
@@ -429,9 +440,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Machinery",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="MOO",
-        alt_etf="XLI",
-        index_name="VanEck Agribusiness ETF Index"
+        primary_etf="MOO",      # VanEck Agribusiness
+        alt_etf="VEGI",
+        index_name="MVIS Global Agribusiness Index"
     ),
     "20106020": SubIndustryETF(
         code="20106020",
@@ -440,9 +451,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Machinery",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XLI",
+        primary_etf="FIW",      # First Trust Water ETF (water machinery)
         alt_etf="VIS",
-        index_name="Industrial Select Sector Index"
+        index_name="ISE Clean Edge Water Index"
     ),
     
     # Industry 201070: Trading Companies & Distributors
@@ -453,12 +464,12 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Trading Companies & Distributors",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XLI",
-        alt_etf="VIS",
-        index_name="Industrial Select Sector Index"
+        primary_etf="VIS",      # Vanguard Industrials
+        alt_etf="XLI",
+        index_name="MSCI US IMI Industrials 25/50 Index",
+        is_sector_fallback=True
     ),
     
-    # Industry Group 2020: Commercial & Professional Services
     # Industry 202010: Commercial Services & Supplies
     "20201010": SubIndustryETF(
         code="20201010",
@@ -467,9 +478,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Commercial Services & Supplies",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XLI",
-        alt_etf="VIS",
-        index_name="Industrial Select Sector Index"
+        primary_etf="VIS",
+        alt_etf="XLI",
+        index_name="MSCI US IMI Industrials 25/50 Index",
+        is_sector_fallback=True
     ),
     "20201050": SubIndustryETF(
         code="20201050",
@@ -478,9 +490,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Commercial Services & Supplies",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="EVX",
-        alt_etf="XLI",
-        index_name="VanEck Vectors Environmental Services ETF Index"
+        primary_etf="EVX",      # VanEck Environmental Services
+        alt_etf="PBW",
+        index_name="NYSE Arca Environmental Services Index"
     ),
     "20201060": SubIndustryETF(
         code="20201060",
@@ -489,9 +501,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Commercial Services & Supplies",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XLI",
-        alt_etf="VIS",
-        index_name="Industrial Select Sector Index"
+        primary_etf="VIS",
+        alt_etf="XLI",
+        index_name="MSCI US IMI Industrials 25/50 Index",
+        is_sector_fallback=True
     ),
     "20201070": SubIndustryETF(
         code="20201070",
@@ -500,9 +513,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Commercial Services & Supplies",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XLI",
-        alt_etf="VIS",
-        index_name="Industrial Select Sector Index"
+        primary_etf="VIS",
+        alt_etf="XLI",
+        index_name="MSCI US IMI Industrials 25/50 Index",
+        is_sector_fallback=True
     ),
     "20201080": SubIndustryETF(
         code="20201080",
@@ -511,9 +525,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Commercial Services & Supplies",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="HACK",
-        alt_etf="XLI",
-        index_name="ISE Cyber Security Index"
+        primary_etf="CIBR",     # First Trust NASDAQ Cybersecurity
+        alt_etf="HACK",
+        index_name="Nasdaq CTA Cybersecurity Index"
     ),
     
     # Industry 202020: Professional Services
@@ -524,9 +538,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Professional Services",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XLI",
-        alt_etf="VIS",
-        index_name="Industrial Select Sector Index"
+        primary_etf="VIS",
+        alt_etf="XLI",
+        index_name="MSCI US IMI Industrials 25/50 Index",
+        is_sector_fallback=True
     ),
     "20202020": SubIndustryETF(
         code="20202020",
@@ -535,9 +550,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Professional Services",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XLI",
-        alt_etf="VIS",
-        index_name="Industrial Select Sector Index"
+        primary_etf="VIS",
+        alt_etf="XLI",
+        index_name="MSCI US IMI Industrials 25/50 Index",
+        is_sector_fallback=True
     ),
     "20202030": SubIndustryETF(
         code="20202030",
@@ -546,12 +562,11 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Professional Services",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="SKYY",
-        alt_etf="XLI",
-        index_name="First Trust Cloud Computing ETF Index"
+        primary_etf="SKYY",     # First Trust Cloud Computing
+        alt_etf="WCLD",
+        index_name="ISE CTA Cloud Computing Index"
     ),
     
-    # Industry Group 2030: Transportation
     # Industry 203010: Air Freight & Logistics
     "20301010": SubIndustryETF(
         code="20301010",
@@ -560,7 +575,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Air Freight & Logistics",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XTN",
+        primary_etf="XTN",      # SPDR S&P Transportation
         alt_etf="IYT",
         index_name="S&P Transportation Select Industry Index"
     ),
@@ -573,7 +588,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Passenger Airlines",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="JETS",
+        primary_etf="JETS",     # U.S. Global Jets - highly specific
         alt_etf="XTN",
         index_name="U.S. Global Jets Index"
     ),
@@ -586,8 +601,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Marine Transportation",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="SEA",
-        alt_etf="XTN",
+        primary_etf="SEA",      # U.S. Global Sea to Sky Cargo
+        alt_etf="BOAT",
         index_name="U.S. Global Sea to Sky Cargo Index"
     ),
     
@@ -599,9 +614,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Ground Transportation",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XTN",
-        alt_etf="IYT",
-        index_name="S&P Transportation Select Industry Index"
+        primary_etf="IYT",      # iShares U.S. Transportation
+        alt_etf="XTN",
+        index_name="Dow Jones U.S. Select Transportation Index"
     ),
     "20304020": SubIndustryETF(
         code="20304020",
@@ -610,7 +625,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Ground Transportation",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XTN",
+        primary_etf="XTN",      # SPDR S&P Transportation
         alt_etf="IYT",
         index_name="S&P Transportation Select Industry Index"
     ),
@@ -621,9 +636,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Ground Transportation",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XTN",
-        alt_etf="IYT",
-        index_name="S&P Transportation Select Industry Index"
+        primary_etf="DRIV",     # Global X Autonomous & Electric Vehicles
+        alt_etf="XTN",
+        index_name="Solactive Autonomous & Electric Vehicles Index"
     ),
     
     # Industry 203050: Transportation Infrastructure
@@ -634,9 +649,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Transportation Infrastructure",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XTN",
+        primary_etf="JETS",     # Related to airline infrastructure
         alt_etf="IYT",
-        index_name="S&P Transportation Select Industry Index"
+        index_name="U.S. Global Jets Index"
     ),
     "20305020": SubIndustryETF(
         code="20305020",
@@ -645,9 +660,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Transportation Infrastructure",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XTN",
-        alt_etf="IYT",
-        index_name="S&P Transportation Select Industry Index"
+        primary_etf="IGF",      # iShares Global Infrastructure
+        alt_etf="PAVE",
+        index_name="S&P Global Infrastructure Index"
     ),
     "20305030": SubIndustryETF(
         code="20305030",
@@ -657,7 +672,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="20",
         sector_name="Industrials",
         primary_etf="SEA",
-        alt_etf="XTN",
+        alt_etf="IGF",
         index_name="U.S. Global Sea to Sky Cargo Index"
     ),
     
@@ -665,7 +680,6 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
     # SECTOR 25: CONSUMER DISCRETIONARY
     # =========================================================================
     
-    # Industry Group 2510: Automobiles & Components
     # Industry 251010: Automobile Components
     "25101010": SubIndustryETF(
         code="25101010",
@@ -674,9 +688,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Automobile Components",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="CARZ",
-        alt_etf="XLY",
-        index_name="First Trust NASDAQ Global Auto Index"
+        primary_etf="CARZ",     # First Trust NASDAQ Global Auto
+        alt_etf="DRIV",
+        index_name="NASDAQ OMX Global Automobile Index"
     ),
     "25101020": SubIndustryETF(
         code="25101020",
@@ -686,8 +700,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="25",
         sector_name="Consumer Discretionary",
         primary_etf="CARZ",
-        alt_etf="XLY",
-        index_name="First Trust NASDAQ Global Auto Index"
+        alt_etf="VCR",
+        index_name="NASDAQ OMX Global Automobile Index"
     ),
     
     # Industry 251020: Automobiles
@@ -698,9 +712,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Automobiles",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="CARZ",
-        alt_etf="XLY",
-        index_name="First Trust NASDAQ Global Auto Index"
+        primary_etf="DRIV",     # Global X Autonomous & Electric Vehicles
+        alt_etf="CARZ",
+        index_name="Solactive Autonomous & Electric Vehicles Index"
     ),
     "25102020": SubIndustryETF(
         code="25102020",
@@ -710,11 +724,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="25",
         sector_name="Consumer Discretionary",
         primary_etf="CARZ",
-        alt_etf="XLY",
-        index_name="First Trust NASDAQ Global Auto Index"
+        alt_etf="VCR",
+        index_name="NASDAQ OMX Global Automobile Index"
     ),
     
-    # Industry Group 2520: Consumer Durables & Apparel
     # Industry 252010: Household Durables
     "25201010": SubIndustryETF(
         code="25201010",
@@ -723,9 +736,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Household Durables",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="XLY",
+        primary_etf="SNSR",     # Global X Internet of Things
         alt_etf="VCR",
-        index_name="Consumer Discretionary Select Sector Index"
+        index_name="Indxx Global Internet of Things Thematic Index"
     ),
     "25201020": SubIndustryETF(
         code="25201020",
@@ -734,9 +747,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Household Durables",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="XHB",
-        alt_etf="XLY",
-        index_name="SPDR S&P Homebuilders ETF Index"
+        primary_etf="XHB",      # SPDR S&P Homebuilders
+        alt_etf="ITB",
+        index_name="S&P Homebuilders Select Industry Index"
     ),
     "25201030": SubIndustryETF(
         code="25201030",
@@ -745,7 +758,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Household Durables",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="ITB",
+        primary_etf="ITB",      # iShares U.S. Home Construction
         alt_etf="XHB",
         index_name="Dow Jones U.S. Select Home Construction Index"
     ),
@@ -756,9 +769,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Household Durables",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="XLY",
-        alt_etf="VCR",
-        index_name="Consumer Discretionary Select Sector Index"
+        primary_etf="VCR",      # Vanguard Consumer Discretionary
+        alt_etf="XLY",
+        index_name="MSCI US IMI Consumer Discretionary 25/50 Index",
+        is_sector_fallback=True
     ),
     "25201050": SubIndustryETF(
         code="25201050",
@@ -768,8 +782,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="25",
         sector_name="Consumer Discretionary",
         primary_etf="XHB",
-        alt_etf="XLY",
-        index_name="SPDR S&P Homebuilders ETF Index"
+        alt_etf="VCR",
+        index_name="S&P Homebuilders Select Industry Index"
     ),
     
     # Industry 252020: Leisure Products
@@ -780,9 +794,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Leisure Products",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="PEJ",
-        alt_etf="XLY",
-        index_name="Invesco Dynamic Leisure & Entertainment ETF Index"
+        primary_etf="PEJ",      # Invesco Dynamic Leisure & Entertainment
+        alt_etf="VCR",
+        index_name="Dynamic Leisure & Entertainment Intellidex Index"
     ),
     
     # Industry 252030: Textiles, Apparel & Luxury Goods
@@ -793,8 +807,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Textiles, Apparel & Luxury Goods",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="XRT",
-        alt_etf="XLY",
+        primary_etf="XRT",      # SPDR S&P Retail
+        alt_etf="RTH",
         index_name="S&P Retail Select Industry Index"
     ),
     "25203020": SubIndustryETF(
@@ -804,9 +818,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Textiles, Apparel & Luxury Goods",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="XRT",
-        alt_etf="XLY",
-        index_name="S&P Retail Select Industry Index"
+        primary_etf="RTH",      # VanEck Retail
+        alt_etf="XRT",
+        index_name="MVIS US Listed Retail 25 Index"
     ),
     "25203030": SubIndustryETF(
         code="25203030",
@@ -815,12 +829,12 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Textiles, Apparel & Luxury Goods",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="XRT",
+        primary_etf="VCR",
         alt_etf="XLY",
-        index_name="S&P Retail Select Industry Index"
+        index_name="MSCI US IMI Consumer Discretionary 25/50 Index",
+        is_sector_fallback=True
     ),
     
-    # Industry Group 2530: Consumer Services
     # Industry 253010: Hotels, Restaurants & Leisure
     "25301010": SubIndustryETF(
         code="25301010",
@@ -829,9 +843,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Hotels, Restaurants & Leisure",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="BJK",
-        alt_etf="PEJ",
-        index_name="VanEck Vectors Gaming ETF Index"
+        primary_etf="BJK",      # VanEck Gaming - highly specific
+        alt_etf="BETZ",
+        index_name="MVIS Global Gaming Index"
     ),
     "25301020": SubIndustryETF(
         code="25301020",
@@ -840,9 +854,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Hotels, Restaurants & Leisure",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="PEJ",
-        alt_etf="XLY",
-        index_name="Invesco Dynamic Leisure & Entertainment ETF Index"
+        primary_etf="PEJ",      # Invesco Dynamic Leisure & Entertainment
+        alt_etf="AWAY",
+        index_name="Dynamic Leisure & Entertainment Intellidex Index"
     ),
     "25301030": SubIndustryETF(
         code="25301030",
@@ -851,9 +865,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Hotels, Restaurants & Leisure",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="PEJ",
-        alt_etf="XLY",
-        index_name="Invesco Dynamic Leisure & Entertainment ETF Index"
+        primary_etf="AWAY",     # ETFMG Travel Tech
+        alt_etf="PEJ",
+        index_name="Prime Travel Technology Index"
     ),
     "25301040": SubIndustryETF(
         code="25301040",
@@ -862,9 +876,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Hotels, Restaurants & Leisure",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="PBJ",
-        alt_etf="XLY",
-        index_name="Invesco Dynamic Food & Beverage ETF Index"
+        primary_etf="PBJ",      # Invesco Dynamic Food & Beverage
+        alt_etf="PEJ",
+        index_name="Dynamic Food & Beverage Intellidex Index"
     ),
     
     # Industry 253020: Diversified Consumer Services
@@ -875,9 +889,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Diversified Consumer Services",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="XLY",
-        alt_etf="VCR",
-        index_name="Consumer Discretionary Select Sector Index"
+        primary_etf="VCR",
+        alt_etf="XLY",
+        index_name="MSCI US IMI Consumer Discretionary 25/50 Index",
+        is_sector_fallback=True
     ),
     "25302020": SubIndustryETF(
         code="25302020",
@@ -886,12 +901,12 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Diversified Consumer Services",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="XLY",
-        alt_etf="VCR",
-        index_name="Consumer Discretionary Select Sector Index"
+        primary_etf="VCR",
+        alt_etf="XLY",
+        index_name="MSCI US IMI Consumer Discretionary 25/50 Index",
+        is_sector_fallback=True
     ),
     
-    # Industry Group 2550: Consumer Discretionary Distribution & Retail
     # Industry 255010: Distributors
     "25501010": SubIndustryETF(
         code="25501010",
@@ -901,7 +916,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="25",
         sector_name="Consumer Discretionary",
         primary_etf="XRT",
-        alt_etf="XLY",
+        alt_etf="VCR",
         index_name="S&P Retail Select Industry Index"
     ),
     
@@ -913,9 +928,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Broadline Retail",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="IBUY",
-        alt_etf="XRT",
-        index_name="Amplify Online Retail ETF Index"
+        primary_etf="IBUY",     # Amplify Online Retail - highly specific
+        alt_etf="ONLN",
+        index_name="EQM Online Retail Index"
     ),
     
     # Industry 255030: Specialty Retail
@@ -926,9 +941,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Specialty Retail",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="XRT",
-        alt_etf="XLY",
-        index_name="S&P Retail Select Industry Index"
+        primary_etf="RTH",
+        alt_etf="XRT",
+        index_name="MVIS US Listed Retail 25 Index"
     ),
     "25503020": SubIndustryETF(
         code="25503020",
@@ -937,9 +952,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Specialty Retail",
         sector_code="25",
         sector_name="Consumer Discretionary",
-        primary_etf="XRT",
-        alt_etf="XLY",
-        index_name="S&P Retail Select Industry Index"
+        primary_etf="ONLN",     # ProShares Online Retail
+        alt_etf="XRT",
+        index_name="ProShares Online Retail Index"
     ),
     "25503030": SubIndustryETF(
         code="25503030",
@@ -949,8 +964,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="25",
         sector_name="Consumer Discretionary",
         primary_etf="XHB",
-        alt_etf="XRT",
-        index_name="SPDR S&P Homebuilders ETF Index"
+        alt_etf="ITB",
+        index_name="S&P Homebuilders Select Industry Index"
     ),
     "25503040": SubIndustryETF(
         code="25503040",
@@ -960,7 +975,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="25",
         sector_name="Consumer Discretionary",
         primary_etf="XRT",
-        alt_etf="XLY",
+        alt_etf="RTH",
         index_name="S&P Retail Select Industry Index"
     ),
     "25503050": SubIndustryETF(
@@ -972,7 +987,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_name="Consumer Discretionary",
         primary_etf="CARZ",
         alt_etf="XRT",
-        index_name="First Trust NASDAQ Global Auto Index"
+        index_name="NASDAQ OMX Global Automobile Index"
     ),
     "25503060": SubIndustryETF(
         code="25503060",
@@ -983,14 +998,13 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_name="Consumer Discretionary",
         primary_etf="XHB",
         alt_etf="XRT",
-        index_name="SPDR S&P Homebuilders ETF Index"
+        index_name="S&P Homebuilders Select Industry Index"
     ),
     
     # =========================================================================
     # SECTOR 30: CONSUMER STAPLES
     # =========================================================================
     
-    # Industry Group 3010: Consumer Staples Distribution & Retail
     # Industry 301010: Consumer Staples Distribution & Retail
     "30101010": SubIndustryETF(
         code="30101010",
@@ -999,9 +1013,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Consumer Staples Distribution & Retail",
         sector_code="30",
         sector_name="Consumer Staples",
-        primary_etf="XLP",
-        alt_etf="VDC",
-        index_name="Consumer Staples Select Sector Index"
+        primary_etf="IHF",      # iShares U.S. Healthcare Providers
+        alt_etf="XLP",
+        index_name="Dow Jones U.S. Select Health Care Providers Index"
     ),
     "30101020": SubIndustryETF(
         code="30101020",
@@ -1011,8 +1025,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="30",
         sector_name="Consumer Staples",
         primary_etf="PBJ",
-        alt_etf="XLP",
-        index_name="Invesco Dynamic Food & Beverage ETF Index"
+        alt_etf="IYK",
+        index_name="Dynamic Food & Beverage Intellidex Index"
     ),
     "30101030": SubIndustryETF(
         code="30101030",
@@ -1021,9 +1035,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Consumer Staples Distribution & Retail",
         sector_code="30",
         sector_name="Consumer Staples",
-        primary_etf="PBJ",
-        alt_etf="XLP",
-        index_name="Invesco Dynamic Food & Beverage ETF Index"
+        primary_etf="IYK",      # iShares U.S. Consumer Staples
+        alt_etf="PBJ",
+        index_name="Dow Jones U.S. Consumer Goods Index"
     ),
     "30101040": SubIndustryETF(
         code="30101040",
@@ -1032,12 +1046,12 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Consumer Staples Distribution & Retail",
         sector_code="30",
         sector_name="Consumer Staples",
-        primary_etf="XLP",
-        alt_etf="VDC",
-        index_name="Consumer Staples Select Sector Index"
+        primary_etf="VDC",      # Vanguard Consumer Staples
+        alt_etf="XLP",
+        index_name="MSCI US IMI Consumer Staples 25/50 Index",
+        is_sector_fallback=True
     ),
     
-    # Industry Group 3020: Food, Beverage & Tobacco
     # Industry 302010: Beverages
     "30201010": SubIndustryETF(
         code="30201010",
@@ -1047,8 +1061,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="30",
         sector_name="Consumer Staples",
         primary_etf="PBJ",
-        alt_etf="XLP",
-        index_name="Invesco Dynamic Food & Beverage ETF Index"
+        alt_etf="VDC",
+        index_name="Dynamic Food & Beverage Intellidex Index"
     ),
     "30201020": SubIndustryETF(
         code="30201020",
@@ -1058,8 +1072,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="30",
         sector_name="Consumer Staples",
         primary_etf="PBJ",
-        alt_etf="XLP",
-        index_name="Invesco Dynamic Food & Beverage ETF Index"
+        alt_etf="IYK",
+        index_name="Dynamic Food & Beverage Intellidex Index"
     ),
     "30201030": SubIndustryETF(
         code="30201030",
@@ -1069,8 +1083,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="30",
         sector_name="Consumer Staples",
         primary_etf="PBJ",
-        alt_etf="XLP",
-        index_name="Invesco Dynamic Food & Beverage ETF Index"
+        alt_etf="VDC",
+        index_name="Dynamic Food & Beverage Intellidex Index"
     ),
     
     # Industry 302020: Food Products
@@ -1081,9 +1095,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Food Products",
         sector_code="30",
         sector_name="Consumer Staples",
-        primary_etf="MOO",
-        alt_etf="XLP",
-        index_name="VanEck Agribusiness ETF Index"
+        primary_etf="VEGI",     # iShares MSCI Global Agriculture Producers
+        alt_etf="MOO",
+        index_name="MSCI ACWI Select Agriculture Producers IMI"
     ),
     "30202030": SubIndustryETF(
         code="30202030",
@@ -1093,8 +1107,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="30",
         sector_name="Consumer Staples",
         primary_etf="PBJ",
-        alt_etf="XLP",
-        index_name="Invesco Dynamic Food & Beverage ETF Index"
+        alt_etf="VDC",
+        index_name="Dynamic Food & Beverage Intellidex Index"
     ),
     
     # Industry 302030: Tobacco
@@ -1105,12 +1119,12 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Tobacco",
         sector_code="30",
         sector_name="Consumer Staples",
-        primary_etf="XLP",
-        alt_etf="VDC",
-        index_name="Consumer Staples Select Sector Index"
+        primary_etf="VDC",
+        alt_etf="XLP",
+        index_name="MSCI US IMI Consumer Staples 25/50 Index",
+        is_sector_fallback=True
     ),
     
-    # Industry Group 3030: Household & Personal Products
     # Industry 303010: Household Products
     "30301010": SubIndustryETF(
         code="30301010",
@@ -1119,9 +1133,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Household Products",
         sector_code="30",
         sector_name="Consumer Staples",
-        primary_etf="XLP",
+        primary_etf="IYK",
         alt_etf="VDC",
-        index_name="Consumer Staples Select Sector Index"
+        index_name="Dow Jones U.S. Consumer Goods Index"
     ),
     
     # Industry 303020: Personal Care Products
@@ -1132,16 +1146,15 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Personal Care Products",
         sector_code="30",
         sector_name="Consumer Staples",
-        primary_etf="XLP",
+        primary_etf="IYK",
         alt_etf="VDC",
-        index_name="Consumer Staples Select Sector Index"
+        index_name="Dow Jones U.S. Consumer Goods Index"
     ),
     
     # =========================================================================
     # SECTOR 35: HEALTH CARE
     # =========================================================================
     
-    # Industry Group 3510: Health Care Equipment & Services
     # Industry 351010: Health Care Equipment & Supplies
     "35101010": SubIndustryETF(
         code="35101010",
@@ -1150,8 +1163,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Health Care Equipment & Supplies",
         sector_code="35",
         sector_name="Health Care",
-        primary_etf="IHI",
-        alt_etf="XLV",
+        primary_etf="IHI",      # iShares U.S. Medical Devices - highly specific
+        alt_etf="XHE",
         index_name="Dow Jones U.S. Select Medical Equipment Index"
     ),
     "35101020": SubIndustryETF(
@@ -1161,9 +1174,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Health Care Equipment & Supplies",
         sector_code="35",
         sector_name="Health Care",
-        primary_etf="IHI",
-        alt_etf="XLV",
-        index_name="Dow Jones U.S. Select Medical Equipment Index"
+        primary_etf="XHE",      # SPDR S&P Health Care Equipment
+        alt_etf="IHI",
+        index_name="S&P Health Care Equipment Select Industry Index"
     ),
     
     # Industry 351020: Health Care Providers & Services
@@ -1174,8 +1187,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Health Care Providers & Services",
         sector_code="35",
         sector_name="Health Care",
-        primary_etf="IHF",
-        alt_etf="XLV",
+        primary_etf="IHF",      # iShares U.S. Healthcare Providers
+        alt_etf="XHS",
         index_name="Dow Jones U.S. Select Health Care Providers Index"
     ),
     "35102015": SubIndustryETF(
@@ -1185,9 +1198,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Health Care Providers & Services",
         sector_code="35",
         sector_name="Health Care",
-        primary_etf="IHF",
-        alt_etf="XLV",
-        index_name="Dow Jones U.S. Select Health Care Providers Index"
+        primary_etf="XHS",      # SPDR S&P Health Care Services
+        alt_etf="IHF",
+        index_name="S&P Health Care Services Select Industry Index"
     ),
     "35102020": SubIndustryETF(
         code="35102020",
@@ -1197,7 +1210,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="35",
         sector_name="Health Care",
         primary_etf="IHF",
-        alt_etf="XLV",
+        alt_etf="XHS",
         index_name="Dow Jones U.S. Select Health Care Providers Index"
     ),
     "35102030": SubIndustryETF(
@@ -1208,7 +1221,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="35",
         sector_name="Health Care",
         primary_etf="IHF",
-        alt_etf="XLV",
+        alt_etf="VHT",
         index_name="Dow Jones U.S. Select Health Care Providers Index"
     ),
     
@@ -1220,12 +1233,11 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Health Care Technology",
         sector_code="35",
         sector_name="Health Care",
-        primary_etf="EDOC",
-        alt_etf="XLV",
-        index_name="Global X Telemedicine & Digital Health ETF Index"
+        primary_etf="EDOC",     # Global X Telemedicine & Digital Health - highly specific
+        alt_etf="IHF",
+        index_name="Solactive Telemedicine & Digital Health Index"
     ),
     
-    # Industry Group 3520: Pharmaceuticals, Biotechnology & Life Sciences
     # Industry 352010: Biotechnology
     "35201010": SubIndustryETF(
         code="35201010",
@@ -1234,7 +1246,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Biotechnology",
         sector_code="35",
         sector_name="Health Care",
-        primary_etf="XBI",
+        primary_etf="XBI",      # SPDR S&P Biotech - highly specific
         alt_etf="IBB",
         index_name="S&P Biotechnology Select Industry Index"
     ),
@@ -1247,8 +1259,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Pharmaceuticals",
         sector_code="35",
         sector_name="Health Care",
-        primary_etf="XPH",
-        alt_etf="IHE",
+        primary_etf="XPH",      # SPDR S&P Pharmaceuticals
+        alt_etf="IHE",          # iShares U.S. Pharmaceuticals
         index_name="S&P Pharmaceuticals Select Industry Index"
     ),
     
@@ -1260,16 +1272,15 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Life Sciences Tools & Services",
         sector_code="35",
         sector_name="Health Care",
-        primary_etf="XBI",
-        alt_etf="XLV",
-        index_name="S&P Biotechnology Select Industry Index"
+        primary_etf="IBB",      # iShares Biotechnology
+        alt_etf="XBI",
+        index_name="Nasdaq Biotechnology Index"
     ),
     
     # =========================================================================
     # SECTOR 40: FINANCIALS
     # =========================================================================
     
-    # Industry Group 4010: Banks
     # Industry 401010: Banks
     "40101010": SubIndustryETF(
         code="40101010",
@@ -1278,8 +1289,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Banks",
         sector_code="40",
         sector_name="Financials",
-        primary_etf="KBE",
-        alt_etf="XLF",
+        primary_etf="KBE",      # SPDR S&P Bank - highly specific
+        alt_etf="IAT",
         index_name="S&P Banks Select Industry Index"
     ),
     "40101015": SubIndustryETF(
@@ -1289,12 +1300,11 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Banks",
         sector_code="40",
         sector_name="Financials",
-        primary_etf="KRE",
-        alt_etf="KBE",
+        primary_etf="KRE",      # SPDR S&P Regional Banking - highly specific
+        alt_etf="IAT",
         index_name="S&P Regional Banks Select Industry Index"
     ),
     
-    # Industry Group 4020: Financial Services
     # Industry 402010: Diversified Financial Services
     "40201010": SubIndustryETF(
         code="40201010",
@@ -1303,9 +1313,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Diversified Financial Services",
         sector_code="40",
         sector_name="Financials",
-        primary_etf="XLF",
-        alt_etf="VFH",
-        index_name="Financial Select Sector Index"
+        primary_etf="VFH",      # Vanguard Financials
+        alt_etf="XLF",
+        index_name="MSCI US IMI Financials 25/50 Index",
+        is_sector_fallback=True
     ),
     "40201020": SubIndustryETF(
         code="40201020",
@@ -1314,9 +1325,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Diversified Financial Services",
         sector_code="40",
         sector_name="Financials",
-        primary_etf="XLF",
-        alt_etf="VFH",
-        index_name="Financial Select Sector Index"
+        primary_etf="VFH",
+        alt_etf="XLF",
+        index_name="MSCI US IMI Financials 25/50 Index",
+        is_sector_fallback=True
     ),
     "40201030": SubIndustryETF(
         code="40201030",
@@ -1325,9 +1337,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Diversified Financial Services",
         sector_code="40",
         sector_name="Financials",
-        primary_etf="XLF",
+        primary_etf="KBWP",     # Invesco KBW Premium Yield Equity REIT
         alt_etf="VFH",
-        index_name="Financial Select Sector Index"
+        index_name="KBW Nasdaq Premium Yield Equity REIT Index"
     ),
     "40201040": SubIndustryETF(
         code="40201040",
@@ -1336,8 +1348,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Diversified Financial Services",
         sector_code="40",
         sector_name="Financials",
-        primary_etf="REM",
-        alt_etf="XLF",
+        primary_etf="REM",      # iShares Mortgage Real Estate - highly specific
+        alt_etf="MORT",
         index_name="FTSE NAREIT All Mortgage Capped Index"
     ),
     "40201050": SubIndustryETF(
@@ -1347,9 +1359,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Diversified Financial Services",
         sector_code="40",
         sector_name="Financials",
-        primary_etf="IPAY",
-        alt_etf="XLF",
-        index_name="NASDAQ CTA Global Digital Payments Index"
+        primary_etf="IPAY",     # ETFMG Prime Mobile Payments - highly specific
+        alt_etf="FINX",
+        index_name="Prime Mobile Payments Index"
     ),
     
     # Industry 402020: Consumer Finance
@@ -1360,9 +1372,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Consumer Finance",
         sector_code="40",
         sector_name="Financials",
-        primary_etf="XLF",
+        primary_etf="FINX",     # Global X FinTech
         alt_etf="VFH",
-        index_name="Financial Select Sector Index"
+        index_name="Indxx Global FinTech Thematic Index"
     ),
     
     # Industry 402030: Capital Markets
@@ -1373,8 +1385,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Capital Markets",
         sector_code="40",
         sector_name="Financials",
-        primary_etf="KCE",
-        alt_etf="XLF",
+        primary_etf="KCE",      # SPDR S&P Capital Markets
+        alt_etf="IAI",
         index_name="S&P Capital Markets Select Industry Index"
     ),
     "40203020": SubIndustryETF(
@@ -1384,9 +1396,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Capital Markets",
         sector_code="40",
         sector_name="Financials",
-        primary_etf="KCE",
-        alt_etf="XLF",
-        index_name="S&P Capital Markets Select Industry Index"
+        primary_etf="IAI",      # iShares U.S. Broker-Dealers & Securities Exchanges
+        alt_etf="KCE",
+        index_name="Dow Jones U.S. Select Investment Services Index"
     ),
     "40203030": SubIndustryETF(
         code="40203030",
@@ -1396,7 +1408,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="40",
         sector_name="Financials",
         primary_etf="KCE",
-        alt_etf="XLF",
+        alt_etf="IAI",
         index_name="S&P Capital Markets Select Industry Index"
     ),
     "40203040": SubIndustryETF(
@@ -1406,12 +1418,12 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Capital Markets",
         sector_code="40",
         sector_name="Financials",
-        primary_etf="KCE",
-        alt_etf="XLF",
-        index_name="S&P Capital Markets Select Industry Index"
+        primary_etf="IAI",
+        alt_etf="KCE",
+        index_name="Dow Jones U.S. Select Investment Services Index"
     ),
     
-    # Industry 402040: Mortgage Real Estate Investment Trusts (REITs)
+    # Industry 402040: Mortgage REITs
     "40204010": SubIndustryETF(
         code="40204010",
         name="Mortgage REITs",
@@ -1424,7 +1436,6 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         index_name="FTSE NAREIT All Mortgage Capped Index"
     ),
     
-    # Industry Group 4030: Insurance
     # Industry 403010: Insurance
     "40301010": SubIndustryETF(
         code="40301010",
@@ -1433,7 +1444,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Insurance",
         sector_code="40",
         sector_name="Financials",
-        primary_etf="KIE",
+        primary_etf="KIE",      # SPDR S&P Insurance - highly specific
         alt_etf="IAK",
         index_name="S&P Insurance Select Industry Index"
     ),
@@ -1444,9 +1455,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Insurance",
         sector_code="40",
         sector_name="Financials",
-        primary_etf="KIE",
-        alt_etf="IAK",
-        index_name="S&P Insurance Select Industry Index"
+        primary_etf="IAK",      # iShares U.S. Insurance
+        alt_etf="KIE",
+        index_name="Dow Jones U.S. Select Insurance Index"
     ),
     "40301030": SubIndustryETF(
         code="40301030",
@@ -1466,9 +1477,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Insurance",
         sector_code="40",
         sector_name="Financials",
-        primary_etf="KIE",
-        alt_etf="IAK",
-        index_name="S&P Insurance Select Industry Index"
+        primary_etf="IAK",
+        alt_etf="KIE",
+        index_name="Dow Jones U.S. Select Insurance Index"
     ),
     "40301050": SubIndustryETF(
         code="40301050",
@@ -1486,7 +1497,6 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
     # SECTOR 45: INFORMATION TECHNOLOGY
     # =========================================================================
     
-    # Industry Group 4510: Software & Services
     # Industry 451020: IT Services
     "45102010": SubIndustryETF(
         code="45102010",
@@ -1495,9 +1505,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="IT Services",
         sector_code="45",
         sector_name="Information Technology",
-        primary_etf="IGV",
-        alt_etf="XLK",
-        index_name="iShares Expanded Tech-Software Sector ETF Index"
+        primary_etf="IGV",      # iShares Expanded Tech-Software
+        alt_etf="XSW",
+        index_name="S&P North American Technology-Software Index"
     ),
     "45102020": SubIndustryETF(
         code="45102020",
@@ -1506,9 +1516,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="IT Services",
         sector_code="45",
         sector_name="Information Technology",
-        primary_etf="XWEB",
-        alt_etf="SKYY",
-        index_name="SPDR S&P Internet ETF Index"
+        primary_etf="FDN",      # First Trust Dow Jones Internet
+        alt_etf="XWEB",
+        index_name="Dow Jones Internet Composite Index"
     ),
     "45102030": SubIndustryETF(
         code="45102030",
@@ -1517,9 +1527,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="IT Services",
         sector_code="45",
         sector_name="Information Technology",
-        primary_etf="SKYY",
-        alt_etf="XLK",
-        index_name="First Trust Cloud Computing ETF Index"
+        primary_etf="WCLD",     # WisdomTree Cloud Computing
+        alt_etf="SKYY",
+        index_name="BVP Nasdaq Emerging Cloud Index"
     ),
     
     # Industry 451030: Software
@@ -1530,9 +1540,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Software",
         sector_code="45",
         sector_name="Information Technology",
-        primary_etf="IGV",
+        primary_etf="IGV",      # iShares Expanded Tech-Software - highly specific
         alt_etf="XSW",
-        index_name="iShares Expanded Tech-Software Sector ETF Index"
+        index_name="S&P North American Technology-Software Index"
     ),
     "45103020": SubIndustryETF(
         code="45103020",
@@ -1541,12 +1551,11 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Software",
         sector_code="45",
         sector_name="Information Technology",
-        primary_etf="IGV",
-        alt_etf="XSW",
-        index_name="iShares Expanded Tech-Software Sector ETF Index"
+        primary_etf="XSW",      # SPDR S&P Software & Services
+        alt_etf="IGV",
+        index_name="S&P Software & Services Select Industry Index"
     ),
     
-    # Industry Group 4520: Technology Hardware & Equipment
     # Industry 452010: Communications Equipment
     "45201010": SubIndustryETF(
         code="45201010",
@@ -1555,9 +1564,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Communications Equipment",
         sector_code="45",
         sector_name="Information Technology",
-        primary_etf="XTH",
-        alt_etf="XLK",
-        index_name="S&P Technology Hardware Select Industry Index"
+        primary_etf="IYZ",      # iShares U.S. Telecommunications
+        alt_etf="FCOM",
+        index_name="Dow Jones U.S. Select Telecommunications Index"
     ),
     
     # Industry 452020: Technology Hardware, Storage & Peripherals
@@ -1568,7 +1577,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Technology Hardware, Storage & Peripherals",
         sector_code="45",
         sector_name="Information Technology",
-        primary_etf="XTH",
+        primary_etf="XTH",      # SPDR S&P Technology Hardware
         alt_etf="QTEC",
         index_name="S&P Technology Hardware Select Industry Index"
     ),
@@ -1581,9 +1590,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Electronic Equipment, Instruments & Components",
         sector_code="45",
         sector_name="Information Technology",
-        primary_etf="XTH",
-        alt_etf="XLK",
-        index_name="S&P Technology Hardware Select Industry Index"
+        primary_etf="QTEC",     # First Trust NASDAQ-100 Technology
+        alt_etf="XTH",
+        index_name="NASDAQ-100 Technology Sector Index"
     ),
     "45203015": SubIndustryETF(
         code="45203015",
@@ -1593,7 +1602,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="45",
         sector_name="Information Technology",
         primary_etf="XTH",
-        alt_etf="XLK",
+        alt_etf="QTEC",
         index_name="S&P Technology Hardware Select Industry Index"
     ),
     "45203020": SubIndustryETF(
@@ -1603,9 +1612,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Electronic Equipment, Instruments & Components",
         sector_code="45",
         sector_name="Information Technology",
-        primary_etf="XTH",
-        alt_etf="XLK",
-        index_name="S&P Technology Hardware Select Industry Index"
+        primary_etf="QTEC",
+        alt_etf="IYW",
+        index_name="NASDAQ-100 Technology Sector Index"
     ),
     "45203030": SubIndustryETF(
         code="45203030",
@@ -1614,12 +1623,11 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Electronic Equipment, Instruments & Components",
         sector_code="45",
         sector_name="Information Technology",
-        primary_etf="XTH",
-        alt_etf="XLK",
-        index_name="S&P Technology Hardware Select Industry Index"
+        primary_etf="IYW",      # iShares U.S. Technology
+        alt_etf="VGT",
+        index_name="Dow Jones U.S. Technology Index"
     ),
     
-    # Industry Group 4530: Semiconductors & Semiconductor Equipment
     # Industry 453010: Semiconductors & Semiconductor Equipment
     "45301010": SubIndustryETF(
         code="45301010",
@@ -1628,7 +1636,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Semiconductors & Semiconductor Equipment",
         sector_code="45",
         sector_name="Information Technology",
-        primary_etf="XSD",
+        primary_etf="XSD",      # SPDR S&P Semiconductor
         alt_etf="SMH",
         index_name="S&P Semiconductor Select Industry Index"
     ),
@@ -1639,16 +1647,15 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Semiconductors & Semiconductor Equipment",
         sector_code="45",
         sector_name="Information Technology",
-        primary_etf="SMH",
-        alt_etf="XSD",
-        index_name="VanEck Semiconductor ETF Index (MVIS US Listed Semiconductor 25 Index)"
+        primary_etf="SMH",      # VanEck Semiconductor - highly specific
+        alt_etf="SOXX",         # iShares Semiconductor
+        index_name="MVIS US Listed Semiconductor 25 Index"
     ),
     
     # =========================================================================
     # SECTOR 50: COMMUNICATION SERVICES
     # =========================================================================
     
-    # Industry Group 5010: Telecommunication Services
     # Industry 501010: Diversified Telecommunication Services
     "50101010": SubIndustryETF(
         code="50101010",
@@ -1658,8 +1665,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="50",
         sector_name="Communication Services",
         primary_etf="IYZ",
-        alt_etf="XLC",
-        index_name="iShares U.S. Telecommunications ETF Index"
+        alt_etf="VOX",
+        index_name="Dow Jones U.S. Select Telecommunications Index"
     ),
     "50101020": SubIndustryETF(
         code="50101020",
@@ -1668,9 +1675,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Diversified Telecommunication Services",
         sector_code="50",
         sector_name="Communication Services",
-        primary_etf="IYZ",
-        alt_etf="VOX",
-        index_name="iShares U.S. Telecommunications ETF Index"
+        primary_etf="VOX",      # Vanguard Communication Services
+        alt_etf="IYZ",
+        index_name="MSCI US IMI Communication Services 25/50 Index"
     ),
     
     # Industry 501020: Wireless Telecommunication Services
@@ -1682,11 +1689,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="50",
         sector_name="Communication Services",
         primary_etf="IYZ",
-        alt_etf="VOX",
-        index_name="iShares U.S. Telecommunications ETF Index"
+        alt_etf="FCOM",
+        index_name="Dow Jones U.S. Select Telecommunications Index"
     ),
     
-    # Industry Group 5020: Media & Entertainment
     # Industry 502010: Media
     "50201010": SubIndustryETF(
         code="50201010",
@@ -1695,9 +1701,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Media",
         sector_code="50",
         sector_name="Communication Services",
-        primary_etf="XLC",
-        alt_etf="VOX",
-        index_name="Communication Services Select Sector Index"
+        primary_etf="PBS",      # Invesco Dynamic Media
+        alt_etf="XLC",
+        index_name="Dynamic Media Intellidex Index"
     ),
     "50201020": SubIndustryETF(
         code="50201020",
@@ -1706,9 +1712,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Media",
         sector_code="50",
         sector_name="Communication Services",
-        primary_etf="XLC",
+        primary_etf="PBS",
         alt_etf="VOX",
-        index_name="Communication Services Select Sector Index"
+        index_name="Dynamic Media Intellidex Index"
     ),
     "50201030": SubIndustryETF(
         code="50201030",
@@ -1717,9 +1723,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Media",
         sector_code="50",
         sector_name="Communication Services",
-        primary_etf="XLC",
-        alt_etf="VOX",
-        index_name="Communication Services Select Sector Index"
+        primary_etf="VOX",
+        alt_etf="XLC",
+        index_name="MSCI US IMI Communication Services 25/50 Index",
+        is_sector_fallback=True
     ),
     "50201040": SubIndustryETF(
         code="50201040",
@@ -1728,9 +1735,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Media",
         sector_code="50",
         sector_name="Communication Services",
-        primary_etf="XLC",
+        primary_etf="PBS",
         alt_etf="VOX",
-        index_name="Communication Services Select Sector Index"
+        index_name="Dynamic Media Intellidex Index"
     ),
     
     # Industry 502020: Entertainment
@@ -1742,8 +1749,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="50",
         sector_name="Communication Services",
         primary_etf="PEJ",
-        alt_etf="XLC",
-        index_name="Invesco Dynamic Leisure & Entertainment ETF Index"
+        alt_etf="PBS",
+        index_name="Dynamic Leisure & Entertainment Intellidex Index"
     ),
     "50202020": SubIndustryETF(
         code="50202020",
@@ -1752,9 +1759,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Entertainment",
         sector_code="50",
         sector_name="Communication Services",
-        primary_etf="ESPO",
+        primary_etf="ESPO",     # VanEck Video Gaming & eSports - highly specific
         alt_etf="HERO",
-        index_name="VanEck Video Gaming and eSports ETF Index"
+        index_name="MVIS Global Video Gaming and eSports Index"
     ),
     
     # Industry 502030: Interactive Media & Services
@@ -1765,16 +1772,15 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Interactive Media & Services",
         sector_code="50",
         sector_name="Communication Services",
-        primary_etf="SOCL",
-        alt_etf="XLC",
-        index_name="Global X Social Media ETF Index"
+        primary_etf="SOCL",     # Global X Social Media - highly specific
+        alt_etf="FDN",
+        index_name="Solactive Social Media Index"
     ),
     
     # =========================================================================
     # SECTOR 55: UTILITIES
     # =========================================================================
     
-    # Industry Group 5510: Utilities
     # Industry 551010: Electric Utilities
     "55101010": SubIndustryETF(
         code="55101010",
@@ -1783,7 +1789,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Electric Utilities",
         sector_code="55",
         sector_name="Utilities",
-        primary_etf="XLU",
+        primary_etf="XLU",      # Utilities Select Sector SPDR
         alt_etf="VPU",
         index_name="Utilities Select Sector Index"
     ),
@@ -1796,9 +1802,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Gas Utilities",
         sector_code="55",
         sector_name="Utilities",
-        primary_etf="XLU",
-        alt_etf="VPU",
-        index_name="Utilities Select Sector Index"
+        primary_etf="FCG",      # First Trust Natural Gas
+        alt_etf="XLU",
+        index_name="ISE-Revere Natural Gas Index"
     ),
     
     # Industry 551030: Multi-Utilities
@@ -1809,9 +1815,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Multi-Utilities",
         sector_code="55",
         sector_name="Utilities",
-        primary_etf="XLU",
-        alt_etf="VPU",
-        index_name="Utilities Select Sector Index"
+        primary_etf="VPU",      # Vanguard Utilities
+        alt_etf="XLU",
+        index_name="MSCI US IMI Utilities 25/50 Index"
     ),
     
     # Industry 551040: Water Utilities
@@ -1822,7 +1828,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Water Utilities",
         sector_code="55",
         sector_name="Utilities",
-        primary_etf="PHO",
+        primary_etf="PHO",      # Invesco Water Resources - highly specific
         alt_etf="FIW",
         index_name="NASDAQ OMX US Water Index"
     ),
@@ -1835,9 +1841,10 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Independent Power and Renewable Electricity Producers",
         sector_code="55",
         sector_name="Utilities",
-        primary_etf="XLU",
-        alt_etf="VPU",
-        index_name="Utilities Select Sector Index"
+        primary_etf="VPU",
+        alt_etf="XLU",
+        index_name="MSCI US IMI Utilities 25/50 Index",
+        is_sector_fallback=True
     ),
     "55105020": SubIndustryETF(
         code="55105020",
@@ -1846,7 +1853,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Independent Power and Renewable Electricity Producers",
         sector_code="55",
         sector_name="Utilities",
-        primary_etf="QCLN",
+        primary_etf="QCLN",     # First Trust NASDAQ Clean Edge Green Energy
         alt_etf="ICLN",
         index_name="NASDAQ Clean Edge Green Energy Index"
     ),
@@ -1855,7 +1862,6 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
     # SECTOR 60: REAL ESTATE
     # =========================================================================
     
-    # Industry Group 6010: Equity Real Estate Investment Trusts (REITs)
     # Industry 601010: Diversified REITs
     "60101010": SubIndustryETF(
         code="60101010",
@@ -1864,9 +1870,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Diversified REITs",
         sector_code="60",
         sector_name="Real Estate",
-        primary_etf="VNQ",
+        primary_etf="VNQ",      # Vanguard Real Estate
         alt_etf="XLRE",
-        index_name="Vanguard Real Estate ETF Index"
+        index_name="MSCI US IMI Real Estate 25/50 Index"
     ),
     
     # Industry 601025: Industrial REITs
@@ -1877,9 +1883,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Industrial REITs",
         sector_code="60",
         sector_name="Real Estate",
-        primary_etf="INDS",
+        primary_etf="INDS",     # Pacer Industrial Real Estate - highly specific
         alt_etf="VNQ",
-        index_name="Pacer Benchmark Industrial Real Estate ETF Index"
+        index_name="Benchmark Industrial Real Estate SCTR Index"
     ),
     
     # Industry 601030: Hotel & Resort REITs
@@ -1890,9 +1896,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Hotel & Resort REITs",
         sector_code="60",
         sector_name="Real Estate",
-        primary_etf="PEJ",
+        primary_etf="AWAY",     # ETFMG Travel Tech
         alt_etf="VNQ",
-        index_name="Invesco Dynamic Leisure & Entertainment ETF Index"
+        index_name="Prime Travel Technology Index"
     ),
     
     # Industry 601040: Office REITs
@@ -1903,9 +1909,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Office REITs",
         sector_code="60",
         sector_name="Real Estate",
-        primary_etf="VNQ",
-        alt_etf="XLRE",
-        index_name="Vanguard Real Estate ETF Index"
+        primary_etf="XLRE",     # Real Estate Select Sector SPDR
+        alt_etf="VNQ",
+        index_name="Real Estate Select Sector Index"
     ),
     
     # Industry 601050: Health Care REITs
@@ -1916,9 +1922,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Health Care REITs",
         sector_code="60",
         sector_name="Real Estate",
-        primary_etf="VNQ",
-        alt_etf="XLRE",
-        index_name="Vanguard Real Estate ETF Index"
+        primary_etf="REZ",      # iShares Residential and Multisector Real Estate
+        alt_etf="VNQ",
+        index_name="FTSE NAREIT All Residential Capped Index"
     ),
     
     # Industry 601060: Residential REITs
@@ -1930,8 +1936,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="60",
         sector_name="Real Estate",
         primary_etf="REZ",
-        alt_etf="VNQ",
-        index_name="iShares Residential and Multisector Real Estate ETF Index"
+        alt_etf="XLRE",
+        index_name="FTSE NAREIT All Residential Capped Index"
     ),
     "60106020": SubIndustryETF(
         code="60106020",
@@ -1942,7 +1948,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_name="Real Estate",
         primary_etf="REZ",
         alt_etf="VNQ",
-        index_name="iShares Residential and Multisector Real Estate ETF Index"
+        index_name="FTSE NAREIT All Residential Capped Index"
     ),
     
     # Industry 601070: Retail REITs
@@ -1953,9 +1959,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Retail REITs",
         sector_code="60",
         sector_name="Real Estate",
-        primary_etf="RTL",
-        alt_etf="VNQ",
-        index_name="Invesco S&P 500 Equal Weight Real Estate ETF Index"
+        primary_etf="RTL",      # Invesco S&P 500 Equal Weight Real Estate
+        alt_etf="XLRE",
+        index_name="S&P 500 Equal Weight Real Estate Index"
     ),
     
     # Industry 601080: Specialized REITs
@@ -1966,9 +1972,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Specialized REITs",
         sector_code="60",
         sector_name="Real Estate",
-        primary_etf="SRVR",
+        primary_etf="SRVR",     # Pacer Data & Infrastructure Real Estate - highly specific
         alt_etf="VNQ",
-        index_name="Pacer Benchmark Data & Infrastructure Real Estate ETF Index"
+        index_name="Benchmark Data & Infrastructure Real Estate SCTR Index"
     ),
     "60108020": SubIndustryETF(
         code="60108020",
@@ -1977,9 +1983,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Specialized REITs",
         sector_code="60",
         sector_name="Real Estate",
-        primary_etf="VNQ",
-        alt_etf="XLRE",
-        index_name="Vanguard Real Estate ETF Index"
+        primary_etf="IGF",      # iShares Global Infrastructure
+        alt_etf="PAVE",
+        index_name="S&P Global Infrastructure Index"
     ),
     "60108030": SubIndustryETF(
         code="60108030",
@@ -1988,9 +1994,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Specialized REITs",
         sector_code="60",
         sector_name="Real Estate",
-        primary_etf="VNQ",
-        alt_etf="XLRE",
-        index_name="Vanguard Real Estate ETF Index"
+        primary_etf="XLRE",
+        alt_etf="VNQ",
+        index_name="Real Estate Select Sector Index"
     ),
     "60108040": SubIndustryETF(
         code="60108040",
@@ -2001,7 +2007,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_name="Real Estate",
         primary_etf="WOOD",
         alt_etf="CUT",
-        index_name="iShares Global Timber & Forestry ETF Index"
+        index_name="S&P Global Timber & Forestry Index"
     ),
     "60108050": SubIndustryETF(
         code="60108050",
@@ -2012,10 +2018,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_name="Real Estate",
         primary_etf="VNQ",
         alt_etf="XLRE",
-        index_name="Vanguard Real Estate ETF Index"
+        index_name="MSCI US IMI Real Estate 25/50 Index"
     ),
     
-    # Industry Group 6020: Real Estate Management & Development
     # Industry 602010: Real Estate Management & Development
     "60201010": SubIndustryETF(
         code="60201010",
@@ -2025,8 +2030,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="60",
         sector_name="Real Estate",
         primary_etf="VNQ",
-        alt_etf="XLRE",
-        index_name="Vanguard Real Estate ETF Index"
+        alt_etf="IYR",
+        index_name="MSCI US IMI Real Estate 25/50 Index"
     ),
     "60201020": SubIndustryETF(
         code="60201020",
@@ -2035,9 +2040,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Real Estate Management & Development",
         sector_code="60",
         sector_name="Real Estate",
-        primary_etf="VNQ",
-        alt_etf="XLRE",
-        index_name="Vanguard Real Estate ETF Index"
+        primary_etf="IYR",      # iShares U.S. Real Estate
+        alt_etf="VNQ",
+        index_name="Dow Jones U.S. Real Estate Index"
     ),
     "60201030": SubIndustryETF(
         code="60201030",
@@ -2046,9 +2051,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Real Estate Management & Development",
         sector_code="60",
         sector_name="Real Estate",
-        primary_etf="VNQ",
-        alt_etf="XLRE",
-        index_name="Vanguard Real Estate ETF Index"
+        primary_etf="ITB",      # Home construction related
+        alt_etf="VNQ",
+        index_name="Dow Jones U.S. Select Home Construction Index"
     ),
     "60201040": SubIndustryETF(
         code="60201040",
@@ -2057,30 +2062,30 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Real Estate Management & Development",
         sector_code="60",
         sector_name="Real Estate",
-        primary_etf="VNQ",
-        alt_etf="XLRE",
-        index_name="Vanguard Real Estate ETF Index"
+        primary_etf="IYR",
+        alt_etf="VNQ",
+        index_name="Dow Jones U.S. Real Estate Index"
     ),
 }
 
 
 # =============================================================================
 # SECTOR ETF FALLBACKS
-# Used when no specific sub-industry ETF is available
+# Only used when no sub-industry/industry ETF is available
 # =============================================================================
 
 SECTOR_ETFS: Dict[str, str] = {
-    "10": "XLE",   # Energy
-    "15": "XLB",   # Materials
-    "20": "XLI",   # Industrials
-    "25": "XLY",   # Consumer Discretionary
-    "30": "XLP",   # Consumer Staples
-    "35": "XLV",   # Health Care
-    "40": "XLF",   # Financials
-    "45": "XLK",   # Information Technology
-    "50": "XLC",   # Communication Services
-    "55": "XLU",   # Utilities
-    "60": "XLRE",  # Real Estate
+    "10": "XLE",    # Energy Select Sector SPDR
+    "15": "XLB",    # Materials Select Sector SPDR
+    "20": "XLI",    # Industrial Select Sector SPDR
+    "25": "XLY",    # Consumer Discretionary Select Sector SPDR
+    "30": "XLP",    # Consumer Staples Select Sector SPDR
+    "35": "XLV",    # Health Care Select Sector SPDR
+    "40": "XLF",    # Financial Select Sector SPDR
+    "45": "XLK",    # Technology Select Sector SPDR
+    "50": "XLC",    # Communication Services Select Sector SPDR
+    "55": "XLU",    # Utilities Select Sector SPDR
+    "60": "XLRE",   # Real Estate Select Sector SPDR
 }
 
 
@@ -2190,3 +2195,26 @@ def get_unique_etfs() -> set[str]:
             etfs.add(entry.alt_etf)
     return etfs
 
+
+def get_etf_usage_stats() -> Dict[str, int]:
+    """
+    Get statistics on how many times each ETF is used as primary.
+    
+    Returns:
+        Dict mapping ETF ticker to usage count
+    """
+    usage = {}
+    for entry in GICS_SUBINDUSTRY_ETF_MAP.values():
+        etf = entry.primary_etf
+        usage[etf] = usage.get(etf, 0) + 1
+    return dict(sorted(usage.items(), key=lambda x: x[1], reverse=True))
+
+
+def get_sector_fallback_count() -> int:
+    """
+    Get count of sub-industries using sector-level fallback ETFs.
+    
+    Returns:
+        Number of sub-industries marked as sector fallbacks
+    """
+    return sum(1 for entry in GICS_SUBINDUSTRY_ETF_MAP.values() if entry.is_sector_fallback)

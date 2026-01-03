@@ -1,34 +1,37 @@
 """
-Main dashboard layout.
+Stock drilldown page layout.
 
-Defines the structure of the RS Dashboard including:
-- Header
-- Filter controls
-- Heatmap
-- Detail panel
+Displays individual stock RS heatmap for a specific GICS sub-industry.
+Similar structure to main layout but focused on individual stocks.
 """
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 
 
-def create_layout():
+def create_layout(subindustry_code: str = None):
     """
-    Create the main dashboard layout.
+    Create the stock drilldown page layout.
+    
+    Args:
+        subindustry_code: GICS sub-industry code to display stocks for
     
     Returns:
         Dash layout component
     """
     return dbc.Container([
-        # Initial Loading Overlay (shown before first callback completes)
+        # Store the subindustry code for callbacks
+        dcc.Store(id="stock-subindustry-code", data=subindustry_code),
+        
+        # Initial Loading Overlay
         html.Div(
-            id="initial-loading-overlay",
+            id="stock-loading-overlay",
             children=[
                 html.Div([
                     html.Div([
-                        html.H2("📊 RS Industry Dashboard", className="text-light mb-4"),
+                        html.H2("📊 Loading Stock Data...", className="text-light mb-4"),
                         html.Div([
                             dbc.Spinner(color="success", size="lg", spinner_class_name="me-3"),
-                            html.Span("Loading data...", className="text-light fs-5"),
+                            html.Span("Calculating RS for stocks...", className="text-light fs-5"),
                         ], className="d-flex align-items-center justify-content-center mb-4"),
                         dbc.Progress(
                             value=100,
@@ -38,8 +41,6 @@ def create_layout():
                             style={"height": "6px", "width": "350px"},
                             className="mb-3"
                         ),
-                        html.P("Fetching RS data for 127 sub-industries...", 
-                               className="text-muted small mb-0"),
                     ], className="text-center")
                 ], className="d-flex align-items-center justify-content-center", 
                    style={"minHeight": "100vh"})
@@ -56,57 +57,66 @@ def create_layout():
             }
         ),
         
-        # Header
+        # Header with Back Button
         dbc.Row([
             dbc.Col([
-                html.H1(
-                    "📊 Relative Strength Industry Dashboard",
-                    className="text-center mt-4 mb-2"
-                ),
-                html.P(
-                    "Mansfield RS by GICS Sub-Industry | Weekly Analysis",
-                    className="text-center text-muted mb-4"
-                ),
+                html.Div([
+                    # Back button (positioned absolutely)
+                    dcc.Link(
+                        dbc.Button(
+                            [html.I(className="fas fa-arrow-left me-2"), "Back to Main"],
+                            id="back-button",
+                            color="secondary",
+                            size="sm",
+                        ),
+                        href="/dashboard/",
+                        refresh=False,
+                        style={
+                            "position": "absolute",
+                            "top": "1rem",
+                            "right": "1rem",
+                            "zIndex": 100
+                        }
+                    ),
+                    
+                    # Title (will be updated by callback with sub-industry name)
+                    html.H1(
+                        id="stock-page-title",
+                        children="📈 Stock RS Heatmap",
+                        className="text-center mt-4 mb-2"
+                    ),
+                    html.P(
+                        id="stock-page-subtitle",
+                        children="Individual Stock Relative Strength | Click stock for TradingView chart",
+                        className="text-center text-muted mb-4"
+                    ),
+                ], className="position-relative")
             ])
         ]),
         
-        # Filter Controls Row
+        # Filter Controls Row (simplified for stocks)
         dbc.Row([
-            # Sector Filter
-            dbc.Col([
-                html.Label("Filter by Sector:", className="fw-bold mb-1"),
-                dcc.Dropdown(
-                    id="sector-filter",
-                    options=[],  # Populated by callback
-                    multi=True,
-                    placeholder="All Sectors",
-                    className="mb-3",
-                    style={"color": "#333"}
-                ),
-            ], md=4),
-            
             # Sort Method
             dbc.Col([
                 html.Label("Sort By:", className="fw-bold mb-1"),
                 dbc.RadioItems(
-                    id="sort-method",
+                    id="stock-sort-method",
                     options=[
                         {"label": " Latest RS", "value": "latest"},
                         {"label": " 4W Change", "value": "change"},
-                        {"label": " Sector", "value": "sector"},
                         {"label": " A-Z", "value": "alpha"},
                     ],
                     value="latest",
                     inline=True,
                     className="mb-3"
                 ),
-            ], md=4),
+            ], md=6),
             
             # Weeks Slider
             dbc.Col([
                 html.Label("Weeks to Display:", className="fw-bold mb-1"),
                 dcc.Slider(
-                    id="weeks-slider",
+                    id="stock-weeks-slider",
                     min=4,
                     max=26,
                     step=1,
@@ -120,41 +130,22 @@ def create_layout():
                     },
                     tooltip={"placement": "bottom", "always_visible": False},
                 ),
-            ], md=4),
+            ], md=6),
         ], className="mb-4 p-3 bg-dark rounded"),
         
-        # Loading indicator and Heatmap
+        # Loading indicator and Stock Heatmap
         dbc.Row([
             dbc.Col([
                 dcc.Loading(
-                    id="loading-heatmap",
+                    id="loading-stock-heatmap",
                     type="default",
                     color="#22c55e",
                     fullscreen=True,
                     style={"backgroundColor": "rgba(15, 23, 42, 0.9)"},
                     children=[
-                        # Custom loading overlay content
-                        html.Div(
-                            id="loading-overlay",
-                            children=[
-                                html.Div([
-                                    html.H4("📊 Loading RS Data...", className="text-light mb-3"),
-                                    dbc.Progress(
-                                        id="loading-progress",
-                                        value=100,
-                                        animated=True,
-                                        striped=True,
-                                        color="success",
-                                        style={"height": "8px", "width": "300px"},
-                                        className="mb-2"
-                                    ),
-                                    html.P("Fetching sub-industry data", className="text-muted small"),
-                                ], className="text-center", style={"display": "none"})
-                            ]
-                        ),
                         # Heatmap container - no fixed height, let figure control size
                         html.Div(
-                            id="heatmap-scroll-container",
+                            id="stock-heatmap-scroll-container",
                             style={
                                 "border": "1px solid #334155",
                                 "borderRadius": "8px",
@@ -162,7 +153,7 @@ def create_layout():
                             },
                             children=[
                                 dcc.Graph(
-                                    id="rs-heatmap",
+                                    id="stock-rs-heatmap",
                                     config={
                                         "displayModeBar": True,
                                         "scrollZoom": False,
@@ -195,11 +186,11 @@ def create_layout():
         dbc.Row([
             dbc.Col([
                 html.Div(
-                    id="detail-panel",
+                    id="stock-detail-panel",
                     className="p-3 bg-dark border border-secondary rounded",
                     children=[
                         html.P(
-                            "📈 Click chart icon to see sector ETF | Click cell to drill down to stocks",
+                            "Click on a stock to see TradingView chart",
                             className="text-muted text-center mb-0"
                         )
                     ]
@@ -211,16 +202,16 @@ def create_layout():
         dbc.Row([
             dbc.Col([
                 html.Div(
-                    id="tradingview-container",
-                    className="mt-5 pt-3",  # Increased margin for clear separation
+                    id="stock-tradingview-container",
+                    className="mt-5 pt-3",
                     style={"display": "none"},
                     children=[
                         html.H5(
-                            id="tradingview-title",
+                            id="stock-tradingview-title",
                             className="text-center mb-3"
                         ),
                         html.Iframe(
-                            id="tradingview-iframe",
+                            id="stock-tradingview-iframe",
                             src="",
                             style={
                                 "width": "100%",
@@ -238,15 +229,11 @@ def create_layout():
         dbc.Row([
             dbc.Col([
                 html.Div(
-                    id="data-stats",
+                    id="stock-data-stats",
                     className="text-center text-muted mt-4 mb-3 small"
                 )
             ])
         ]),
-        
-        # Hidden data stores
-        dcc.Store(id="rs-data-store"),
-        dcc.Store(id="selected-cell-store"),
         
     ], fluid=True, className="bg-dark text-light min-vh-100 pb-4")
 

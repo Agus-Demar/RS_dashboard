@@ -343,3 +343,224 @@ def get_data_stats(db: Session) -> dict:
         'newest_price_date': newest_price[0] if newest_price else None,
     }
 
+
+def get_subindustry_info(db: Session, subindustry_code: str) -> Optional[dict]:
+    """
+    Get information about a specific sub-industry.
+    
+    Args:
+        db: Database session
+        subindustry_code: GICS sub-industry code
+    
+    Returns:
+        Dict with sub-industry info or None if not found
+    """
+    subindustry = db.query(GICSSubIndustry).filter(
+        GICSSubIndustry.code == subindustry_code
+    ).first()
+    
+    if not subindustry:
+        return None
+    
+    return {
+        'code': subindustry.code,
+        'name': subindustry.name,
+        'sector_name': subindustry.sector_name,
+        'industry_name': subindustry.industry_name,
+    }
+
+
+def get_stock_rs_matrix_data(
+    db: Session,
+    subindustry_code: str,
+    num_weeks: int = None,
+    sort_by: str = "latest"
+) -> pd.DataFrame:
+    """
+    Calculate individual stock RS data on-the-fly for a sub-industry.
+    
+    Args:
+        db: Database session
+        subindustry_code: GICS sub-industry code
+        num_weeks: Number of weeks to include (default from settings)
+        sort_by: Sort method - 'latest', 'change', or 'alpha'
+    
+    Returns:
+        DataFrame with columns:
+        - ticker
+        - stock_name
+        - week_label
+        - week_end_date
+        - mansfield_rs
+        - rs_percentile
+    """
+    from src.models import StockPrice
+    from src.services.rs_calculator import MansfieldRSCalculator, calculate_percentile_ranks
+    from src.config import settings
+    
+    if num_weeks is None:
+        num_weeks = settings.DEFAULT_WEEKS_DISPLAY
+    
+    # Get week ranges
+    week_ranges = get_week_ranges(months_back=num_weeks / 4.33)[:num_weeks]
+    
+    if not week_ranges:
+        return pd.DataFrame()
+    
+    # Get date range for price queries (need 60+ weeks for SMA calculation)
+    end_date = week_ranges[0]['week_end']
+    start_date = end_date - timedelta(weeks=65)  # Extra buffer for SMA
+    
+    # Get stocks in sub-industry
+    stocks = get_subindustry_stocks(db, subindustry_code)
+    
+    if not stocks:
+        return pd.DataFrame()
+    
+    # Get benchmark prices
+    benchmark_prices = db.query(StockPrice).filter(
+        StockPrice.ticker == settings.BENCHMARK_TICKER,
+        StockPrice.date >= start_date,
+        StockPrice.date <= end_date
+    ).order_by(StockPrice.date).all()
+    
+    if not benchmark_prices:
+        return pd.DataFrame()
+    
+    benchmark_series = pd.Series(
+        {p.date: p.adj_close for p in benchmark_prices}
+    ).sort_index()
+    
+    # Calculate RS for each stock
+    calculator = MansfieldRSCalculator()
+    all_results = []
+    
+    for stock in stocks:
+        # Get stock prices
+        stock_prices = db.query(StockPrice).filter(
+            StockPrice.ticker == stock['ticker'],
+            StockPrice.date >= start_date,
+            StockPrice.date <= end_date
+        ).order_by(StockPrice.date).all()
+        
+        if not stock_prices:
+            continue
+        
+        stock_series = pd.Series(
+            {p.date: p.adj_close for p in stock_prices}
+        ).sort_index()
+        
+        # Calculate full RS history
+        try:
+            rs_result = calculator.calculate_full(stock_series, benchmark_series)
+            
+            if rs_result.empty:
+                continue
+            
+            # Sample at week end dates
+            for week in week_ranges:
+                week_end = week['week_end']
+                week_label = week['label']
+                
+                # Find the closest date <= week_end
+                valid_dates = [d for d in rs_result.index if d <= week_end]
+                if not valid_dates:
+                    continue
+                
+                closest_date = max(valid_dates)
+                row = rs_result.loc[closest_date]
+                
+                mansfield_rs = row['mansfield_rs']
+                if pd.isna(mansfield_rs):
+                    mansfield_rs = None
+                
+                all_results.append({
+                    'ticker': stock['ticker'],
+                    'stock_name': stock['name'],
+                    'week_end_date': week_end,
+                    'week_label': week_label,
+                    'mansfield_rs': mansfield_rs,
+                    'rs_percentile': None,  # Will be calculated below
+                })
+        except Exception as e:
+            logger.warning(f"Error calculating RS for {stock['ticker']}: {e}")
+            continue
+    
+    if not all_results:
+        return pd.DataFrame()
+    
+    df = pd.DataFrame(all_results)
+    
+    # Calculate percentile ranks per week
+    for week_end in df['week_end_date'].unique():
+        week_mask = df['week_end_date'] == week_end
+        week_rs = df.loc[week_mask, 'mansfield_rs'].dropna()
+        
+        if not week_rs.empty:
+            percentiles = calculate_percentile_ranks(week_rs)
+            for idx in percentiles.index:
+                df.loc[idx, 'rs_percentile'] = int(percentiles[idx])
+    
+    # Sort stocks
+    df = _sort_stocks(df, sort_by)
+    
+    return df
+
+
+def _sort_stocks(df: pd.DataFrame, sort_by: str) -> pd.DataFrame:
+    """Sort stock DataFrame by specified method."""
+    if df.empty:
+        return df
+    
+    if sort_by == "latest":
+        # Sort by most recent week's RS percentile
+        latest_week = df['week_end_date'].max()
+        latest_data = df[df['week_end_date'] == latest_week].set_index('ticker')
+        
+        # Handle NaN percentiles - put them at the end
+        latest_data['sort_val'] = latest_data['rs_percentile'].fillna(-999)
+        sort_order = latest_data['sort_val'].sort_values(ascending=False).index.tolist()
+        
+        df['sort_key'] = pd.Categorical(
+            df['ticker'],
+            categories=sort_order,
+            ordered=True
+        )
+        df = df.sort_values('sort_key').drop('sort_key', axis=1)
+        
+    elif sort_by == "change":
+        # Sort by 4-week RS change
+        weeks = sorted(df['week_end_date'].unique(), reverse=True)
+        if len(weeks) >= 4:
+            newest = weeks[0]
+            oldest = weeks[3]
+            
+            newest_data = df[df['week_end_date'] == newest].set_index('ticker')
+            oldest_data = df[df['week_end_date'] == oldest].set_index('ticker')
+            
+            # Calculate change, handling NaN
+            common_tickers = newest_data.index.intersection(oldest_data.index)
+            if len(common_tickers) > 0:
+                change = (newest_data.loc[common_tickers, 'rs_percentile'] - 
+                         oldest_data.loc[common_tickers, 'rs_percentile'])
+                sort_order = change.sort_values(ascending=False).index.tolist()
+                
+                # Add tickers not in both weeks at the end
+                all_tickers = df['ticker'].unique().tolist()
+                for t in all_tickers:
+                    if t not in sort_order:
+                        sort_order.append(t)
+                
+                df['sort_key'] = pd.Categorical(
+                    df['ticker'],
+                    categories=sort_order,
+                    ordered=True
+                )
+                df = df.sort_values('sort_key').drop('sort_key', axis=1)
+            
+    else:  # 'alpha' or default
+        # Alphabetical by stock name
+        df = df.sort_values('stock_name')
+    
+    return df
+
