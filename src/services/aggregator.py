@@ -89,7 +89,8 @@ class SubIndustryAggregator:
         subindustry_code: str,
         start_date: date,
         end_date: date,
-        method: str = "market_cap_weighted"
+        method: str = "market_cap_weighted",
+        min_history_weeks: int = 52
     ) -> pd.Series:
         """
         Calculate aggregated price series for a sub-industry.
@@ -99,6 +100,7 @@ class SubIndustryAggregator:
             start_date: Start date
             end_date: End date
             method: Aggregation method - 'market_cap_weighted' or 'equal_weighted'
+            min_history_weeks: Minimum weeks of history required for a stock to be included
         
         Returns:
             Series of aggregated prices indexed by date
@@ -113,13 +115,22 @@ class SubIndustryAggregator:
             logger.debug(f"No stocks found for sub-industry {subindustry_code}")
             return pd.Series(dtype=float)
         
-        # Collect prices and weights
+        # Calculate minimum required data points (approximately 5 trading days per week)
+        min_data_points = min_history_weeks * 5
+        
+        # Collect prices and weights, filtering out stocks with insufficient history
         all_prices = []
         weights = []
+        excluded_count = 0
         
         for stock in stocks:
             prices = self.get_stock_prices(stock.ticker, start_date, end_date)
             if prices.empty:
+                continue
+            
+            # Filter out stocks with insufficient history
+            if len(prices) < min_data_points:
+                excluded_count += 1
                 continue
             
             all_prices.append(prices)
@@ -131,10 +142,16 @@ class SubIndustryAggregator:
             
             weights.append(weight)
         
+        if excluded_count > 0:
+            logger.debug(
+                f"Sub-industry {subindustry_code}: excluded {excluded_count} stocks "
+                f"with <{min_history_weeks} weeks of data"
+            )
+        
         if not all_prices:
             return pd.Series(dtype=float)
         
-        # Align all price series
+        # Align all price series using inner join
         prices_df = pd.concat(all_prices, axis=1, join='inner')
         
         if prices_df.empty:

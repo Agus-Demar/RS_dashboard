@@ -98,7 +98,7 @@ class MansfieldRSCalculator:
             # Weekly data - use exact week count
             window = self.sma_period
         
-        # Calculate rolling SMA
+        # Calculate rolling SMA - requires full 52 weeks of data
         rs_sma = rs_line.rolling(window=window, min_periods=window).mean()
         
         return rs_sma
