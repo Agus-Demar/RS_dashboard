@@ -109,6 +109,7 @@ INDUSTRY_ETFS = {
     "Building Products": "XHB",
     "Home Furnishings": "XHB",
     "Home Furnishing Retail": "XHB",
+    "Homefurnishing Retail": "XHB",    # Alternate spelling
     "Housewares & Specialties": "XHB",
     "Hotels, Resorts & Cruise Lines": "PEJ",
     "Hotels & Motels": "PEJ",
@@ -119,6 +120,7 @@ INDUSTRY_ETFS = {
     "Leisure Products": "PEJ",
     "Movies & Entertainment": "PEJ",
     "Specialty Retail": "XRT",
+    "Specialty Stores": "XRT",      # Specific retail stores
     "Apparel Retail": "XRT",
     "Apparel, Accessories & Luxury Goods": "XRT",
     "Footwear": "XRT",
@@ -224,12 +226,12 @@ INDUSTRY_ETFS = {
     # ============================================
     # MATERIALS
     # ============================================
-    "Chemicals": "XLB",
-    "Commodity Chemicals": "XLB",
-    "Diversified Chemicals": "XLB",
-    "Specialty Chemicals": "XLB",
+    "Chemicals": "VAW",            # Vanguard Materials ETF
+    "Commodity Chemicals": "VAW",  # Vanguard Materials ETF
+    "Diversified Chemicals": "VAW",
+    "Specialty Chemicals": "PYZ",  # Invesco Dynamic Basic Materials ETF
     "Fertilizers & Agricultural Chemicals": "MOO",
-    "Industrial Gases": "XLB",
+    "Industrial Gases": "FMAT",    # Fidelity MSCI Materials Index ETF
     "Metals & Mining": "XME",
     "Diversified Metals & Mining": "XME",
     "Copper": "COPX",
@@ -239,9 +241,9 @@ INDUSTRY_ETFS = {
     "Steel": "SLX",
     "Aluminum": "XME",
     "Construction Materials": "PKB",
-    "Containers & Packaging": "XLB",
-    "Metal, Glass & Plastic Containers": "XLB",
-    "Paper & Plastic Packaging Products & Materials": "XLB",
+    "Containers & Packaging": "VAW",
+    "Metal, Glass & Plastic Containers": "VAW",
+    "Paper & Plastic Packaging Products & Materials": "VAW",
     "Paper & Forest Products": "WOOD",
     "Forest Products": "WOOD",
     "Paper Products": "WOOD",
@@ -250,11 +252,11 @@ INDUSTRY_ETFS = {
     # ============================================
     # UTILITIES
     # ============================================
-    "Electric Utilities": "XLU",
-    "Multi-Utilities": "XLU",
-    "Gas Utilities": "XLU",
+    "Electric Utilities": "VPU",   # Vanguard Utilities ETF
+    "Multi-Utilities": "VPU",
+    "Gas Utilities": "FCG",        # First Trust Natural Gas ETF
     "Water Utilities": "PHO",
-    "Independent Power Producers & Energy Traders": "XLU",
+    "Independent Power Producers & Energy Traders": "VPU",
     "Independent Power and Renewable Electricity Producers": "QCLN",
     "Renewable Electricity": "QCLN",
     
@@ -271,6 +273,8 @@ INDUSTRY_ETFS = {
     "Hotel & Resort REITs": "PEJ",
     "Health Care REITs": "IHF",
     "Data Center REITs": "SRVR",
+    "Telecom Tower REITs": "SRVR",   # Infrastructure REITs - telecom towers
+    "Infrastructure REITs": "SRVR",
     "Timber REITs": "WOOD",
     "Real Estate Management & Development": "VNQ",
     "Real Estate Operating Companies": "VNQ",
@@ -302,55 +306,74 @@ def normalize_name(name: str) -> str:
     )
 
 
-def get_etf_for_subindustry(subindustry_name: str, sector_name: str) -> str:
+def get_etf_for_subindustry(subindustry_name: str, sector_name: str = "") -> str:
     """
     Get the representative ETF for a sub-industry.
     
-    Uses normalized matching to handle variations in naming conventions
-    (e.g., "and" vs "&", case differences).
-    
-    Prioritizes industry-level matches and only falls back to SPY
-    when no industry match exists.
+    PRIORITY ORDER:
+    1. Official GICS_SUBINDUSTRY_ETF_MAP (by exact name match)
+    2. Official GICS_SUBINDUSTRY_ETF_MAP (by normalized name match)
+    3. Sector ETF fallback based on sector_name
+    4. SPY as final fallback
     
     Args:
         subindustry_name: Name of the GICS sub-industry
-        sector_name: Name of the GICS sector (unused, kept for API compatibility)
+        sector_name: Name of the GICS sector (used for sector fallback)
     
     Returns:
         ETF ticker symbol
     """
+    if not subindustry_name:
+        return DEFAULT_ETF
+    
     # Normalize the input name
     normalized_input = normalize_name(subindustry_name)
     
-    # Try exact normalized match first
+    # PRIORITY 1: Try exact match in official GICS mapping
+    for entry in GICS_SUBINDUSTRY_ETF_MAP.values():
+        if entry.name.lower() == subindustry_name.lower():
+            logger.debug(f"Exact match for '{subindustry_name}': {entry.primary_etf}")
+            return entry.primary_etf
+    
+    # PRIORITY 2: Try normalized match in official GICS mapping
+    for entry in GICS_SUBINDUSTRY_ETF_MAP.values():
+        if normalize_name(entry.name) == normalized_input:
+            logger.debug(f"Normalized match for '{subindustry_name}': {entry.primary_etf}")
+            return entry.primary_etf
+    
+    # PRIORITY 3: Try partial match in official GICS mapping (for minor variations)
+    for entry in GICS_SUBINDUSTRY_ETF_MAP.values():
+        normalized_entry = normalize_name(entry.name)
+        # Check if names are substantially similar
+        if normalized_input in normalized_entry or normalized_entry in normalized_input:
+            logger.debug(f"Partial match for '{subindustry_name}' -> '{entry.name}': {entry.primary_etf}")
+            return entry.primary_etf
+    
+    # PRIORITY 4: Try legacy INDUSTRY_ETFS mapping (for custom/generated codes)
     for industry_key, etf in INDUSTRY_ETFS.items():
         if normalize_name(industry_key) == normalized_input:
+            logger.debug(f"Legacy INDUSTRY_ETFS match for '{subindustry_name}': {etf}")
             return etf
     
-    # Try partial normalized match (input contains key)
+    # PRIORITY 5: Try partial match in legacy INDUSTRY_ETFS
     for industry_key, etf in INDUSTRY_ETFS.items():
         normalized_key = normalize_name(industry_key)
-        if normalized_key in normalized_input:
+        if normalized_key in normalized_input or normalized_input in normalized_key:
+            logger.debug(f"Legacy INDUSTRY_ETFS partial match for '{subindustry_name}' -> '{industry_key}': {etf}")
             return etf
     
-    # Try reverse partial normalized match (key contains input)
-    for industry_key, etf in INDUSTRY_ETFS.items():
-        normalized_key = normalize_name(industry_key)
-        if normalized_input in normalized_key:
-            return etf
+    # PRIORITY 6: Sector fallback
+    if sector_name:
+        normalized_sector = sector_name.lower().strip()
+        for sector_code, etf in SECTOR_ETFS.items():
+            # Check if any entry in the mapping has this sector
+            for entry in GICS_SUBINDUSTRY_ETF_MAP.values():
+                if entry.sector_name.lower() == normalized_sector:
+                    logger.debug(f"Sector fallback for '{subindustry_name}' ({sector_name}): {SECTOR_ETFS.get(entry.sector_code, DEFAULT_ETF)}")
+                    return SECTOR_ETFS.get(entry.sector_code, DEFAULT_ETF)
     
-    # Try word-based matching (check if key words appear in input)
-    input_words = set(normalized_input.split())
-    for industry_key, etf in INDUSTRY_ETFS.items():
-        key_words = set(normalize_name(industry_key).split())
-        # If at least 2 significant words match
-        common_words = input_words & key_words
-        # Filter out common small words
-        significant_common = {w for w in common_words if len(w) > 3}
-        if len(significant_common) >= 2:
-            return etf
-    
-    # Final fallback to SPY
+    # PRIORITY 5: Final fallback to SPY
+    logger.warning(f"No ETF mapping found for sub-industry '{subindustry_name}', using {DEFAULT_ETF}")
     return DEFAULT_ETF
 
 

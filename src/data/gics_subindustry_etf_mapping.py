@@ -159,9 +159,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Chemicals",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="XLB",      # Materials Select Sector SPDR
-        alt_etf="VAW",
-        index_name="Materials Select Sector Index"
+        primary_etf="VAW",      # Vanguard Materials ETF - more specific than XLB
+        alt_etf="IYM",          # iShares U.S. Basic Materials ETF
+        index_name="MSCI US IMI Materials 25/50 Index"
     ),
     "15101030": SubIndustryETF(
         code="15101030",
@@ -218,9 +218,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Containers & Packaging",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="PKG",      # Packaging Corporation of America (use XLB)
-        alt_etf="XLB",
-        index_name="Materials Select Sector Index"
+        primary_etf="VAW",      # Vanguard Materials ETF - includes packaging companies
+        alt_etf="IYM",          # iShares U.S. Basic Materials ETF
+        index_name="MSCI US IMI Materials 25/50 Index"
     ),
     "15103020": SubIndustryETF(
         code="15103020",
@@ -413,7 +413,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="20",
         sector_name="Industrials",
         primary_etf="FIDU",     # Fidelity MSCI Industrials Index ETF
-        alt_etf="XLI",
+        alt_etf="VIS",          # Vanguard Industrials ETF
         index_name="MSCI USA IMI Industrials Index"
     ),
     
@@ -461,7 +461,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="20",
         sector_name="Industrials",
         primary_etf="PSCI",     # Invesco S&P SmallCap Industrials ETF
-        alt_etf="XLI",
+        alt_etf="VIS",          # Vanguard Industrials ETF
         index_name="S&P SmallCap 600 Capped Industrials Index"
     ),
     
@@ -507,7 +507,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="20",
         sector_name="Industrials",
         primary_etf="SRVR",     # Pacer Data & Infrastructure Real Estate
-        alt_etf="XLI",
+        alt_etf="VIS",          # Vanguard Industrials ETF
         index_name="Benchmark Data & Infrastructure Real Estate SCTR Index"
     ),
     "20201080": SubIndustryETF(
@@ -1000,7 +1000,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="30",
         sector_name="Consumer Staples",
         primary_etf="IHF",      # iShares U.S. Healthcare Providers
-        alt_etf="XLP",
+        alt_etf="VDC",          # Vanguard Consumer Staples ETF
         index_name="Dow Jones U.S. Select Health Care Providers Index"
     ),
     "30101020": SubIndustryETF(
@@ -1032,9 +1032,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Consumer Staples Distribution & Retail",
         sector_code="30",
         sector_name="Consumer Staples",
-        primary_etf="XLP",      # Consumer Staples Select Sector SPDR
-        alt_etf="VDC",
-        index_name="Consumer Staples Select Sector Index"
+        primary_etf="VDC",      # Vanguard Consumer Staples ETF
+        alt_etf="FSTA",         # Fidelity MSCI Consumer Staples Index ETF
+        index_name="MSCI US IMI Consumer Staples 25/50 Index"
     ),
     
     # Industry 302010: Beverages
@@ -1298,7 +1298,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="40",
         sector_name="Financials",
         primary_etf="IYG",      # iShares U.S. Financial Services ETF
-        alt_etf="XLF",
+        alt_etf="VFH",          # Vanguard Financials ETF
         index_name="Dow Jones U.S. Financial Services Index"
     ),
     "40201020": SubIndustryETF(
@@ -1684,7 +1684,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="50",
         sector_name="Communication Services",
         primary_etf="PBS",      # Invesco Dynamic Media
-        alt_etf="XLC",
+        alt_etf="VOX",          # Vanguard Communication Services ETF
         index_name="Dynamic Media Intellidex Index"
     ),
     "50201020": SubIndustryETF(
@@ -1706,7 +1706,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="50",
         sector_name="Communication Services",
         primary_etf="FCOM",     # Fidelity MSCI Communication Services Index ETF
-        alt_etf="XLC",
+        alt_etf="VOX",          # Vanguard Communication Services ETF
         index_name="MSCI USA IMI Communication Services 25/50 Index"
     ),
     "50201040": SubIndustryETF(
@@ -1770,9 +1770,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Electric Utilities",
         sector_code="55",
         sector_name="Utilities",
-        primary_etf="XLU",      # Utilities Select Sector SPDR
-        alt_etf="VPU",
-        index_name="Utilities Select Sector Index"
+        primary_etf="VPU",      # Vanguard Utilities ETF
+        alt_etf="FUTY",         # Fidelity MSCI Utilities Index ETF
+        index_name="MSCI US IMI Utilities 25/50 Index"
     ),
     
     # Industry 551020: Gas Utilities
@@ -1784,7 +1784,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="55",
         sector_name="Utilities",
         primary_etf="FCG",      # First Trust Natural Gas
-        alt_etf="XLU",
+        alt_etf="VPU",          # Vanguard Utilities ETF
         index_name="ISE-Revere Natural Gas Index"
     ),
     
@@ -1797,7 +1797,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="55",
         sector_name="Utilities",
         primary_etf="VPU",      # Vanguard Utilities
-        alt_etf="XLU",
+        alt_etf="FUTY",         # Fidelity MSCI Utilities Index ETF
         index_name="MSCI US IMI Utilities 25/50 Index"
     ),
     
@@ -1851,7 +1851,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="60",
         sector_name="Real Estate",
         primary_etf="VNQ",      # Vanguard Real Estate
-        alt_etf="XLRE",
+        alt_etf="IYR",          # iShares U.S. Real Estate ETF
         index_name="MSCI US IMI Real Estate 25/50 Index"
     ),
     
@@ -1915,8 +1915,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Residential REITs",
         sector_code="60",
         sector_name="Real Estate",
-        primary_etf="REZ",
-        alt_etf="XLRE",
+        primary_etf="REZ",      # iShares Residential and Multisector Real Estate ETF
+        alt_etf="VNQ",          # Vanguard Real Estate ETF
         index_name="FTSE NAREIT All Residential Capped Index"
     ),
     "60106020": SubIndustryETF(
@@ -1940,7 +1940,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="60",
         sector_name="Real Estate",
         primary_etf="RWR",      # SPDR Dow Jones REIT ETF - includes retail REITs
-        alt_etf="XLRE",
+        alt_etf="VNQ",          # Vanguard Real Estate ETF
         index_name="Dow Jones U.S. Select REIT Index"
     ),
     
@@ -1974,9 +1974,9 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Specialized REITs",
         sector_code="60",
         sector_name="Real Estate",
-        primary_etf="XLRE",
-        alt_etf="VNQ",
-        index_name="Real Estate Select Sector Index"
+        primary_etf="VNQ",      # Vanguard Real Estate ETF - includes self-storage REITs
+        alt_etf="IYR",          # iShares U.S. Real Estate ETF
+        index_name="MSCI US IMI Real Estate 25/50 Index"
     ),
     "60108040": SubIndustryETF(
         code="60108040",

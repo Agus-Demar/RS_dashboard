@@ -507,6 +507,158 @@ def get_stock_rs_matrix_data(
     return df
 
 
+def get_stock_price_with_rs(
+    db: Session,
+    ticker: str,
+    num_weeks: int = 52
+) -> pd.DataFrame:
+    """
+    Get stock price history with RS indicator and Cardwell RSI data for charting.
+    
+    Calculates:
+    - RS Line = Close / Benchmark Close (like Pine Script: close/comparativeSymbol)
+    - RS EMA 13 = 13-period EMA of RS Line
+    - RS EMA 52 = 52-period EMA of RS Line
+    - RSI 14 = 14-period RSI
+    - RSI SMA 9 = 9-period SMA of RSI
+    - RSI EMA 45 = 45-period EMA of RSI
+    
+    Args:
+        db: Database session
+        ticker: Stock ticker symbol
+        num_weeks: Number of weeks of history to return
+    
+    Returns:
+        DataFrame with columns:
+        - date, open, high, low, close, adj_close, volume
+        - rs_line, rs_ema_13, rs_ema_52
+        - rsi_14, rsi_sma_9, rsi_ema_45
+    """
+    from src.models import StockPrice
+    from src.config import settings
+    
+    # Get date range - need extra history for EMA calculation
+    end_date = get_last_friday()
+    # Need ~65 weeks of data to have enough for 52-week EMA calculation
+    start_date = end_date - timedelta(weeks=num_weeks + 60)
+    
+    # Get stock prices
+    stock_prices = db.query(StockPrice).filter(
+        StockPrice.ticker == ticker,
+        StockPrice.date >= start_date,
+        StockPrice.date <= end_date
+    ).order_by(StockPrice.date).all()
+    
+    if not stock_prices:
+        return pd.DataFrame()
+    
+    # Get benchmark prices
+    benchmark_prices = db.query(StockPrice).filter(
+        StockPrice.ticker == settings.BENCHMARK_TICKER,
+        StockPrice.date >= start_date,
+        StockPrice.date <= end_date
+    ).order_by(StockPrice.date).all()
+    
+    if not benchmark_prices:
+        return pd.DataFrame()
+    
+    # Create DataFrames
+    stock_df = pd.DataFrame([{
+        'date': p.date,
+        'open': p.open,
+        'high': p.high,
+        'low': p.low,
+        'close': p.close,
+        'adj_close': p.adj_close,
+        'volume': p.volume,
+    } for p in stock_prices]).set_index('date')
+    
+    benchmark_df = pd.DataFrame([{
+        'date': p.date,
+        'benchmark_close': p.adj_close,
+    } for p in benchmark_prices]).set_index('date')
+    
+    # Merge on date (inner join to only keep common dates)
+    df = stock_df.join(benchmark_df, how='inner')
+    
+    if df.empty:
+        return pd.DataFrame()
+    
+    # Calculate RS Line (like Pine Script: close/comparativeSymbol)
+    df['rs_line'] = df['adj_close'] / df['benchmark_close']
+    
+    # Calculate EMAs (like Pine Script: ema(net, lenghtMA))
+    df['rs_ema_13'] = df['rs_line'].ewm(span=13, adjust=False).mean()
+    df['rs_ema_52'] = df['rs_line'].ewm(span=52, adjust=False).mean()
+    
+    # Calculate Price EMAs for weekly chart analysis (10-week and 30-week)
+    df['ema_10'] = df['adj_close'].ewm(span=10, adjust=False).mean()
+    df['ema_30'] = df['adj_close'].ewm(span=30, adjust=False).mean()
+    
+    # Calculate Cardwell RSI (14-period RSI)
+    df['rsi_14'] = _calculate_rsi(df['adj_close'], period=14)
+    
+    # Calculate RSI moving averages
+    df['rsi_sma_9'] = df['rsi_14'].rolling(window=9).mean()
+    df['rsi_ema_45'] = df['rsi_14'].ewm(span=45, adjust=False).mean()
+    
+    # Reset index and filter to requested weeks
+    df = df.reset_index()
+    cutoff_date = end_date - timedelta(weeks=num_weeks)
+    df = df[df['date'] >= cutoff_date]
+    
+    # Drop the benchmark column (no longer needed)
+    df = df.drop(columns=['benchmark_close'])
+    
+    return df
+
+
+def _calculate_rsi(prices: pd.Series, period: int = 14) -> pd.Series:
+    """
+    Calculate RSI (Relative Strength Index) using Wilder's smoothing method.
+    
+    This matches TradingView's RSI calculation.
+    
+    Args:
+        prices: Series of closing prices
+        period: RSI period (default 14)
+    
+    Returns:
+        Series of RSI values (0-100)
+    """
+    # Calculate price changes
+    delta = prices.diff()
+    
+    # Separate gains and losses
+    gains = delta.where(delta > 0, 0.0)
+    losses = (-delta).where(delta < 0, 0.0)
+    
+    # Calculate initial average gain/loss using SMA for first period
+    first_avg_gain = gains.iloc[:period].mean()
+    first_avg_loss = losses.iloc[:period].mean()
+    
+    # Use Wilder's smoothing (exponential moving average with alpha = 1/period)
+    # This is equivalent to: avg = (prev_avg * (period-1) + current) / period
+    avg_gains = gains.copy()
+    avg_losses = losses.copy()
+    
+    avg_gains.iloc[:period] = None
+    avg_losses.iloc[:period] = None
+    avg_gains.iloc[period] = first_avg_gain
+    avg_losses.iloc[period] = first_avg_loss
+    
+    # Apply Wilder's smoothing for remaining values
+    for i in range(period + 1, len(prices)):
+        avg_gains.iloc[i] = (avg_gains.iloc[i-1] * (period - 1) + gains.iloc[i]) / period
+        avg_losses.iloc[i] = (avg_losses.iloc[i-1] * (period - 1) + losses.iloc[i]) / period
+    
+    # Calculate RS and RSI
+    rs = avg_gains / avg_losses
+    rsi = 100 - (100 / (1 + rs))
+    
+    return rsi
+
+
 def _sort_stocks(df: pd.DataFrame, sort_by: str) -> pd.DataFrame:
     """Sort stock DataFrame by specified method."""
     if df.empty:

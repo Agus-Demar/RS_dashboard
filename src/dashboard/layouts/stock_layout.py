@@ -198,27 +198,40 @@ def create_layout(subindustry_code: str = None):
             ])
         ], className="mt-4"),
         
-        # TradingView Chart Container (shown on cell click)
+        # Stock Price + RS Chart Container (shown on cell click)
         dbc.Row([
             dbc.Col([
                 html.Div(
-                    id="stock-tradingview-container",
+                    id="stock-chart-container",
                     className="mt-5 pt-3",
                     style={"display": "none"},
                     children=[
                         html.H5(
-                            id="stock-tradingview-title",
+                            id="stock-chart-title",
                             className="text-center mb-3"
                         ),
-                        html.Iframe(
-                            id="stock-tradingview-iframe",
-                            src="",
-                            style={
-                                "width": "100%",
-                                "height": "500px",
-                                "border": "1px solid #334155",
-                                "borderRadius": "8px",
-                            }
+                        dcc.Loading(
+                            id="loading-stock-chart",
+                            type="default",
+                            color="#22c55e",
+                            children=[
+                                dcc.Graph(
+                                    id="stock-price-rs-chart",
+                                    config={
+                                        "displayModeBar": True,
+                                        "scrollZoom": True,
+                                        "displaylogo": False,
+                                        "modeBarButtonsToRemove": [
+                                            "select2d", "lasso2d"
+                                        ],
+                                    },
+                                    style={
+                                        "height": "1000px",  # Increased for 4 subplots (Price, Volume, RS, RSI)
+                                        "border": "1px solid #334155",
+                                        "borderRadius": "8px",
+                                    }
+                                )
+                            ]
                         )
                     ]
                 )
