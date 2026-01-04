@@ -550,39 +550,42 @@ def get_exchange_for_symbol(symbol: str, use_yfinance_fallback: bool = False) ->
 
 def get_tradingview_symbol(symbol: str, exchange: str = None) -> str:
     """
-    Get the full TradingView symbol with exchange prefix.
+    Get the TradingView symbol.
+    
+    Just returns the uppercase ticker - TradingView will automatically
+    resolve to the first/best match for the symbol.
     
     Args:
         symbol: Ticker symbol
-        exchange: Optional exchange override (NYSE, NASDAQ, AMEX)
+        exchange: Deprecated, kept for backward compatibility
     
     Returns:
-        Full symbol like "NYSE:AAPL" or "NASDAQ:MSFT"
+        Uppercase ticker symbol (e.g., "AAPL", "SPY")
     """
-    if exchange is None:
-        exchange = get_exchange_for_symbol(symbol)
-    
-    return f"{exchange}:{symbol.upper()}"
+    return symbol.upper()
 
 
 def get_tradingview_widget_url(symbol: str, interval: str = "W", exchange: str = None) -> str:
     """
     Generate a TradingView widget embed URL.
     
+    Uses just the ticker symbol without exchange prefix - TradingView
+    automatically resolves to the first/best match.
+    
     Args:
-        symbol: Ticker symbol to display
+        symbol: Ticker symbol to display (stock or ETF)
         interval: Chart interval (D=daily, W=weekly, M=monthly)
-        exchange: Optional exchange override (NYSE, NASDAQ, AMEX)
+        exchange: Deprecated, kept for backward compatibility
     
     Returns:
         TradingView widget embed URL
     """
-    # Get full symbol with exchange prefix
-    full_symbol = get_tradingview_symbol(symbol, exchange)
+    # Use just the ticker - TradingView will show first match
+    ticker = symbol.upper()
     
     return (
         f"https://s.tradingview.com/widgetembed/?"
-        f"symbol={full_symbol}&"
+        f"symbol={ticker}&"
         f"interval={interval}&"
         f"theme=dark&"
         f"style=1&"
