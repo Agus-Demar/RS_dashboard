@@ -48,6 +48,28 @@ def register_callbacks(app):
     """Register all callbacks with the Dash app."""
     
     @app.callback(
+        Output("sector-click-filter-store", "data"),
+        Input("sector-filter", "value"),
+        State("sector-click-filter-store", "data"),
+        prevent_initial_call=True,
+    )
+    def sync_click_filter_on_dropdown_change(dropdown_value, click_store):
+        """
+        Sync the click filter store when dropdown is manually changed.
+        
+        This keeps the toggle logic in sync - if user manually clears or changes
+        the filter via dropdown, we reset the click store accordingly.
+        """
+        # If dropdown is cleared or set to something different than what was clicked
+        if not dropdown_value:
+            return None
+        # If dropdown has a single sector that matches what was clicked, keep it
+        if click_store and len(dropdown_value) == 1 and dropdown_value[0] == click_store:
+            return no_update
+        # Otherwise, user manually changed - clear the click store
+        return None
+    
+    @app.callback(
         Output("rs-heatmap", "figure"),
         Output("sector-filter", "options"),
         Output("data-stats", "children"),
@@ -179,18 +201,21 @@ def register_callbacks(app):
         Output("tradingview-container", "style", allow_duplicate=True),
         Output("tradingview-iframe", "src", allow_duplicate=True),
         Output("tradingview-title", "children", allow_duplicate=True),
+        Output("sector-filter", "value", allow_duplicate=True),
+        Output("sector-click-filter-store", "data", allow_duplicate=True),
         Input("sector-heatmap", "clickData"),
         State("sector-data-store", "data"),
+        State("sector-click-filter-store", "data"),
         prevent_initial_call=True,
     )
-    def handle_sector_heatmap_click(click_data, sector_name_to_code):
-        """Handle sector heatmap clicks - chart column shows TradingView for sector ETF."""
+    def handle_sector_heatmap_click(click_data, sector_name_to_code, current_filter):
+        """Handle sector heatmap clicks - chart column shows TradingView, data cells filter sub-industries."""
         
         hidden_style = {"display": "none"}
         visible_style = {"display": "block", "marginTop": "2.5rem", "paddingTop": "1rem"}
         
         if not click_data:
-            return no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update, no_update, no_update
         
         try:
             point = click_data['points'][0]
@@ -200,12 +225,26 @@ def register_callbacks(app):
             
             # Check if clicking on the chart column
             if week_label == CHART_COLUMN:
-                # Show TradingView chart for sector ETF
-                return show_tradingview_for_sector(sector_name)
+                # Show TradingView chart for sector ETF (don't change filter)
+                detail, style, src, title = show_tradingview_for_sector(sector_name)
+                return detail, style, src, title, no_update, no_update
             
-            # For data cells, just show sector info (don't navigate)
+            # For data cells, toggle the sector filter for sub-industry heatmap
             strength = get_strength_label(percentile) if percentile else "N/A"
             etf_symbol = get_etf_for_sector(sector_name)
+            
+            # Toggle logic: if clicking the same sector, clear the filter
+            currently_filtered = current_filter if current_filter else None
+            if currently_filtered == sector_name:
+                # Clear the filter - show all sub-industries
+                new_filter_value = None
+                new_filter_store = None
+                filter_message = "Filter cleared - showing all sub-industries"
+            else:
+                # Set filter to this sector
+                new_filter_value = [sector_name]  # Dropdown expects a list for multi-select
+                new_filter_store = sector_name
+                filter_message = f"Filtering sub-industries by {sector_name} sector (click again to clear)"
             
             detail_card = dbc.Card([
                 dbc.CardHeader([
@@ -233,11 +272,11 @@ def register_callbacks(app):
                         ], md=6),
                         dbc.Col([
                             html.P(
-                                "Click on the 📈 icon to view the sector ETF chart",
-                                className="text-muted small"
+                                filter_message,
+                                className="text-info small fw-bold"
                             ),
                             html.P(
-                                "Use the sub-industry heatmap below to drill down",
+                                "Click on the 📈 icon to view the sector ETF chart",
                                 className="text-muted small"
                             ),
                         ], md=6),
@@ -245,7 +284,7 @@ def register_callbacks(app):
                 ])
             ], className="bg-secondary")
             
-            return detail_card, hidden_style, "", ""
+            return detail_card, hidden_style, "", "", new_filter_value, new_filter_store
             
         except Exception as e:
             logger.exception(f"Error handling sector heatmap click: {e}")
@@ -253,7 +292,9 @@ def register_callbacks(app):
                 html.P(f"Error: {str(e)}", className="text-danger"),
                 hidden_style,
                 "",
-                ""
+                "",
+                no_update,
+                no_update
             )
     
     @app.callback(

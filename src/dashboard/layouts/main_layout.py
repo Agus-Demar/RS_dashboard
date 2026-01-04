@@ -276,6 +276,7 @@ def create_layout():
         dcc.Store(id="rs-data-store"),
         dcc.Store(id="sector-data-store"),  # Store for sector name to code mapping
         dcc.Store(id="selected-cell-store"),
+        dcc.Store(id="sector-click-filter-store"),  # Store for sector filter from heatmap click
         
     ], fluid=True, className="bg-dark text-light min-vh-100 pb-4")
 
