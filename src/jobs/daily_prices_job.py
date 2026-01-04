@@ -13,6 +13,58 @@ from src.ingestion.sources.yfinance_source import yfinance_source
 
 logger = logging.getLogger(__name__)
 
+# Sector ETFs for sector-level RS calculation
+SECTOR_ETF_TICKERS = ["XLE", "XLB", "XLI", "XLY", "XLP", "XLV", "XLF", "XLK", "XLC", "XLU", "XLRE"]
+
+# Sector ETF details (ticker -> (sector_code, sector_name, etf_name))
+SECTOR_ETFS = {
+    "XLE": ("10", "Energy", "Energy Select Sector SPDR Fund"),
+    "XLB": ("15", "Materials", "Materials Select Sector SPDR Fund"),
+    "XLI": ("20", "Industrials", "Industrial Select Sector SPDR Fund"),
+    "XLY": ("25", "Consumer Discretionary", "Consumer Discretionary Select Sector SPDR Fund"),
+    "XLP": ("30", "Consumer Staples", "Consumer Staples Select Sector SPDR Fund"),
+    "XLV": ("35", "Health Care", "Health Care Select Sector SPDR Fund"),
+    "XLF": ("40", "Financials", "Financial Select Sector SPDR Fund"),
+    "XLK": ("45", "Information Technology", "Technology Select Sector SPDR Fund"),
+    "XLC": ("50", "Communication Services", "Communication Services Select Sector SPDR Fund"),
+    "XLU": ("55", "Utilities", "Utilities Select Sector SPDR Fund"),
+    "XLRE": ("60", "Real Estate", "Real Estate Select Sector SPDR Fund"),
+}
+
+
+def _ensure_sector_etfs_exist(db):
+    """
+    Ensure Stock records exist for all sector ETFs.
+    
+    Creates missing Stock records so their prices can be stored.
+    """
+    from src.models import GICSSubIndustry
+    
+    for ticker, (sector_code, sector_name, etf_name) in SECTOR_ETFS.items():
+        existing = db.query(Stock).filter(Stock.ticker == ticker).first()
+        if existing:
+            continue
+        
+        # Find a sub-industry in this sector
+        subindustry = db.query(GICSSubIndustry).filter(
+            GICSSubIndustry.sector_code == sector_code
+        ).first()
+        
+        if not subindustry:
+            logger.warning(f"No sub-industry found for sector {sector_code}, cannot create {ticker}")
+            continue
+        
+        stock = Stock(
+            ticker=ticker,
+            name=etf_name,
+            gics_subindustry_code=subindustry.code,
+            is_active=True,
+        )
+        db.add(stock)
+        logger.info(f"Created sector ETF record: {ticker}")
+    
+    db.commit()
+
 
 def run_daily_prices_job() -> dict:
     """
@@ -51,7 +103,13 @@ def run_daily_prices_job() -> dict:
         stocks = db.query(Stock).filter(Stock.is_active == True).all()
         tickers = [s.ticker for s in stocks]
         
-        logger.info(f"Refreshing prices for {len(tickers)} stocks")
+        # Ensure sector ETFs are included - create Stock records if missing
+        _ensure_sector_etfs_exist(db)
+        for etf in SECTOR_ETF_TICKERS:
+            if etf not in tickers:
+                tickers.append(etf)
+        
+        logger.info(f"Refreshing prices for {len(tickers)} stocks (including {len(SECTOR_ETF_TICKERS)} sector ETFs)")
         
         # Fetch last 5 days of prices (to catch any missed days)
         end_date = date.today()

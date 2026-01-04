@@ -20,6 +20,21 @@ from src.ingestion.mappers.gics_mapper import gics_mapper
 
 logger = logging.getLogger(__name__)
 
+# Sector ETFs for sector-level RS calculation
+SECTOR_ETFS = {
+    "XLE": ("10", "Energy", "Energy Select Sector SPDR Fund"),
+    "XLB": ("15", "Materials", "Materials Select Sector SPDR Fund"),
+    "XLI": ("20", "Industrials", "Industrial Select Sector SPDR Fund"),
+    "XLY": ("25", "Consumer Discretionary", "Consumer Discretionary Select Sector SPDR Fund"),
+    "XLP": ("30", "Consumer Staples", "Consumer Staples Select Sector SPDR Fund"),
+    "XLV": ("35", "Health Care", "Health Care Select Sector SPDR Fund"),
+    "XLF": ("40", "Financials", "Financial Select Sector SPDR Fund"),
+    "XLK": ("45", "Information Technology", "Technology Select Sector SPDR Fund"),
+    "XLC": ("50", "Communication Services", "Communication Services Select Sector SPDR Fund"),
+    "XLU": ("55", "Utilities", "Utilities Select Sector SPDR Fund"),
+    "XLRE": ("60", "Real Estate", "Real Estate Select Sector SPDR Fund"),
+}
+
 
 class InitialLoadPipeline:
     """
@@ -79,6 +94,10 @@ class InitialLoadPipeline:
             logger.info("Step 3: Creating stock records...")
             stats['stocks_created'] = self._create_stock_records(use_all_indices=self.use_all_indices)
             
+            # Step 3b: Create sector ETF records
+            logger.info("Step 3b: Creating sector ETF records...")
+            stats['sector_etfs_created'] = self._create_sector_etf_records()
+            
             # Step 4: Fetch price history
             logger.info("Step 4: Fetching price history...")
             stats['prices_stored'] = self._fetch_price_history()
@@ -87,6 +106,7 @@ class InitialLoadPipeline:
             logger.info("Initial data load complete!")
             logger.info(f"  Sub-industries: {stats['subindustries_created']}")
             logger.info(f"  Stocks: {stats['stocks_created']}")
+            logger.info(f"  Sector ETFs: {stats.get('sector_etfs_created', 0)}")
             logger.info(f"  Price records: {stats['prices_stored']}")
             logger.info("=" * 50)
             
@@ -200,6 +220,49 @@ class InitialLoadPipeline:
         if skipped_no_subindustry > 0:
             logger.info(f"  Skipped {skipped_no_subindustry} stocks without sub-industry")
         
+        return count
+    
+    def _create_sector_etf_records(self) -> int:
+        """
+        Create Stock records for sector ETFs (XLE, XLB, etc.).
+        
+        These ETFs are used for direct sector RS calculation instead of
+        aggregating sub-industry RS values.
+        
+        Returns:
+            Number of sector ETF records created
+        """
+        count = 0
+        
+        for ticker, (sector_code, sector_name, etf_name) in SECTOR_ETFS.items():
+            # Check if already exists
+            existing = self.db.query(Stock).filter(Stock.ticker == ticker).first()
+            if existing:
+                logger.debug(f"Sector ETF {ticker} already exists")
+                continue
+            
+            # Find a sub-industry in this sector to use as the GICS code
+            # (ETFs don't have a sub-industry, but we need one for the FK constraint)
+            subindustry = self.db.query(GICSSubIndustry).filter(
+                GICSSubIndustry.sector_code == sector_code
+            ).first()
+            
+            if not subindustry:
+                logger.warning(f"No sub-industry found for sector {sector_code} ({sector_name}), skipping {ticker}")
+                continue
+            
+            stock = Stock(
+                ticker=ticker,
+                name=etf_name,
+                gics_subindustry_code=subindustry.code,
+                is_active=True,
+            )
+            self.db.add(stock)
+            count += 1
+            logger.info(f"Created sector ETF record: {ticker} ({etf_name})")
+        
+        self.db.commit()
+        logger.info(f"Created {count} sector ETF records")
         return count
     
     def _fetch_price_history(self) -> int:

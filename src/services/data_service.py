@@ -46,15 +46,18 @@ def get_rs_matrix_data(
     if num_weeks is None:
         num_weeks = settings.DEFAULT_WEEKS_DISPLAY
     
-    # Get week ranges
-    week_ranges = get_week_ranges(months_back=num_weeks / 4.33)[:num_weeks]
+    # Get actual available week_end_dates from the database (most recent first)
+    available_weeks = db.query(RSWeekly.week_end_date).distinct().order_by(
+        desc(RSWeekly.week_end_date)
+    ).limit(num_weeks).all()
     
-    if not week_ranges:
+    if not available_weeks:
         return pd.DataFrame()
     
-    # Get date range
-    oldest_week = week_ranges[-1]['week_end']
-    newest_week = week_ranges[0]['week_end']
+    # Extract dates and determine range
+    week_dates = [w[0] for w in available_weeks]
+    newest_week = week_dates[0]
+    oldest_week = week_dates[-1]
     
     # Build query
     query = db.query(
@@ -96,9 +99,8 @@ def get_rs_matrix_data(
         'sector_code',
     ])
     
-    # Create week labels
-    week_label_map = {w['week_end']: w['label'] for w in week_ranges}
-    df['week_label'] = df['week_end_date'].map(week_label_map)
+    # Create week labels from actual data (format: DD/MM/YY)
+    df['week_label'] = df['week_end_date'].apply(lambda d: d.strftime("%d/%m/%y"))
     
     # Sort subindustries
     df = _sort_subindustries(df, sort_by)
@@ -267,6 +269,248 @@ def get_available_sectors(db: Session) -> List[str]:
     return [s[0] for s in sectors]
 
 
+def get_sector_rs_matrix_data(
+    db: Session,
+    num_weeks: int = None,
+    sort_by: str = "latest"
+) -> pd.DataFrame:
+    """
+    Get sector-level RS data calculated from sector ETFs (XL* series) for the sector heatmap.
+    
+    Calculates Mansfield RS for each sector ETF (XLE, XLB, XLI, etc.) vs SPY benchmark,
+    then ranks them as percentiles across all sectors for each week.
+    
+    Args:
+        db: Database session
+        num_weeks: Number of weeks to include (default from settings)
+        sort_by: Sort method - 'latest', 'change', or 'alpha'
+    
+    Returns:
+        DataFrame with columns:
+        - sector_code
+        - sector_name
+        - week_label
+        - week_end_date
+        - rs_percentile (from sector ETF Mansfield RS)
+        - subindustry_count (set to 0 for ETF-based calculation)
+    """
+    from src.config import settings
+    from src.models import StockPrice
+    from src.services.rs_calculator import MansfieldRSCalculator
+    import numpy as np
+    
+    if num_weeks is None:
+        num_weeks = settings.DEFAULT_WEEKS_DISPLAY
+    
+    # Sector ETF mapping (sector_name -> ETF ticker)
+    SECTOR_ETFS = {
+        "Energy": ("10", "XLE"),
+        "Materials": ("15", "XLB"),
+        "Industrials": ("20", "XLI"),
+        "Consumer Discretionary": ("25", "XLY"),
+        "Consumer Staples": ("30", "XLP"),
+        "Health Care": ("35", "XLV"),
+        "Financials": ("40", "XLF"),
+        "Information Technology": ("45", "XLK"),
+        "Communication Services": ("50", "XLC"),
+        "Utilities": ("55", "XLU"),
+        "Real Estate": ("60", "XLRE"),
+    }
+    
+    # Calculate date range - need extra history for 52-week SMA
+    end_date = get_last_friday()
+    # Need at least 52 weeks of history for Mansfield RS calculation
+    start_date = end_date - timedelta(weeks=num_weeks + 60)
+    
+    # Get benchmark prices (SPY)
+    benchmark_ticker = settings.BENCHMARK_TICKER
+    benchmark_prices_query = db.query(StockPrice).filter(
+        StockPrice.ticker == benchmark_ticker,
+        StockPrice.date >= start_date,
+        StockPrice.date <= end_date
+    ).order_by(StockPrice.date).all()
+    
+    if not benchmark_prices_query:
+        logger.warning(f"No benchmark prices found for {benchmark_ticker}")
+        return pd.DataFrame()
+    
+    benchmark_prices = pd.Series(
+        {p.date: p.adj_close for p in benchmark_prices_query}
+    ).sort_index()
+    
+    # Get week end dates (Fridays) for the requested period
+    # Generate week end dates directly instead of using get_week_ranges
+    # (which expects months_back and may not give exact num_weeks)
+    week_end_dates = []
+    current_friday = end_date
+    for i in range(num_weeks):
+        week_end_dates.append(current_friday - timedelta(weeks=i))
+    week_end_dates.reverse()  # Oldest first for consistent ordering
+    
+    # Initialize RS calculator
+    rs_calc = MansfieldRSCalculator()
+    
+    # Calculate Mansfield RS for each sector ETF
+    sector_rs_data = []
+    
+    for sector_name, (sector_code, etf_ticker) in SECTOR_ETFS.items():
+        # Get ETF prices
+        etf_prices_query = db.query(StockPrice).filter(
+            StockPrice.ticker == etf_ticker,
+            StockPrice.date >= start_date,
+            StockPrice.date <= end_date
+        ).order_by(StockPrice.date).all()
+        
+        if not etf_prices_query:
+            logger.warning(f"No prices found for sector ETF {etf_ticker} ({sector_name})")
+            continue
+        
+        etf_prices = pd.Series(
+            {p.date: p.adj_close for p in etf_prices_query}
+        ).sort_index()
+        
+        # Calculate full Mansfield RS history
+        rs_result = rs_calc.calculate_full(etf_prices, benchmark_prices)
+        
+        if rs_result.empty:
+            logger.warning(f"Could not calculate RS for {etf_ticker} ({sector_name})")
+            continue
+        
+        # Extract Mansfield RS for each week end date
+        for week_end in week_end_dates:
+            # Find the closest date <= week_end in the RS result
+            valid_dates = rs_result.index[rs_result.index <= week_end]
+            if len(valid_dates) == 0:
+                continue
+            
+            closest_date = valid_dates[-1]
+            mansfield_rs = rs_result.loc[closest_date, 'mansfield_rs']
+            
+            if pd.notna(mansfield_rs):
+                sector_rs_data.append({
+                    'sector_code': sector_code,
+                    'sector_name': sector_name,
+                    'week_end_date': week_end,
+                    'mansfield_rs': mansfield_rs,
+                    'etf_ticker': etf_ticker,
+                })
+    
+    if not sector_rs_data:
+        return pd.DataFrame()
+    
+    # Convert to DataFrame
+    df = pd.DataFrame(sector_rs_data)
+    
+    # Calculate percentile ranks within each week
+    def calc_percentile_rank(group):
+        """Calculate percentile rank for RS values within a week."""
+        rs_values = group['mansfield_rs']
+        # rank(pct=True) gives values from 0 to 1, multiply by 100 for percentile
+        group['rs_percentile'] = rs_values.rank(pct=True) * 100
+        return group
+    
+    df = df.groupby('week_end_date', group_keys=False).apply(calc_percentile_rank)
+    
+    # Round percentile to integer
+    df['rs_percentile'] = df['rs_percentile'].round().astype(int)
+    
+    # Add subindustry_count (0 for ETF-based calculation)
+    df['subindustry_count'] = 0
+    
+    # Create week labels from actual data (format: DD/MM/YY)
+    df['week_label'] = df['week_end_date'].apply(lambda d: d.strftime("%d/%m/%y"))
+    
+    # Drop the intermediate mansfield_rs column (keep only percentile for heatmap)
+    df = df.drop(columns=['mansfield_rs', 'etf_ticker'])
+    
+    # Sort sectors
+    df = _sort_sectors(df, sort_by)
+    
+    return df
+
+
+def _sort_sectors(df: pd.DataFrame, sort_by: str) -> pd.DataFrame:
+    """Sort sector DataFrame by specified method."""
+    if df.empty:
+        return df
+    
+    # Get all unique sectors upfront
+    all_sectors = list(df['sector_code'].unique())
+    
+    if sort_by == "latest":
+        # Sort by most recent week's RS percentile
+        latest_week = df['week_end_date'].max()
+        latest_data = df[df['week_end_date'] == latest_week].copy()
+        
+        # Get one entry per sector with the mean RS percentile
+        sector_rs = latest_data.groupby('sector_code')['rs_percentile'].mean().sort_values(ascending=False)
+        sort_order = list(sector_rs.index)
+        
+        # Add any missing sectors to the end
+        seen = set(sort_order)
+        for s in all_sectors:
+            if s not in seen:
+                sort_order.append(s)
+                seen.add(s)
+        
+        # Ensure uniqueness
+        sort_order = list(dict.fromkeys(sort_order))
+        
+        # Create category type for sorting
+        df['sort_key'] = pd.Categorical(
+            df['sector_code'],
+            categories=sort_order,
+            ordered=True
+        )
+        df = df.sort_values('sort_key').drop('sort_key', axis=1)
+        
+    elif sort_by == "change":
+        # Sort by 4-week RS change
+        weeks = sorted(df['week_end_date'].unique(), reverse=True)
+        if len(weeks) >= 4:
+            newest = weeks[0]
+            oldest = weeks[3]
+            
+            # Get mean RS per sector for newest and oldest weeks
+            newest_data = df[df['week_end_date'] == newest].groupby('sector_code')['rs_percentile'].mean()
+            oldest_data = df[df['week_end_date'] == oldest].groupby('sector_code')['rs_percentile'].mean()
+            
+            # Only calculate change for sectors present in both weeks
+            common_sectors = newest_data.index.intersection(oldest_data.index)
+            if len(common_sectors) > 0:
+                change = newest_data.loc[common_sectors] - oldest_data.loc[common_sectors]
+                sort_order = list(change.sort_values(ascending=False).index)
+                
+                # Add any missing sectors to the end
+                seen = set(sort_order)
+                for s in all_sectors:
+                    if s not in seen:
+                        sort_order.append(s)
+                        seen.add(s)
+                
+                # Ensure uniqueness
+                sort_order = list(dict.fromkeys(sort_order))
+                
+                df['sort_key'] = pd.Categorical(
+                    df['sector_code'],
+                    categories=sort_order,
+                    ordered=True
+                )
+                df = df.sort_values('sort_key').drop('sort_key', axis=1)
+            else:
+                # Fallback to alphabetical if no common sectors
+                df = df.sort_values('sector_name')
+        else:
+            # Not enough weeks, fallback to alphabetical
+            df = df.sort_values('sector_name')
+    
+    else:  # 'alpha' or 'sector' or default
+        # Alphabetical by sector name
+        df = df.sort_values('sector_name')
+    
+    return df
+
+
 def get_subindustry_stocks(
     db: Session,
     subindustry_code: str
@@ -401,15 +645,26 @@ def get_stock_rs_matrix_data(
     if num_weeks is None:
         num_weeks = settings.DEFAULT_WEEKS_DISPLAY
     
-    # Get week ranges
-    week_ranges = get_week_ranges(months_back=num_weeks / 4.33)[:num_weeks]
+    # Get the latest available price date from the benchmark to use as reference
+    latest_price = db.query(StockPrice.date).filter(
+        StockPrice.ticker == settings.BENCHMARK_TICKER
+    ).order_by(desc(StockPrice.date)).first()
+    
+    if not latest_price:
+        return pd.DataFrame()
+    
+    # Use the actual latest data date as reference for week generation
+    latest_date = latest_price[0]
+    week_ranges = get_week_ranges(months_back=num_weeks / 4.33, reference_date=latest_date)[:num_weeks]
     
     if not week_ranges:
         return pd.DataFrame()
     
-    # Get date range for price queries (need 60+ weeks for SMA calculation)
-    end_date = week_ranges[0]['week_end']
-    start_date = end_date - timedelta(weeks=65)  # Extra buffer for SMA
+    # Get date range for price queries
+    # Need 60+ weeks BEFORE the oldest week we want to display for SMA calculation
+    end_date = week_ranges[0]['week_end']  # Most recent week
+    oldest_display_week = week_ranges[-1]['week_end']  # Oldest week to display
+    start_date = oldest_display_week - timedelta(weeks=60)  # 52 weeks for SMA + buffer
     
     # Get stocks in sub-industry
     stocks = get_subindustry_stocks(db, subindustry_code)

@@ -123,7 +123,35 @@ def create_layout():
             ], md=4),
         ], className="mb-4 p-3 bg-dark rounded"),
         
-        # Loading indicator and Heatmap
+        # Sector Heatmap (above main heatmap)
+        dbc.Row([
+            dbc.Col([
+                html.Div(
+                    id="sector-heatmap-container",
+                    style={
+                        "border": "1px solid #334155",
+                        "borderRadius": "8px",
+                        "backgroundColor": "#0f172a",
+                        "marginBottom": "1rem",
+                    },
+                    children=[
+                        dcc.Graph(
+                            id="sector-heatmap",
+                            config={
+                                "displayModeBar": True,
+                                "scrollZoom": False,
+                                "displaylogo": False,
+                                "modeBarButtonsToRemove": [
+                                    "select2d", "lasso2d", "autoScale2d", "zoomOut2d"
+                                ],
+                            },
+                        )
+                    ]
+                )
+            ])
+        ]),
+        
+        # Loading indicator and Sub-Industry Heatmap
         dbc.Row([
             dbc.Col([
                 dcc.Loading(
@@ -152,7 +180,7 @@ def create_layout():
                                 ], className="text-center", style={"display": "none"})
                             ]
                         ),
-                        # Heatmap container - no fixed height, let figure control size
+                        # Sub-Industry Heatmap container - no fixed height, let figure control size
                         html.Div(
                             id="heatmap-scroll-container",
                             style={
@@ -246,6 +274,7 @@ def create_layout():
         
         # Hidden data stores
         dcc.Store(id="rs-data-store"),
+        dcc.Store(id="sector-data-store"),  # Store for sector name to code mapping
         dcc.Store(id="selected-cell-store"),
         
     ], fluid=True, className="bg-dark text-light min-vh-100 pb-4")

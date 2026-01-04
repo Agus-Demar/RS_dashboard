@@ -33,6 +33,7 @@ STOCK_MARGINS = {
 # Minimum chart heights
 MIN_CHART_HEIGHT = 400
 MIN_MAIN_CHART_HEIGHT = 600
+MIN_SECTOR_CHART_HEIGHT = 500  # Sector heatmap is smaller (only 11 sectors)
 
 # Colors
 COLORS = {

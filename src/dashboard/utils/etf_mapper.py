@@ -284,6 +284,21 @@ INDUSTRY_ETFS = {
 # Default fallback ETF (S&P 500) - only used when no industry match found
 DEFAULT_ETF = "SPY"
 
+# Sector name to ETF mapping (using XL* sector ETFs)
+SECTOR_NAME_TO_ETF = {
+    "Energy": "XLE",
+    "Materials": "XLB",
+    "Industrials": "XLI",
+    "Consumer Discretionary": "XLY",
+    "Consumer Staples": "XLP",
+    "Health Care": "XLV",
+    "Financials": "XLF",
+    "Information Technology": "XLK",
+    "Communication Services": "XLC",
+    "Utilities": "XLU",
+    "Real Estate": "XLRE",
+}
+
 
 def normalize_name(name: str) -> str:
     """
@@ -304,6 +319,34 @@ def normalize_name(name: str) -> str:
         .replace("  ", " ")
         .strip()
     )
+
+
+def get_etf_for_sector(sector_name: str) -> str:
+    """
+    Get the representative XL* ETF for a GICS sector.
+    
+    Args:
+        sector_name: Name of the GICS sector (e.g., "Energy", "Information Technology")
+    
+    Returns:
+        ETF ticker symbol (e.g., "XLE", "XLK")
+    """
+    if not sector_name:
+        return DEFAULT_ETF
+    
+    # Direct lookup
+    etf = SECTOR_NAME_TO_ETF.get(sector_name)
+    if etf:
+        return etf
+    
+    # Try case-insensitive lookup
+    normalized = sector_name.strip().lower()
+    for name, ticker in SECTOR_NAME_TO_ETF.items():
+        if name.lower() == normalized:
+            return ticker
+    
+    logger.warning(f"No sector ETF mapping found for '{sector_name}', using {DEFAULT_ETF}")
+    return DEFAULT_ETF
 
 
 def get_etf_for_subindustry(subindustry_name: str, sector_name: str = "") -> str:

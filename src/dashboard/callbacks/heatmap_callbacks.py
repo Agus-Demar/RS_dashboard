@@ -19,18 +19,24 @@ import dash_bootstrap_components as dbc
 from src.models import SessionLocal
 from src.services.data_service import (
     get_rs_matrix_data,
+    get_sector_rs_matrix_data,
     get_available_sectors,
     get_subindustry_stocks,
     get_data_stats,
 )
 from src.dashboard.utils.colors import get_color_scale, get_strength_label
-from src.dashboard.utils.etf_mapper import get_etf_for_subindustry, get_tradingview_widget_url
+from src.dashboard.utils.etf_mapper import (
+    get_etf_for_subindustry,
+    get_etf_for_sector,
+    get_tradingview_widget_url,
+)
 from src.dashboard.utils.heatmap_config import (
     CHART_COLUMN,
     ROW_HEIGHT,
     MAX_LABEL_LENGTH,
     MARGINS,
     MIN_MAIN_CHART_HEIGHT,
+    MIN_SECTOR_CHART_HEIGHT,
     COLORS,
     FONT_SIZES,
 )
@@ -115,6 +121,140 @@ def register_callbacks(app):
             return error_fig, [], "Error loading data", {"display": "none"}, None
         finally:
             db.close()
+    
+    @app.callback(
+        Output("sector-heatmap", "figure"),
+        Output("sector-data-store", "data"),
+        Input("sort-method", "value"),
+        Input("weeks-slider", "value"),
+    )
+    def update_sector_heatmap(sort_method: str, num_weeks: int):
+        """Generate and update the sector-level RS heatmap."""
+        
+        db = SessionLocal()
+        try:
+            # Get sector RS data
+            df = get_sector_rs_matrix_data(
+                db=db,
+                num_weeks=num_weeks,
+                sort_by=sort_method
+            )
+            
+            if df.empty:
+                # Return empty figure
+                empty_fig = go.Figure()
+                empty_fig.update_layout(
+                    title="No sector RS data available.",
+                    paper_bgcolor=COLORS["paper_bg"],
+                    plot_bgcolor=COLORS["plot_bg"],
+                    font=dict(color=COLORS["text"]),
+                    height=200,
+                )
+                return empty_fig, None
+            
+            # Store sector name to code mapping for click handling
+            sector_map = df[['sector_name', 'sector_code']].drop_duplicates()
+            name_to_code = dict(zip(sector_map['sector_name'], sector_map['sector_code']))
+            
+            # Create sector heatmap figure
+            fig = create_sector_heatmap_figure(df, num_weeks)
+            
+            return fig, name_to_code
+            
+        except Exception as e:
+            logger.exception(f"Error updating sector heatmap: {e}")
+            error_fig = go.Figure()
+            error_fig.update_layout(
+                title=f"Error loading sector data: {str(e)}",
+                paper_bgcolor=COLORS["paper_bg"],
+                font=dict(color="#ef4444"),
+                height=200,
+            )
+            return error_fig, None
+        finally:
+            db.close()
+    
+    @app.callback(
+        Output("detail-panel", "children", allow_duplicate=True),
+        Output("tradingview-container", "style", allow_duplicate=True),
+        Output("tradingview-iframe", "src", allow_duplicate=True),
+        Output("tradingview-title", "children", allow_duplicate=True),
+        Input("sector-heatmap", "clickData"),
+        State("sector-data-store", "data"),
+        prevent_initial_call=True,
+    )
+    def handle_sector_heatmap_click(click_data, sector_name_to_code):
+        """Handle sector heatmap clicks - chart column shows TradingView for sector ETF."""
+        
+        hidden_style = {"display": "none"}
+        visible_style = {"display": "block", "marginTop": "2.5rem", "paddingTop": "1rem"}
+        
+        if not click_data:
+            return no_update, no_update, no_update, no_update
+        
+        try:
+            point = click_data['points'][0]
+            sector_name = point['y']
+            week_label = point['x']
+            percentile = point.get('z')
+            
+            # Check if clicking on the chart column
+            if week_label == CHART_COLUMN:
+                # Show TradingView chart for sector ETF
+                return show_tradingview_for_sector(sector_name)
+            
+            # For data cells, just show sector info (don't navigate)
+            strength = get_strength_label(percentile) if percentile else "N/A"
+            etf_symbol = get_etf_for_sector(sector_name)
+            
+            detail_card = dbc.Card([
+                dbc.CardHeader([
+                    html.H5(f"📊 {sector_name} Sector", className="mb-0")
+                ]),
+                dbc.CardBody([
+                    dbc.Row([
+                        dbc.Col([
+                            html.P([
+                                html.Strong("Week: "),
+                                week_label
+                            ]),
+                            html.P([
+                                html.Strong("RS Percentile: "),
+                                f"{percentile:.0f}" if percentile else "N/A"
+                            ]),
+                            html.P([
+                                html.Strong("Strength: "),
+                                strength
+                            ]),
+                            html.P([
+                                html.Strong("Sector ETF: "),
+                                etf_symbol
+                            ]),
+                        ], md=6),
+                        dbc.Col([
+                            html.P(
+                                "Click on the 📈 icon to view the sector ETF chart",
+                                className="text-muted small"
+                            ),
+                            html.P(
+                                "Use the sub-industry heatmap below to drill down",
+                                className="text-muted small"
+                            ),
+                        ], md=6),
+                    ])
+                ])
+            ], className="bg-secondary")
+            
+            return detail_card, hidden_style, "", ""
+            
+        except Exception as e:
+            logger.exception(f"Error handling sector heatmap click: {e}")
+            return (
+                html.P(f"Error: {str(e)}", className="text-danger"),
+                hidden_style,
+                "",
+                ""
+            )
     
     @app.callback(
         Output("detail-panel", "children"),
@@ -334,6 +474,208 @@ def show_detail_panel_content(subindustry_name: str, week_label: str, percentile
     ], className="bg-secondary")
     
     return detail_card, visible_style, tradingview_url, tradingview_title, no_update
+
+
+def show_tradingview_for_sector(sector_name: str):
+    """Show TradingView chart for sector ETF."""
+    hidden_style = {"display": "none"}
+    visible_style = {"display": "block", "marginTop": "2.5rem", "paddingTop": "1rem"}
+    
+    # Get ETF for sector
+    etf_symbol = get_etf_for_sector(sector_name)
+    tradingview_url = get_tradingview_widget_url(etf_symbol)
+    tradingview_title = f"📊 {etf_symbol} - {sector_name} Sector ETF Weekly Chart"
+    
+    detail_card = dbc.Card([
+        dbc.CardHeader([
+            html.H5(f"📊 {sector_name} Sector", className="mb-0")
+        ]),
+        dbc.CardBody([
+            dbc.Row([
+                dbc.Col([
+                    html.P([
+                        html.Strong("Sector ETF: "),
+                        etf_symbol
+                    ]),
+                    html.P(
+                        "Click on the sub-industry heatmap below to drill down to individual stocks",
+                        className="text-muted small"
+                    ),
+                ], md=12),
+            ])
+        ])
+    ], className="bg-secondary")
+    
+    return detail_card, visible_style, tradingview_url, tradingview_title
+
+
+def create_sector_heatmap_figure(df: pd.DataFrame, num_weeks: int) -> go.Figure:
+    """
+    Create the Plotly sector heatmap figure with chart column on right side.
+    
+    Args:
+        df: DataFrame with sector RS matrix data
+        num_weeks: Number of weeks to display
+    
+    Returns:
+        Plotly Figure object
+    """
+    from datetime import datetime
+    
+    # Ensure no duplicates before pivot (pivot_table handles aggregation)
+    pivot_df = df.pivot_table(
+        index='sector_name',
+        columns='week_label',
+        values='rs_percentile',
+        aggfunc='mean'  # In case of duplicates, take the mean
+    )
+    
+    # Sort weeks: most recent FIRST (left side)
+    week_order = sorted(pivot_df.columns, key=lambda x: datetime.strptime(x, "%d/%m/%y"), reverse=True)
+    pivot_df = pivot_df[week_order]
+    
+    # Keep sector order from the sorted DataFrame (use dict.fromkeys to preserve order and ensure uniqueness)
+    unique_sectors = list(dict.fromkeys(df['sector_name'].tolist()))
+    # Only reindex with sectors that exist in the pivot index
+    valid_sectors = [s for s in unique_sectors if s in pivot_df.index]
+    pivot_df = pivot_df.reindex(valid_sectors)
+    
+    # Add chart column on the RIGHT side with NaN values
+    chart_col_values = [np.nan] * len(pivot_df)
+    pivot_df[CHART_COLUMN] = chart_col_values
+    
+    # Column order: weeks first, then chart column on right
+    columns_order = week_order + [CHART_COLUMN]
+    pivot_df = pivot_df[columns_order]
+    
+    # Build hover text matrix
+    hover_text = []
+    for sector in pivot_df.index:
+        row_text = []
+        for week in pivot_df.columns:
+            if week == CHART_COLUMN:
+                etf = get_etf_for_sector(sector)
+                text = f"<b>📈 View {etf} Chart</b><br>{sector} Sector<br>Click to show TradingView"
+            else:
+                value = pivot_df.loc[sector, week]
+                if pd.isna(value):
+                    text = f"<b>{sector}</b><br>Week: {week}<br>No data"
+                else:
+                    strength = get_strength_label(value)
+                    text = (
+                        f"<b>{sector} Sector</b><br>"
+                        f"Week: {week}<br>"
+                        f"RS Percentile: {value:.0f}<br>"
+                        f"Strength: {strength}"
+                    )
+            row_text.append(text)
+        hover_text.append(row_text)
+    
+    # Create heatmap
+    fig = go.Figure(data=go.Heatmap(
+        z=pivot_df.values,
+        x=pivot_df.columns.tolist(),
+        y=pivot_df.index.tolist(),
+        colorscale=get_color_scale(),
+        zmin=0,
+        zmax=100,
+        hovertemplate="%{customdata}<extra></extra>",
+        customdata=hover_text,
+        xgap=1,
+        ygap=1,
+        showscale=False,  # Hide colorbar for sector heatmap (same scale as main)
+    ))
+    
+    # Add invisible scatter trace to enable top x-axis labels
+    fig.add_trace(go.Scatter(
+        x=pivot_df.columns.tolist(),
+        y=[None] * len(pivot_df.columns),
+        xaxis="x2",
+        mode="markers",
+        marker=dict(opacity=0),
+        showlegend=False,
+        hoverinfo="skip",
+    ))
+    
+    # Calculate chart height based on row count (11 sectors)
+    num_sectors = len(pivot_df)
+    chart_height = max(MIN_SECTOR_CHART_HEIGHT, num_sectors * ROW_HEIGHT + 160)
+    
+    # Build annotations for chart icons in each row
+    chart_annotations = []
+    for sector in pivot_df.index:
+        chart_annotations.append(
+            dict(
+                text="📈",
+                x=CHART_COLUMN,
+                y=sector,
+                xref="x",
+                yref="y",
+                showarrow=False,
+                font=dict(size=FONT_SIZES["chart_icon"], color=COLORS["text"]),
+            )
+        )
+    
+    # Layout
+    fig.update_layout(
+        title=dict(
+            text="📊 Sector RS Overview (XL* ETFs)<br><sup>← Most Recent | Weeks | Older → | 📈 = Sector ETF Chart</sup>",
+            font=dict(size=FONT_SIZES["title"], color=COLORS["title"]),
+            x=0.5,
+            xanchor="center",
+            y=0.98,
+            yanchor="top",
+        ),
+        xaxis=dict(
+            title=None,
+            tickfont=dict(size=FONT_SIZES["axis_label"], color=COLORS["muted_text"]),
+            tickangle=45,
+            side="bottom",
+            dtick=1,
+            fixedrange=True,
+            showticklabels=True,
+        ),
+        xaxis2=dict(
+            title=None,
+            tickfont=dict(size=FONT_SIZES["axis_label"], color=COLORS["muted_text"]),
+            tickangle=-45,
+            side="top",
+            anchor="y",
+            overlaying="x",
+            fixedrange=True,
+            showticklabels=True,
+            tickmode="array",
+            tickvals=pivot_df.columns.tolist(),
+            ticktext=pivot_df.columns.tolist(),
+            range=[-0.5, len(pivot_df.columns) - 0.5],
+        ),
+        yaxis=dict(
+            title=None,
+            tickfont=dict(size=FONT_SIZES["stock_axis_label"], color=COLORS["muted_text"]),
+            autorange="reversed",
+            tickmode="linear",
+            dtick=1,
+            fixedrange=True,
+            ticklabelposition="outside",
+        ),
+        annotations=chart_annotations,
+        paper_bgcolor=COLORS["paper_bg"],
+        plot_bgcolor=COLORS["plot_bg"],
+        font=dict(color=COLORS["text"]),
+        height=chart_height,
+        margin=dict(
+            l=200,  # Less space needed for sector names
+            r=MARGINS["right"],
+            t=100,
+            b=60,
+        ),
+    )
+    
+    # Add grid lines
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor=COLORS["grid"])
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor=COLORS["grid"])
+    
+    return fig
 
 
 def create_heatmap_figure(df: pd.DataFrame, num_weeks: int) -> go.Figure:
