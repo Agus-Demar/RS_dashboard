@@ -419,6 +419,36 @@ def create_price_rs_chart(df: pd.DataFrame, ticker: str, stock_name: str) -> go.
     """
     from plotly.subplots import make_subplots
     
+    # Filter out rows with null values in critical OHLC columns
+    df = df.dropna(subset=['open', 'high', 'low', 'close']).copy()
+    
+    if df.empty:
+        empty_fig = go.Figure()
+        empty_fig.update_layout(
+            title=f"No valid price data for {ticker}",
+            paper_bgcolor=COLORS["paper_bg"],
+            plot_bgcolor=COLORS["plot_bg"],
+            font=dict(color=COLORS["text"]),
+        )
+        return empty_fig
+    
+    # Build list of date gaps (holidays, etc.) to exclude from chart
+    # This prevents gaps in the chart for non-trading days
+    all_dates = pd.date_range(start=df['date'].min(), end=df['date'].max(), freq='D')
+    trading_dates = set(df['date'].dt.date if hasattr(df['date'].iloc[0], 'date') else df['date'])
+    
+    # Convert to set of date objects for comparison
+    if hasattr(df['date'].iloc[0], 'date'):
+        trading_dates = set(d.date() for d in df['date'])
+    else:
+        trading_dates = set(df['date'])
+    
+    # Find gaps (non-trading days that aren't weekends)
+    date_gaps = []
+    for d in all_dates:
+        if d.weekday() < 5 and d.date() not in trading_dates:  # Weekday but not in data
+            date_gaps.append(d)
+    
     # Create figure with four subplots (Price, Volume, RS, RSI)
     fig = make_subplots(
         rows=4, cols=1,
@@ -642,6 +672,14 @@ def create_price_rs_chart(df: pd.DataFrame, ticker: str, stock_name: str) -> go.
         hovermode='x unified',
     )
     
+    # Build rangebreaks for weekends and holidays/gaps
+    rangebreaks_list = [
+        dict(bounds=["sat", "mon"]),  # Hide Saturday and Sunday
+    ]
+    # Add individual date gaps (holidays, etc.) to rangebreaks
+    if date_gaps:
+        rangebreaks_list.append(dict(values=date_gaps))
+    
     # Style all subplots
     fig.update_xaxes(
         showgrid=True,
@@ -650,10 +688,8 @@ def create_price_rs_chart(df: pd.DataFrame, ticker: str, stock_name: str) -> go.
         showline=True,
         linewidth=1,
         linecolor=COLORS["grid"],
-        # Hide weekends (non-trading days) to avoid gaps in the chart
-        rangebreaks=[
-            dict(bounds=["sat", "mon"]),  # Hide Saturday and Sunday
-        ],
+        # Hide non-trading days to avoid gaps in the chart
+        rangebreaks=rangebreaks_list,
     )
     
     fig.update_yaxes(
