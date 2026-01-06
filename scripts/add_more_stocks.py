@@ -68,23 +68,32 @@ YFINANCE_TO_GICS_INDUSTRY = {
     "Oil & Gas Midstream": "Oil & Gas Storage & Transportation",
     "Thermal Coal": "Coal & Consumable Fuels",
     
-    # Materials
+    # Materials - expanded for underrepresented industries
     "Agricultural Inputs": "Fertilizers & Agricultural Chemicals",
     "Chemicals": "Diversified Chemicals",
     "Specialty Chemicals": "Specialty Chemicals",
     "Building Materials": "Construction Materials",
     "Paper & Paper Products": "Paper Products",
+    "Packaging & Containers": "Paper Products",
+    "Paper Packaging": "Paper Products",
     "Lumber & Wood Production": "Forest Products",
+    "Forest Products": "Forest Products",
+    "Wood Products": "Forest Products",
+    "Timber": "Forest Products",
     "Aluminum": "Aluminum",
     "Copper": "Copper",
+    "Industrial Metals": "Copper",
     "Gold": "Gold",
     "Silver": "Silver",
     "Steel": "Steel",
     "Other Industrial Metals & Mining": "Diversified Metals & Mining",
     "Other Precious Metals & Mining": "Precious Metals & Minerals",
     "Coking Coal": "Coal & Consumable Fuels",
+    "Industrial Gases": "Industrial Gases",
+    "Commodity Chemicals": "Commodity Chemicals",
+    "Basic Chemicals": "Commodity Chemicals",
     
-    # Industrials
+    # Industrials - expanded for underrepresented industries
     "Aerospace & Defense": "Aerospace & Defense",
     "Airlines": "Passenger Airlines",
     "Building Products & Equipment": "Building Products",
@@ -92,20 +101,31 @@ YFINANCE_TO_GICS_INDUSTRY = {
     "Construction": "Construction & Engineering",
     "Engineering & Construction": "Construction & Engineering",
     "Electrical Equipment & Parts": "Electrical Components & Equipment",
+    "Heavy Electrical Equipment": "Heavy Electrical Equipment",
+    "Electrical Equipment": "Heavy Electrical Equipment",
+    "Power Equipment": "Heavy Electrical Equipment",
     "Farm & Heavy Construction Machinery": "Construction Machinery & Heavy Transportation Equipment",
     "Farm & Construction Machinery": "Construction Machinery & Heavy Transportation Equipment",
     "Industrial Distribution": "Trading Companies & Distributors",
     "Business Equipment & Supplies": "Office Services & Supplies",
+    "Commercial Printing": "Commercial Printing",
+    "Printing Services": "Commercial Printing",
+    "Publishing & Printing": "Commercial Printing",
     "Specialty Business Services": "Diversified Support Services",
     "Staffing & Employment Services": "Human Resource & Employment Services",
     "Consulting Services": "Research & Consulting Services",
     "Integrated Freight & Logistics": "Air Freight & Logistics",
     "Freight & Logistics Services": "Air Freight & Logistics",
     "Trucking": "Cargo Ground Transportation",
+    "Passenger Ground Transportation": "Passenger Ground Transportation",
+    "Ground Transportation": "Passenger Ground Transportation",
+    "Taxi & Ridesharing": "Passenger Ground Transportation",
     "Railroads": "Rail Transportation",
     "Marine Shipping": "Marine Transportation",
     "Rental & Leasing Services": "Trading Companies & Distributors",
     "Security & Protection Services": "Security & Alarm Services",
+    "Security & Alarm Services": "Security & Alarm Services",
+    "Security Systems & Services": "Security & Alarm Services",
     "Waste Management": "Environmental & Facilities Services",
     "Industrial Machinery": "Industrial Machinery & Supplies & Components",
     "Specialty Industrial Machinery": "Industrial Machinery & Supplies & Components",
@@ -114,12 +134,28 @@ YFINANCE_TO_GICS_INDUSTRY = {
     "Pollution & Treatment Controls": "Environmental & Facilities Services",
     "Airports & Air Services": "Airport Services",
     
-    # Consumer Discretionary
+    # Consumer Discretionary - expanded for underrepresented industries
     "Auto Manufacturers": "Automobile Manufacturers",
     "Auto & Truck Dealerships": "Automotive Retail",
     "Auto Parts": "Automotive Parts & Equipment",
     "Recreational Vehicles": "Automobile Manufacturers",
+    "Motorcycle Manufacturers": "Motorcycle Manufacturers",
+    "Motorcycles": "Motorcycle Manufacturers",
+    "Powersports": "Motorcycle Manufacturers",
+    "Tires & Rubber": "Tires & Rubber",
+    "Rubber & Tires": "Tires & Rubber",
     "Furnishings, Fixtures & Appliances": "Home Furnishings",
+    "Household Appliances": "Household Appliances",
+    "Appliances": "Household Appliances",
+    "Home Appliances": "Household Appliances",
+    "Small Appliances": "Household Appliances",
+    "Major Appliances": "Household Appliances",
+    "Housewares & Specialties": "Housewares & Specialties",
+    "Housewares": "Housewares & Specialties",
+    "Home Furnishing Retail": "Homefurnishing Retail",
+    "Homefurnishing Retail": "Homefurnishing Retail",
+    "Home Furnishings Retail": "Homefurnishing Retail",
+    "Furniture Stores": "Homefurnishing Retail",
     "Home Improvement Retail": "Home Improvement Retail",
     "Residential Construction": "Homebuilding",
     "Textile Manufacturing": "Textiles",
@@ -131,9 +167,19 @@ YFINANCE_TO_GICS_INDUSTRY = {
     "Discount Stores": "Broadline Retail",
     "Internet Retail": "Broadline Retail",
     "Specialty Retail": "Other Specialty Retail",
+    "Electronics Retail": "Computer & Electronics Retail",
+    "Computer & Electronics Retail": "Computer & Electronics Retail",
+    "Consumer Electronics Retail": "Computer & Electronics Retail",
+    "Computer Stores": "Computer & Electronics Retail",
+    "Consumer Electronics": "Consumer Electronics",
     "Gambling": "Casinos & Gaming",
     "Resorts & Casinos": "Casinos & Gaming",
     "Leisure": "Leisure Products",
+    "Leisure Facilities": "Leisure Facilities",
+    "Amusement Parks": "Leisure Facilities",
+    "Theme Parks": "Leisure Facilities",
+    "Fitness Centers": "Leisure Facilities",
+    "Gyms & Fitness": "Leisure Facilities",
     "Lodging": "Hotels, Resorts & Cruise Lines",
     "Restaurants": "Restaurants",
     "Travel Services": "Hotels, Resorts & Cruise Lines",
@@ -166,12 +212,19 @@ YFINANCE_TO_GICS_INDUSTRY = {
     "Medical Instruments & Supplies": "Health Care Supplies",
     "Pharmaceutical Retailers": "Drug Retail",
     
-    # Financials
+    # Financials - expanded for underrepresented industries
     "Banks - Diversified": "Diversified Banks",
     "Banks - Regional": "Regional Banks",
     "Asset Management": "Asset Management & Custody Banks",
     "Capital Markets": "Investment Banking & Brokerage",
     "Credit Services": "Consumer Finance",
+    "Specialized Finance": "Specialized Finance",
+    "Specialty Finance": "Specialized Finance",
+    "Consumer Lending": "Specialized Finance",
+    "Subprime Lenders": "Specialized Finance",
+    "Multi-Sector Holdings": "Multi-Sector Holdings",
+    "Conglomerates (Finance)": "Multi-Sector Holdings",
+    "Diversified Holdings": "Multi-Sector Holdings",
     "Financial Data & Stock Exchanges": "Financial Exchanges & Data",
     "Financial Conglomerates": "Diversified Financial Services",
     "Insurance - Diversified": "Multi-line Insurance",
@@ -198,7 +251,7 @@ YFINANCE_TO_GICS_INDUSTRY = {
     "Software - Infrastructure": "Systems Software",
     "Solar": "Semiconductors",  # Many solar are semiconductor-based
     
-    # Communication Services
+    # Communication Services - expanded for underrepresented industries
     "Advertising Agencies": "Advertising",
     "Broadcasting": "Broadcasting",
     "Electronic Gaming & Multimedia": "Interactive Home Entertainment",
@@ -206,6 +259,10 @@ YFINANCE_TO_GICS_INDUSTRY = {
     "Internet Content & Information": "Interactive Media & Services",
     "Publishing": "Publishing",
     "Telecom Services": "Integrated Telecommunication Services",
+    "Cable & Satellite": "Cable & Satellite",
+    "Cable Television": "Cable & Satellite",
+    "Satellite Radio": "Cable & Satellite",
+    "Pay TV": "Cable & Satellite",
     
     # Utilities
     "Utilities - Diversified": "Multi-Utilities",
@@ -215,8 +272,11 @@ YFINANCE_TO_GICS_INDUSTRY = {
     "Utilities - Regulated Water": "Water Utilities",
     "Utilities - Renewable": "Renewable Electricity",
     
-    # Real Estate
+    # Real Estate - expanded for underrepresented industries
     "Real Estate - Development": "Real Estate Development",
+    "Real Estate Development": "Real Estate Development",
+    "Property Development": "Real Estate Development",
+    "Land Development": "Real Estate Development",
     "Real Estate - Diversified": "Diversified Real Estate Activities",
     "Real Estate Services": "Real Estate Services",
     "REIT - Diversified": "Diversified REITs",
@@ -228,6 +288,14 @@ YFINANCE_TO_GICS_INDUSTRY = {
     "REIT - Residential": "Multi-Family Residential REITs",
     "REIT - Retail": "Retail REITs",
     "REIT - Specialty": "Other Specialized REITs",
+    "REIT - Data Center": "Data Center REITs",
+    "Data Center REITs": "Data Center REITs",
+    "REIT - Self-Storage": "Self-Storage REITs",
+    "Self-Storage REITs": "Self-Storage REITs",
+    "REIT - Telecom Tower": "Telecom Tower REITs",
+    "Telecom Tower REITs": "Telecom Tower REITs",
+    "REIT - Timber": "Timber REITs",
+    "Timber REITs": "Timber REITs",
 }
 
 # Sector mapping from yfinance sector to GICS sector code
@@ -408,12 +476,17 @@ def screen_for_us_stocks(min_market_cap: float = 50_000_000) -> List[str]:
     
     # Method 3: Use pre-defined comprehensive ticker list from data module
     # These are common US stocks organized by sector
-    from src.data.additional_tickers import get_all_additional_tickers
+    from src.data.additional_tickers import get_all_additional_tickers, get_all_targeted_tickers
     additional = get_all_additional_tickers()
     all_tickers.update(additional)
     logger.info(f"  Additional tickers from data module: {len(additional)}")
     
-    # Method 4: Add more tickers from inline list for extra coverage
+    # Method 4: Add targeted tickers for underrepresented sub-industries
+    targeted = get_all_targeted_tickers()
+    all_tickers.update(targeted)
+    logger.info(f"  Targeted sub-industry tickers: {len(targeted)}")
+    
+    # Method 5: Add more tickers from inline list for extra coverage
     all_tickers.update(get_comprehensive_ticker_list())
     
     logger.info(f"Total unique tickers found: {len(all_tickers)}")
