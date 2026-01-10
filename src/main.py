@@ -5,10 +5,12 @@ Main application that:
 - Serves the REST API endpoints
 - Mounts the Plotly Dash dashboard
 - Initializes the database
+- Checks data freshness on startup (runs update if stale)
 - Optionally starts the scheduler
 """
 import logging
 from contextlib import asynccontextmanager
+from datetime import date
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,6 +29,59 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def check_and_update_data() -> None:
+    """
+    Check if data is up to date with the last complete week.
+    
+    If the latest RS data is older than the last complete week (Friday),
+    runs the weekly data update job to fill the gap.
+    """
+    from src.models import SessionLocal
+    from src.services.aggregator import get_last_friday
+    from src.services.data_service import get_latest_available_week
+    
+    logger.info("Checking data freshness...")
+    
+    db = SessionLocal()
+    try:
+        # Get the last complete week (most recent Friday)
+        last_friday = get_last_friday()
+        
+        # Get the latest RS data in the database
+        latest_rs_week = get_latest_available_week(db)
+        
+        if latest_rs_week is None:
+            logger.warning("No RS data found in database. Please run initial data load.")
+            return
+        
+        logger.info(f"Last complete week: {last_friday}")
+        logger.info(f"Latest RS data: {latest_rs_week}")
+        
+        # Check if we need to update
+        if latest_rs_week < last_friday:
+            logger.info(f"Data is stale (missing {(last_friday - latest_rs_week).days} days). Running update...")
+            
+            # Calculate how many days of price data to fetch
+            days_gap = (date.today() - latest_rs_week).days + 1
+            days_to_fetch = max(7, days_gap)  # At least 7 days
+            
+            # Run the unified weekly update job
+            from src.jobs.weekly_rs_job import run_weekly_data_update
+            result = run_weekly_data_update()
+            
+            if result.get('success'):
+                logger.info(f"Data update complete: {result.get('rs_records_processed', 0)} RS records updated")
+            else:
+                logger.error(f"Data update failed: {result.get('error')}")
+        else:
+            logger.info("Data is up to date!")
+            
+    except Exception as e:
+        logger.error(f"Error checking data freshness: {e}")
+    finally:
+        db.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -40,6 +95,12 @@ async def lifespan(app: FastAPI):
     # Initialize database
     logger.info("Initializing database...")
     init_db()
+    
+    # Check data freshness and update if needed
+    try:
+        check_and_update_data()
+    except Exception as e:
+        logger.error(f"Error during data freshness check: {e}")
     
     # Start scheduler if enabled
     if settings.SCHEDULER_ENABLED:

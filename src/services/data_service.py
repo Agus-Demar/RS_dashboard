@@ -317,8 +317,13 @@ def get_sector_rs_matrix_data(
         "Real Estate": ("60", "XLRE"),
     }
     
-    # Calculate date range - need extra history for 52-week SMA
-    end_date = get_last_friday()
+    # Calculate date range - use latest complete week from RS data for consistency
+    latest_rs_week = get_latest_available_week(db)
+    if not latest_rs_week:
+        logger.warning("No RS data available in database")
+        return pd.DataFrame()
+    
+    end_date = latest_rs_week
     # Need at least 52 weeks of history for Mansfield RS calculation
     start_date = end_date - timedelta(weeks=num_weeks + 60)
     
@@ -645,25 +650,28 @@ def get_stock_rs_matrix_data(
     if num_weeks is None:
         num_weeks = settings.DEFAULT_WEEKS_DISPLAY
     
-    # Get the latest available price date from the benchmark to use as reference
-    latest_price = db.query(StockPrice.date).filter(
-        StockPrice.ticker == settings.BENCHMARK_TICKER
-    ).order_by(desc(StockPrice.date)).first()
+    # Get actual available week_end_dates from the RSWeekly table (same as sub-industry heatmap)
+    # This ensures stock heatmap shows the exact same dates as other heatmaps
+    available_weeks = db.query(RSWeekly.week_end_date).distinct().order_by(
+        desc(RSWeekly.week_end_date)
+    ).limit(num_weeks).all()
     
-    if not latest_price:
+    if not available_weeks:
         return pd.DataFrame()
     
-    # Use the actual latest data date as reference for week generation
-    latest_date = latest_price[0]
-    week_ranges = get_week_ranges(months_back=num_weeks / 4.33, reference_date=latest_date)[:num_weeks]
+    # Extract dates - these are the exact week dates to display
+    week_dates = [w[0] for w in available_weeks]
     
-    if not week_ranges:
-        return pd.DataFrame()
+    # Create week_ranges structure compatible with rest of the function
+    week_ranges = [
+        {'week_end': wd, 'label': wd.strftime("%d/%m/%y")}
+        for wd in week_dates
+    ]
     
     # Get date range for price queries
     # Need 60+ weeks BEFORE the oldest week we want to display for SMA calculation
-    end_date = week_ranges[0]['week_end']  # Most recent week
-    oldest_display_week = week_ranges[-1]['week_end']  # Oldest week to display
+    end_date = week_dates[0]  # Most recent week
+    oldest_display_week = week_dates[-1]  # Oldest week to display
     start_date = oldest_display_week - timedelta(weeks=60)  # 52 weeks for SMA + buffer
     
     # Get stocks in sub-industry
@@ -792,8 +800,15 @@ def get_stock_price_with_rs(
     from src.models import StockPrice
     from src.config import settings
     
-    # Get date range - need extra history for EMA calculation
-    end_date = get_last_friday()
+    # Get actual latest date from stock's price data (not just last Friday)
+    latest_price = db.query(StockPrice.date).filter(
+        StockPrice.ticker == ticker
+    ).order_by(desc(StockPrice.date)).first()
+    
+    if not latest_price:
+        return pd.DataFrame()
+    
+    end_date = latest_price[0]
     # Need ~65 weeks of data to have enough for 52-week EMA calculation
     start_date = end_date - timedelta(weeks=num_weeks + 60)
     
@@ -863,6 +878,140 @@ def get_stock_price_with_rs(
     df = df[df['date'] >= cutoff_date]
     
     # Drop the benchmark column (no longer needed)
+    df = df.drop(columns=['benchmark_close'])
+    
+    return df
+
+
+def get_stock_price_with_rs_weekly(
+    db: Session,
+    ticker: str,
+    num_weeks: int = 104
+) -> pd.DataFrame:
+    """
+    Get weekly OHLC with RS indicator and Cardwell RSI data for charting.
+    
+    Resamples daily data into weekly OHLC bars (Mon-Fri):
+    - Open: First day's open
+    - High: Max of week
+    - Low: Min of week
+    - Close: Last day's close
+    - Volume: Sum of week
+    
+    Then recalculates RS and RSI indicators using the same numeric periods
+    as daily (EMA 13, EMA 52 for RS; RSI 14, SMA 9, EMA 45 for RSI).
+    
+    Args:
+        db: Database session
+        ticker: Stock ticker symbol
+        num_weeks: Number of weeks of history to return
+    
+    Returns:
+        DataFrame with columns:
+        - date, open, high, low, close, adj_close, volume
+        - rs_line, rs_ema_13, rs_ema_52
+        - ema_10, ema_30
+        - rsi_14, rsi_sma_9, rsi_ema_45
+    """
+    from src.models import StockPrice
+    from src.config import settings
+    
+    # Get actual latest date from stock's price data
+    latest_price = db.query(StockPrice.date).filter(
+        StockPrice.ticker == ticker
+    ).order_by(desc(StockPrice.date)).first()
+    
+    if not latest_price:
+        return pd.DataFrame()
+    
+    end_date = latest_price[0]
+    # Need extra history for indicator warm-up (52 weeks for EMA + buffer)
+    start_date = end_date - timedelta(weeks=num_weeks + 60)
+    
+    # Get stock prices
+    stock_prices = db.query(StockPrice).filter(
+        StockPrice.ticker == ticker,
+        StockPrice.date >= start_date,
+        StockPrice.date <= end_date
+    ).order_by(StockPrice.date).all()
+    
+    if not stock_prices:
+        return pd.DataFrame()
+    
+    # Get benchmark prices
+    benchmark_prices = db.query(StockPrice).filter(
+        StockPrice.ticker == settings.BENCHMARK_TICKER,
+        StockPrice.date >= start_date,
+        StockPrice.date <= end_date
+    ).order_by(StockPrice.date).all()
+    
+    if not benchmark_prices:
+        return pd.DataFrame()
+    
+    # Create daily DataFrames
+    stock_df = pd.DataFrame([{
+        'date': p.date,
+        'open': p.open,
+        'high': p.high,
+        'low': p.low,
+        'close': p.close,
+        'adj_close': p.adj_close,
+        'volume': p.volume,
+    } for p in stock_prices])
+    stock_df['date'] = pd.to_datetime(stock_df['date'])
+    stock_df = stock_df.set_index('date')
+    
+    benchmark_df = pd.DataFrame([{
+        'date': p.date,
+        'benchmark_close': p.adj_close,
+    } for p in benchmark_prices])
+    benchmark_df['date'] = pd.to_datetime(benchmark_df['date'])
+    benchmark_df = benchmark_df.set_index('date')
+    
+    # Resample stock data to weekly (week ending Friday)
+    weekly_stock = stock_df.resample('W-FRI').agg({
+        'open': 'first',
+        'high': 'max',
+        'low': 'min',
+        'close': 'last',
+        'adj_close': 'last',
+        'volume': 'sum',
+    }).dropna()
+    
+    # Resample benchmark data to weekly
+    weekly_benchmark = benchmark_df.resample('W-FRI').agg({
+        'benchmark_close': 'last',
+    }).dropna()
+    
+    # Merge on date (inner join to only keep common dates)
+    df = weekly_stock.join(weekly_benchmark, how='inner')
+    
+    if df.empty:
+        return pd.DataFrame()
+    
+    # Calculate RS Line on weekly data
+    df['rs_line'] = df['adj_close'] / df['benchmark_close']
+    
+    # Calculate RS EMAs on weekly data (same numeric periods)
+    df['rs_ema_13'] = df['rs_line'].ewm(span=13, adjust=False).mean()
+    df['rs_ema_52'] = df['rs_line'].ewm(span=52, adjust=False).mean()
+    
+    # Calculate Price EMAs on weekly data
+    df['ema_10'] = df['adj_close'].ewm(span=10, adjust=False).mean()
+    df['ema_30'] = df['adj_close'].ewm(span=30, adjust=False).mean()
+    
+    # Calculate Cardwell RSI on weekly data (14-period)
+    df['rsi_14'] = _calculate_rsi(df['adj_close'], period=14)
+    
+    # Calculate RSI moving averages on weekly data
+    df['rsi_sma_9'] = df['rsi_14'].rolling(window=9).mean()
+    df['rsi_ema_45'] = df['rsi_14'].ewm(span=45, adjust=False).mean()
+    
+    # Reset index and filter to requested weeks
+    df = df.reset_index()
+    df = df.tail(num_weeks)
+    
+    # Drop the benchmark column
     df = df.drop(columns=['benchmark_close'])
     
     return df

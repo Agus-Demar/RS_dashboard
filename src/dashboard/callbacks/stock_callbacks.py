@@ -19,6 +19,7 @@ from src.services.data_service import (
     get_stock_rs_matrix_data,
     get_subindustry_info,
     get_stock_price_with_rs,
+    get_stock_price_with_rs_weekly,
 )
 from plotly.subplots import make_subplots
 
@@ -141,11 +142,15 @@ def register_stock_callbacks(app):
         Output("stock-chart-container", "style"),
         Output("stock-price-rs-chart", "figure"),
         Output("stock-chart-title", "children"),
+        Output("selected-stock-store", "data"),
         Input("stock-rs-heatmap", "clickData"),
+        Input("chart-timeframe-tabs", "active_tab"),
         State("stock-subindustry-code", "data"),
+        State("selected-stock-store", "data"),
     )
-    def show_stock_detail_panel(click_data, subindustry_code):
-        """Show price chart with RS indicator when any stock cell is clicked."""
+    def show_stock_detail_panel(click_data, timeframe, subindustry_code, stored_stock):
+        """Show price chart with RS indicator when any stock cell is clicked or timeframe changes."""
+        from dash import ctx
         
         # Hidden style for chart container
         hidden_style = {"display": "none"}
@@ -159,7 +164,36 @@ def register_stock_callbacks(app):
             font=dict(color=COLORS["text"]),
         )
         
-        if not click_data:
+        # Default timeframe if not set
+        if not timeframe:
+            timeframe = "daily"
+        
+        # Determine what triggered the callback
+        triggered_id = ctx.triggered_id if ctx.triggered_id else None
+        
+        # If tab changed, use stored stock info (if available)
+        if triggered_id == "chart-timeframe-tabs" and stored_stock:
+            ticker = stored_stock.get("ticker")
+            stock_name = stored_stock.get("stock_name")
+            week_label = stored_stock.get("week_label")
+            percentile = stored_stock.get("percentile")
+        elif click_data:
+            # New cell click
+            point = click_data['points'][0]
+            ticker = point['y']  # Stock ticker on y-axis
+            week_label = point['x']
+            percentile = point.get('z')
+            
+            # Get stock name from database
+            db = SessionLocal()
+            try:
+                from src.models import Stock
+                stock = db.query(Stock).filter(Stock.ticker == ticker).first()
+                stock_name = stock.name if stock else ticker
+            finally:
+                db.close()
+        else:
+            # No click data and no stored stock
             return (
                 html.P(
                     "Click any cell to see stock's price chart with RS indicator",
@@ -167,29 +201,33 @@ def register_stock_callbacks(app):
                 ),
                 hidden_style,
                 empty_fig,
-                ""
+                "",
+                no_update
             )
         
         try:
-            point = click_data['points'][0]
-            ticker = point['y']  # Stock ticker on y-axis
-            week_label = point['x']
-            percentile = point.get('z')
+            # Store the selected stock for tab switching
+            stock_store_data = {
+                "ticker": ticker,
+                "stock_name": stock_name,
+                "week_label": week_label,
+                "percentile": percentile,
+            }
             
-            # Get stock info and price data from database
+            # Get price data from database
             db = SessionLocal()
             try:
-                from src.models import Stock
-                stock = db.query(Stock).filter(Stock.ticker == ticker).first()
-                stock_name = stock.name if stock else ticker
-                
-                # Get price data with RS calculation
-                price_df = get_stock_price_with_rs(db, ticker, num_weeks=52)
+                # Choose data based on timeframe
+                if timeframe == "weekly":
+                    price_df = get_stock_price_with_rs_weekly(db, ticker, num_weeks=104)
+                else:
+                    price_df = get_stock_price_with_rs(db, ticker, num_weeks=52)
             finally:
                 db.close()
             
-            # Chart title
-            chart_title = f"📊 {ticker} - {stock_name} | Price & RS Indicator"
+            # Chart title with timeframe indicator
+            timeframe_label = "Weekly" if timeframe == "weekly" else "Daily"
+            chart_title = f"📊 {ticker} - {stock_name} | {timeframe_label} Price & RS Indicator"
             
             # Show week and percentile info
             strength = get_strength_label(percentile) if percentile else "N/A"
@@ -231,11 +269,11 @@ def register_stock_callbacks(app):
                     plot_bgcolor=COLORS["plot_bg"],
                     font=dict(color=COLORS["text"]),
                 )
-                return detail_card, visible_style, error_fig, chart_title
+                return detail_card, visible_style, error_fig, chart_title, stock_store_data
             
-            fig = create_price_rs_chart(price_df, ticker, stock_name)
+            fig = create_price_rs_chart(price_df, ticker, stock_name, timeframe)
             
-            return detail_card, visible_style, fig, chart_title
+            return detail_card, visible_style, fig, chart_title, stock_store_data
             
         except Exception as e:
             logger.exception(f"Error showing stock detail panel: {e}")
@@ -243,7 +281,8 @@ def register_stock_callbacks(app):
                 html.P(f"Error: {str(e)}", className="text-danger"),
                 hidden_style,
                 empty_fig,
-                ""
+                "",
+                no_update
             )
 
 
@@ -399,7 +438,7 @@ def create_stock_heatmap_figure(df: pd.DataFrame, num_weeks: int) -> go.Figure:
     return fig
 
 
-def create_price_rs_chart(df: pd.DataFrame, ticker: str, stock_name: str) -> go.Figure:
+def create_price_rs_chart(df: pd.DataFrame, ticker: str, stock_name: str, timeframe: str = "daily") -> go.Figure:
     """
     Create a Plotly figure with candlestick price chart, RS indicator, and Cardwell RSI subplots.
     
@@ -413,9 +452,10 @@ def create_price_rs_chart(df: pd.DataFrame, ticker: str, stock_name: str) -> go.
         df: DataFrame with OHLC data, RS calculations, and RSI data
         ticker: Stock ticker symbol
         stock_name: Stock company name
+        timeframe: "daily" or "weekly" - affects title and rangebreaks
     
     Returns:
-        Plotly Figure with three subplots
+        Plotly Figure with four subplots
     """
     from plotly.subplots import make_subplots
     
@@ -644,9 +684,12 @@ def create_price_rs_chart(df: pd.DataFrame, ticker: str, stock_name: str) -> go.
     # ===================
     # Layout styling
     # ===================
+    # Timeframe label for title
+    timeframe_label = "Weekly" if timeframe == "weekly" else "Daily"
+    
     fig.update_layout(
         title=dict(
-            text=f"{ticker} - {stock_name}<br><sup>Price Chart with RS & Cardwell RSI Indicators</sup>",
+            text=f"{ticker} - {stock_name}<br><sup>{timeframe_label} Price Chart with RS & Cardwell RSI Indicators</sup>",
             font=dict(size=16, color=COLORS["title"]),
             x=0.5,
             xanchor="center",
@@ -672,13 +715,13 @@ def create_price_rs_chart(df: pd.DataFrame, ticker: str, stock_name: str) -> go.
         hovermode='x unified',
     )
     
-    # Build rangebreaks for weekends and holidays/gaps
-    rangebreaks_list = [
-        dict(bounds=["sat", "mon"]),  # Hide Saturday and Sunday
-    ]
-    # Add individual date gaps (holidays, etc.) to rangebreaks
-    if date_gaps:
-        rangebreaks_list.append(dict(values=date_gaps))
+    # Build rangebreaks for weekends and holidays/gaps (only for daily charts)
+    rangebreaks_list = []
+    if timeframe == "daily":
+        rangebreaks_list.append(dict(bounds=["sat", "mon"]))  # Hide Saturday and Sunday
+        # Add individual date gaps (holidays, etc.) to rangebreaks
+        if date_gaps:
+            rangebreaks_list.append(dict(values=date_gaps))
     
     # Style all subplots
     fig.update_xaxes(

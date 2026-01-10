@@ -1,9 +1,8 @@
 """
 APScheduler configuration.
 
-Sets up scheduled jobs for:
-- Weekly RS calculation (Saturday 6 AM ET)
-- Daily price refresh (Mon-Fri 7 PM ET)
+Sets up scheduled job for:
+- Weekly data update (prices + RS calculation) - Saturday 6 AM ET
 """
 import logging
 from typing import Optional
@@ -44,39 +43,26 @@ def start_scheduler() -> None:
         logger.warning("Scheduler is already running")
         return
     
-    # Import job functions
-    from src.jobs.weekly_rs_job import run_weekly_rs_job
-    from src.jobs.daily_prices_job import run_daily_prices_job
+    # Import unified job function
+    from src.jobs.weekly_rs_job import run_weekly_data_update
     
-    # Weekly RS calculation: Saturday 6 AM ET
+    # Weekly data update (prices + RS): Saturday 6 AM ET
+    # This job:
+    # 1. Refreshes price data for the past week (fills any gaps)
+    # 2. Calculates Mansfield RS for all sub-industries
     scheduler.add_job(
-        run_weekly_rs_job,
+        run_weekly_data_update,
         trigger=CronTrigger(
             day_of_week="sat",
             hour=6,
             minute=0,
             timezone=settings.SCHEDULER_TIMEZONE
         ),
-        id="weekly_rs_calculation",
-        name="Weekly Mansfield RS Calculation",
+        id="weekly_data_update",
+        name="Weekly Data Update (Prices + RS)",
         replace_existing=True,
     )
-    logger.info("Added weekly RS job: Saturday 6 AM ET")
-    
-    # Daily price refresh: Mon-Fri 7 PM ET
-    scheduler.add_job(
-        run_daily_prices_job,
-        trigger=CronTrigger(
-            day_of_week="mon-fri",
-            hour=19,
-            minute=0,
-            timezone=settings.SCHEDULER_TIMEZONE
-        ),
-        id="daily_price_refresh",
-        name="Daily Price Data Refresh",
-        replace_existing=True,
-    )
-    logger.info("Added daily price job: Mon-Fri 7 PM ET")
+    logger.info("Added weekly data update job: Saturday 6 AM ET")
     
     # Start the scheduler
     scheduler.start()

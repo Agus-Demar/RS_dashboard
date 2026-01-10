@@ -1,8 +1,9 @@
 """
-Weekly RS calculation job.
+Weekly data update job.
 
-Runs every Saturday to calculate Mansfield RS for all sub-industries
-for the week that just ended (Friday).
+Runs every Saturday to:
+1. Refresh price data for the past week (fill any gaps)
+2. Calculate Mansfield RS for all sub-industries for the week that just ended
 """
 import logging
 from datetime import datetime, timezone
@@ -13,25 +14,25 @@ from src.services.aggregator import SubIndustryAggregator, get_last_friday
 logger = logging.getLogger(__name__)
 
 
-def run_weekly_rs_job() -> dict:
+def run_weekly_data_update() -> dict:
     """
-    Main weekly RS calculation job.
+    Unified weekly data update job.
     
-    Calculates Mansfield RS for all GICS sub-industries
-    for the most recent complete week.
+    1. First refreshes price data to fill any gaps from the past week
+    2. Then calculates Mansfield RS for all GICS sub-industries
     
     Returns:
-        Dict with job results
+        Dict with combined job results
     """
-    logger.info("=" * 50)
-    logger.info("Starting weekly RS calculation job")
-    logger.info("=" * 50)
+    logger.info("=" * 60)
+    logger.info("Starting weekly data update (prices + RS calculation)")
+    logger.info("=" * 60)
     
     db = SessionLocal()
     
     # Create job log entry
     job_log = JobLog(
-        job_name="weekly_rs_calculation",
+        job_name="weekly_data_update",
         started_at=datetime.now(timezone.utc),
         status=JobStatus.STARTED
     )
@@ -40,18 +41,40 @@ def run_weekly_rs_job() -> dict:
     
     result = {
         'success': False,
-        'records_processed': 0,
+        'prices_added': 0,
+        'stocks_updated': 0,
+        'rs_records_processed': 0,
         'error': None
     }
     
     try:
-        # Get the week to calculate
+        # Step 1: Refresh prices for the past 7 days
+        logger.info("-" * 40)
+        logger.info("Step 1: Refreshing price data...")
+        logger.info("-" * 40)
+        
+        from src.jobs.daily_prices_job import run_price_refresh_job
+        price_result = run_price_refresh_job(days_back=7, db_session=db)
+        
+        result['prices_added'] = price_result.get('prices_added', 0)
+        result['stocks_updated'] = price_result.get('stocks_updated', 0)
+        
+        if not price_result.get('success'):
+            logger.warning(f"Price refresh had issues: {price_result.get('error')}")
+            # Continue with RS calculation even if price refresh had issues
+        
+        # Step 2: Calculate RS for the last complete week
+        logger.info("-" * 40)
+        logger.info("Step 2: Calculating weekly RS...")
+        logger.info("-" * 40)
+        
         week_end = get_last_friday()
         logger.info(f"Calculating RS for week ending: {week_end}")
         
-        # Create aggregator and calculate
         aggregator = SubIndustryAggregator(db)
         records_stored = aggregator.store_weekly_rs(week_end)
+        
+        result['rs_records_processed'] = records_stored
         
         # Update job log
         job_log.status = JobStatus.SUCCESS
@@ -60,12 +83,12 @@ def run_weekly_rs_job() -> dict:
         db.commit()
         
         result['success'] = True
-        result['records_processed'] = records_stored
         
-        logger.info(f"Successfully calculated RS for {records_stored} sub-industries")
+        logger.info(f"Updated {result['stocks_updated']} stocks with {result['prices_added']} prices")
+        logger.info(f"Calculated RS for {records_stored} sub-industries")
         
     except Exception as e:
-        logger.exception(f"Weekly RS job failed: {e}")
+        logger.exception(f"Weekly data update failed: {e}")
         
         job_log.status = JobStatus.FAILED
         job_log.completed_at = datetime.now(timezone.utc)
@@ -77,11 +100,17 @@ def run_weekly_rs_job() -> dict:
     finally:
         db.close()
     
-    logger.info("=" * 50)
-    logger.info("Weekly RS job completed")
-    logger.info("=" * 50)
+    logger.info("=" * 60)
+    logger.info("Weekly data update completed")
+    logger.info("=" * 60)
     
     return result
+
+
+# Legacy function for backwards compatibility
+def run_weekly_rs_job() -> dict:
+    """Legacy function - now calls unified weekly data update."""
+    return run_weekly_data_update()
 
 
 def backfill_rs(weeks: int = 17) -> dict:

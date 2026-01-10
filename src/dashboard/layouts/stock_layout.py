@@ -210,6 +210,16 @@ def create_layout(subindustry_code: str = None):
                             id="stock-chart-title",
                             className="text-center mb-3"
                         ),
+                        # Daily/Weekly timeframe tabs
+                        dbc.Tabs(
+                            id="chart-timeframe-tabs",
+                            active_tab="daily",
+                            className="mb-3",
+                            children=[
+                                dbc.Tab(label="Daily", tab_id="daily"),
+                                dbc.Tab(label="Weekly", tab_id="weekly"),
+                            ]
+                        ),
                         dcc.Loading(
                             id="loading-stock-chart",
                             type="default",
@@ -247,6 +257,9 @@ def create_layout(subindustry_code: str = None):
                 )
             ])
         ]),
+        
+        # Hidden store for selected stock info (used for tab switching)
+        dcc.Store(id="selected-stock-store"),
         
     ], fluid=True, className="bg-dark text-light min-vh-100 pb-4")
 

@@ -1,11 +1,12 @@
 """
-Daily price refresh job.
+Price refresh job.
 
-Runs every weekday evening to fetch the latest price data
-for all tracked stocks.
+Fetches price data for all tracked stocks to fill any gaps.
+Can be run standalone or as part of the weekly data update.
 """
 import logging
 from datetime import datetime, date, timedelta, timezone
+from typing import Optional
 
 from src.config import settings
 from src.models import SessionLocal, Stock, StockPrice, JobLog, JobStatus
@@ -66,25 +67,31 @@ def _ensure_sector_etfs_exist(db):
     db.commit()
 
 
-def run_daily_prices_job() -> dict:
+def run_price_refresh_job(days_back: int = 7, db_session=None) -> dict:
     """
-    Daily price data refresh job.
+    Price data refresh job.
     
-    Fetches today's prices for all active stocks
-    and updates the database.
+    Fetches prices for the specified number of days back
+    to fill any gaps in the data.
+    
+    Args:
+        days_back: Number of days to look back for price data (default 7)
+        db_session: Optional existing database session (for use in combined jobs)
     
     Returns:
         Dict with job results
     """
     logger.info("=" * 50)
-    logger.info("Starting daily price refresh job")
+    logger.info(f"Starting price refresh job (looking back {days_back} days)")
     logger.info("=" * 50)
     
-    db = SessionLocal()
+    # Use provided session or create new one
+    own_session = db_session is None
+    db = db_session if db_session else SessionLocal()
     
     # Create job log entry
     job_log = JobLog(
-        job_name="daily_price_refresh",
+        job_name="price_refresh",
         started_at=datetime.now(timezone.utc),
         status=JobStatus.STARTED
     )
@@ -111,9 +118,9 @@ def run_daily_prices_job() -> dict:
         
         logger.info(f"Refreshing prices for {len(tickers)} stocks (including {len(SECTOR_ETF_TICKERS)} sector ETFs)")
         
-        # Fetch last 5 days of prices (to catch any missed days)
+        # Fetch prices for the specified number of days back
         end_date = date.today()
-        start_date = end_date - timedelta(days=5)
+        start_date = end_date - timedelta(days=days_back)
         
         # Batch fetch prices
         all_prices = yfinance_source.fetch_multiple_prices(
@@ -186,7 +193,7 @@ def run_daily_prices_job() -> dict:
         logger.info(f"Updated {stocks_updated} stocks with {prices_added} new price records")
         
     except Exception as e:
-        logger.exception(f"Daily price job failed: {e}")
+        logger.exception(f"Price refresh job failed: {e}")
         
         job_log.status = JobStatus.FAILED
         job_log.completed_at = datetime.now(timezone.utc)
@@ -196,11 +203,19 @@ def run_daily_prices_job() -> dict:
         result['error'] = str(e)
         
     finally:
-        db.close()
+        # Only close session if we created it
+        if own_session:
+            db.close()
     
     logger.info("=" * 50)
-    logger.info("Daily price job completed")
+    logger.info("Price refresh job completed")
     logger.info("=" * 50)
     
     return result
+
+
+# Backwards compatibility alias
+def run_daily_prices_job() -> dict:
+    """Legacy function name for backwards compatibility."""
+    return run_price_refresh_job(days_back=7)
 
