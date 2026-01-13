@@ -2,7 +2,7 @@
 Main dashboard layout.
 
 Defines the structure of the RS Dashboard including:
-- Header
+- Header with Ticker Searcher button
 - Filter controls
 - Heatmap
 - Detail panel
@@ -56,17 +56,33 @@ def create_layout():
             }
         ),
         
-        # Header
+        # Header with Ticker Searcher button
         dbc.Row([
             dbc.Col([
-                html.H1(
-                    "📊 Relative Strength Industry Dashboard",
-                    className="text-center mt-4 mb-2"
-                ),
-                html.P(
-                    "Mansfield RS by GICS Sub-Industry | Weekly Analysis",
-                    className="text-center text-muted mb-4"
-                ),
+                html.Div([
+                    # Ticker Searcher button (positioned at top right)
+                    html.A(
+                        [html.I(className="fas fa-search me-2"), "Ticker Searcher"],
+                        href="/dashboard/ticker/",
+                        className="btn btn-primary btn-sm",
+                        style={
+                            "position": "absolute",
+                            "top": "1rem",
+                            "right": "1rem",
+                            "zIndex": 10000,
+                            "textDecoration": "none"
+                        }
+                    ),
+                    
+                    html.H1(
+                        "📊 Relative Strength Industry Dashboard",
+                        className="text-center mt-4 mb-2"
+                    ),
+                    html.P(
+                        "Mansfield RS by GICS Sub-Industry | Weekly Analysis",
+                        className="text-center text-muted mb-4"
+                    ),
+                ], className="position-relative")
             ])
         ]),
         

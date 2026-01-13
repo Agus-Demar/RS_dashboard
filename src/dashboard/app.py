@@ -13,8 +13,10 @@ import dash_bootstrap_components as dbc
 
 from src.dashboard.layouts.main_layout import create_layout as create_main_layout
 from src.dashboard.layouts.stock_layout import create_layout as create_stock_layout
+from src.dashboard.layouts.ticker_layout import create_layout as create_ticker_layout
 from src.dashboard.callbacks import register_callbacks
 from src.dashboard.callbacks.stock_callbacks import register_stock_callbacks
+from src.dashboard.callbacks.ticker_callbacks import register_ticker_callbacks
 
 # Get the assets folder path relative to this file
 ASSETS_PATH = os.path.join(os.path.dirname(__file__), "assets")
@@ -80,17 +82,41 @@ def create_dash_app(server=None, routes_pathname_prefix: str = "/", requests_pat
     )
     def display_page(pathname):
         """Route to appropriate page based on URL pathname."""
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Routing pathname: {pathname}")
+        
         if pathname is None:
             return create_main_layout()
         
-        # Handle stock drilldown page: /stocks/<subindustry_code>
-        # The pathname will be relative to routes_pathname_prefix
-        stock_match = re.match(r'^/?stocks/(\d+)/?$', pathname)
+        # Normalize pathname - remove leading/trailing slashes for easier matching
+        # Also handle both with and without /dashboard prefix
+        clean_path = pathname.strip('/')
+        
+        # Remove 'dashboard' prefix if present (for mounted app)
+        if clean_path.startswith('dashboard/'):
+            clean_path = clean_path[10:]  # Remove 'dashboard/'
+        elif clean_path == 'dashboard':
+            clean_path = ''
+        
+        logger.info(f"Clean path: {clean_path}")
+        
+        # Handle stock drilldown page: stocks/<subindustry_code>
+        stock_match = re.match(r'^stocks/(\d+)$', clean_path)
         if stock_match:
             subindustry_code = stock_match.group(1)
+            logger.info(f"Routing to stock page: {subindustry_code}")
             return create_stock_layout(subindustry_code)
         
+        # Handle ticker search page: ticker/ or ticker/<ticker>
+        if clean_path == 'ticker' or clean_path.startswith('ticker/'):
+            ticker = clean_path[7:] if clean_path.startswith('ticker/') else None  # Remove 'ticker/'
+            ticker = ticker.strip('/') if ticker else None
+            logger.info(f"Routing to ticker page with ticker: {ticker}")
+            return create_ticker_layout(ticker)
+        
         # Default: main heatmap page
+        logger.info("Routing to main layout")
         return create_main_layout()
     
     # Register callbacks for main heatmap
@@ -98,6 +124,9 @@ def create_dash_app(server=None, routes_pathname_prefix: str = "/", requests_pat
     
     # Register callbacks for stock drilldown page
     register_stock_callbacks(app)
+    
+    # Register callbacks for ticker search page
+    register_ticker_callbacks(app)
     
     return app
 
