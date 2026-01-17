@@ -42,6 +42,7 @@ class SubIndustryETF(NamedTuple):
     alt_etf: Optional[str]       # Alternative ETF (if available)
     index_name: str              # Related index name
     is_sector_fallback: bool = False  # True if using broad sector ETF
+    stockcharts_index: Optional[str] = None  # StockCharts $DJUS industry index symbol
 
 
 # =============================================================================
@@ -76,7 +77,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_name="Energy",
         primary_etf="XES",      # SPDR S&P Oil & Gas Equipment & Services
         alt_etf="IEZ",          # iShares U.S. Oil Equipment & Services
-        index_name="S&P Oil & Gas Equipment & Services Select Industry Index"
+        index_name="S&P Oil & Gas Equipment & Services Select Industry Index",
+        stockcharts_index="$DJUSOI"  # Dow Jones US Oil Equipment & Services
     ),
     
     # Industry 101020: Oil, Gas & Consumable Fuels
@@ -89,7 +91,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_name="Energy",
         primary_etf="IEO",      # iShares U.S. Oil & Gas Exploration & Production
         alt_etf="VDE",
-        index_name="Dow Jones U.S. Select Oil Exploration & Production Index"
+        index_name="Dow Jones U.S. Select Oil Exploration & Production Index",
+        stockcharts_index="$DJUSOL"  # Dow Jones US Integrated Oil & Gas
     ),
     "10102020": SubIndustryETF(
         code="10102020",
@@ -100,7 +103,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_name="Energy",
         primary_etf="XOP",      # SPDR S&P Oil & Gas E&P - highly specific
         alt_etf="FCG",          # First Trust Natural Gas
-        index_name="S&P Oil & Gas Exploration & Production Select Industry Index"
+        index_name="S&P Oil & Gas Exploration & Production Select Industry Index",
+        stockcharts_index="$DJUSOS"  # Dow Jones US Oil & Gas Producers
     ),
     "10102030": SubIndustryETF(
         code="10102030",
@@ -122,7 +126,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_name="Energy",
         primary_etf="IBAT",     # Alerian MLP ETF - specific to midstream
         alt_etf="AMLP",
-        index_name="Alerian MLP Index"
+        index_name="Alerian MLP Index",
+        stockcharts_index="$DJUSPL"  # Dow Jones US Pipelines
     ),
     "10102050": SubIndustryETF(
         code="10102050",
@@ -148,7 +153,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Chemicals",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="LIT",      # Global X Lithium & Battery Tech - specific commodity
+        primary_etf="NQUSB5520",      # Global X Lithium & Battery Tech - specific commodity
         alt_etf="VAW",
         index_name="Solactive Global Lithium Index"
     ),
@@ -388,7 +393,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Electrical Equipment",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="GRID",     # First Trust NASDAQ Clean Edge Smart Grid
+        primary_etf="NQUSB50202010",     # First Trust NASDAQ Clean Edge Smart Grid
         alt_etf="QCLN",
         index_name="NASDAQ OMX Clean Edge Smart Grid Infrastructure Index"
     ),
@@ -425,7 +430,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Machinery",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="VIS",     # Global X U.S. Infrastructure Development
+        primary_etf="NQUSB50204020",     # Global X U.S. Infrastructure Development
         alt_etf="VIS",
         index_name="Indxx U.S. Infrastructure Development Index"
     ),
@@ -436,7 +441,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Machinery",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="VEGI",      # VanEck Agribusiness
+        primary_etf="NQUSB50204010",      # VanEck Agribusiness
         alt_etf="VEGI",
         index_name="MVIS Global Agribusiness Index"
     ),
@@ -447,7 +452,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Machinery",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="FIW",      # First Trust Water ETF (water machinery)
+        primary_etf="NQUSB50204000",      # First Trust Water ETF (water machinery)
         alt_etf="VIS",
         index_name="ISE Clean Edge Water Index"
     ),
@@ -460,7 +465,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Trading Companies & Distributors",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="PSCI",     # Invesco S&P SmallCap Industrials ETF
+        primary_etf="WEGMLS4",     # Invesco S&P SmallCap Industrials ETF
         alt_etf="VIS",          # Vanguard Industrials ETF
         index_name="S&P SmallCap 600 Capped Industrials Index"
     ),
@@ -473,7 +478,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Commercial Services & Supplies",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="PBS",      # Invesco Dynamic Media - covers printing/media
+        primary_etf="NQUSB50205030",      # Invesco Dynamic Media - covers printing/media
         alt_etf="VIS",
         index_name="Dynamic Media Intellidex Index"
     ),
@@ -495,7 +500,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Commercial Services & Supplies",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="PRNT",     # 3D Printing ETF - includes office equipment
+        primary_etf="NQUSB50205020",     # 3D Printing ETF - includes office equipment
         alt_etf="VIS",
         index_name="The 3D Printing Index"
     ),
@@ -506,7 +511,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Commercial Services & Supplies",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="SRVR",     # Pacer Data & Infrastructure Real Estate
+        primary_etf="NQUSB502050",     # Pacer Data & Infrastructure Real Estate
         alt_etf="VIS",          # Vanguard Industrials ETF
         index_name="Benchmark Data & Infrastructure Real Estate SCTR Index"
     ),
@@ -517,7 +522,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Commercial Services & Supplies",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="CIBR",     # First Trust NASDAQ Cybersecurity
+        primary_etf="NQUSB50205040",     # First Trust NASDAQ Cybersecurity
         alt_etf="HACK",
         index_name="Nasdaq CTA Cybersecurity Index"
     ),
@@ -1232,7 +1237,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_name="Health Care",
         primary_etf="XBI",      # SPDR S&P Biotech - highly specific
         alt_etf="IBB",
-        index_name="S&P Biotechnology Select Industry Index"
+        index_name="S&P Biotechnology Select Industry Index",
+        stockcharts_index="$DJUSBT"  # Dow Jones US Biotechnology
     ),
     
     # Industry 352020: Pharmaceuticals
@@ -1245,7 +1251,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_name="Health Care",
         primary_etf="XPH",      # SPDR S&P Pharmaceuticals
         alt_etf="IHE",          # iShares U.S. Pharmaceuticals
-        index_name="S&P Pharmaceuticals Select Industry Index"
+        index_name="S&P Pharmaceuticals Select Industry Index",
+        stockcharts_index="$DJUSPR"  # Dow Jones US Pharmaceuticals
     ),
     
     # Industry 352030: Life Sciences Tools & Services
@@ -1275,7 +1282,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_name="Financials",
         primary_etf="KBE",      # SPDR S&P Bank - highly specific
         alt_etf="IAT",
-        index_name="S&P Banks Select Industry Index"
+        index_name="S&P Banks Select Industry Index",
+        stockcharts_index="$DJUSBK"  # Dow Jones US Banks
     ),
     "40101015": SubIndustryETF(
         code="40101015",
@@ -1631,7 +1639,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_name="Information Technology",
         primary_etf="SMH",      # VanEck Semiconductor - highly specific
         alt_etf="SOXX",         # iShares Semiconductor
-        index_name="MVIS US Listed Semiconductor 25 Index"
+        index_name="MVIS US Listed Semiconductor 25 Index",
+        stockcharts_index="$DJUSSC"  # Dow Jones US Semiconductors
     ),
     
     # =========================================================================

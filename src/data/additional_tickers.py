@@ -743,12 +743,1214 @@ TARGETED_SUBINDUSTRY_STOCKS = {
     ],
     
     "Timber REITs": [
-        # Note: Removed LPX, BCC → Forest Products (manufacturers, not REITs)
         "WY",    # Weyerhaeuser Company - timber REIT
         "RYN",   # Rayonier Inc - timber REIT
         "PCH",   # PotlatchDeltic Corporation - timber REIT
         "CUT",   # Invesco MSCI Global Timber ETF
         "PLTK",  # Pope Resources - timber
+    ],
+    
+    # === NEW SUB-INDUSTRIES FROM STOCKCHARTS DRILL-DOWN ===
+    
+    # Energy Sector Sub-Industries
+    "Integrated Oil & Gas": [
+        "XOM",   # Exxon Mobil Corporation
+        "CVX",   # Chevron Corporation
+        "COP",   # ConocoPhillips
+        "OXY",   # Occidental Petroleum
+        "HES",   # Hess Corporation
+        "MPC",   # Marathon Petroleum
+        "VLO",   # Valero Energy
+        "PSX",   # Phillips 66
+    ],
+    
+    "Oil & Gas Exploration & Production": [
+        "EOG",   # EOG Resources
+        "PXD",   # Pioneer Natural Resources
+        "DVN",   # Devon Energy
+        "FANG",  # Diamondback Energy
+        "APA",   # APA Corporation
+        "CTRA",  # Coterra Energy
+        "MRO",   # Marathon Oil
+        "EQT",   # EQT Corporation
+        "OVV",   # Ovintiv Inc
+        "CHRD",  # Chord Energy
+        "MTDR",  # Matador Resources
+        "PR",    # Permian Resources
+        "TPL",   # Texas Pacific Land
+        "MGY",   # Magnolia Oil & Gas
+        "SM",    # SM Energy
+    ],
+    
+    "Oil & Gas Refining & Marketing": [
+        "VLO",   # Valero Energy
+        "MPC",   # Marathon Petroleum
+        "PSX",   # Phillips 66
+        "DK",    # Delek US Holdings
+        "PBF",   # PBF Energy
+        "HFC",   # HollyFrontier
+        "CVI",   # CVR Energy
+        "DINO",  # HF Sinclair
+        "PARR",  # Par Pacific Holdings
+    ],
+    
+    "Oil & Gas Storage & Transportation": [
+        "WMB",   # Williams Companies
+        "KMI",   # Kinder Morgan
+        "OKE",   # ONEOK Inc
+        "TRGP",  # Targa Resources
+        "ET",    # Energy Transfer
+        "EPD",   # Enterprise Products Partners
+        "MPLX",  # MPLX LP
+        "PAA",   # Plains All American
+        "LNG",   # Cheniere Energy
+        "DTM",   # DT Midstream
+    ],
+    
+    "Oil & Gas Equipment & Services": [
+        "SLB",   # Schlumberger
+        "HAL",   # Halliburton
+        "BKR",   # Baker Hughes
+        "NOV",   # NOV Inc
+        "FTI",   # TechnipFMC
+        "CHX",   # ChampionX Corporation
+        "WHD",   # Cactus Inc
+        "LBRT",  # Liberty Energy
+        "HP",    # Helmerich & Payne
+        "RIG",   # Transocean
+    ],
+    
+    # Materials Sector Sub-Industries
+    "Construction Materials": [
+        "VMC",   # Vulcan Materials
+        "MLM",   # Martin Marietta Materials
+        "CRH",   # CRH plc
+        "EXP",   # Eagle Materials
+        "SUM",   # Summit Materials
+        "USLM",  # United States Lime
+    ],
+    
+    "Diversified Chemicals": [
+        "DD",    # DuPont de Nemours
+        "EMN",   # Eastman Chemical
+        "CE",    # Celanese
+        "HUN",   # Huntsman Corporation
+        "AXTA",  # Axalta Coating Systems
+        "AVNT",  # Avient Corporation
+    ],
+    
+    "Specialty Chemicals": [
+        "SHW",   # Sherwin-Williams
+        "ECL",   # Ecolab
+        "PPG",   # PPG Industries
+        "IFF",   # International Flavors & Fragrances
+        "ALB",   # Albemarle Corporation
+        "RPM",   # RPM International
+        "FUL",   # H.B. Fuller
+        "ASH",   # Ashland Global Holdings
+    ],
+    
+    "Fertilizers & Agricultural Chemicals": [
+        "NTR",   # Nutrien Ltd
+        "CF",    # CF Industries
+        "MOS",   # The Mosaic Company
+        "FMC",   # FMC Corporation
+        "CTVA",  # Corteva Inc
+        "SMG",   # The Scotts Miracle-Gro
+        "ICL",   # ICL Group
+    ],
+    
+    "Diversified Metals & Mining": [
+        "FCX",   # Freeport-McMoRan
+        "NUE",   # Nucor Corporation
+        "CLF",   # Cleveland-Cliffs
+        "STLD",  # Steel Dynamics
+        "RS",    # Reliance Steel
+        "CMC",   # Commercial Metals
+        "ATI",   # ATI Inc
+        "X",     # United States Steel
+    ],
+    
+    "Gold": [
+        "NEM",   # Newmont Corporation
+        "GOLD",  # Barrick Gold
+        "FNV",   # Franco-Nevada
+        "WPM",   # Wheaton Precious Metals
+        "RGLD",  # Royal Gold
+        "AEM",   # Agnico Eagle Mines
+        "KGC",   # Kinross Gold
+    ],
+    
+    "Metal, Glass & Plastic Containers": [
+        "BLL",   # Ball Corporation
+        "CCK",   # Crown Holdings
+        "AMCR",  # Amcor plc
+        "BERY",  # Berry Global
+        "SEE",   # Sealed Air Corporation
+        "ATR",   # AptarGroup
+        "SON",   # Sonoco Products
+    ],
+    
+    # Industrials Sector Sub-Industries
+    "Aerospace & Defense": [
+        "RTX",   # RTX Corporation
+        "BA",    # Boeing Company
+        "LMT",   # Lockheed Martin
+        "NOC",   # Northrop Grumman
+        "GD",    # General Dynamics
+        "LHX",   # L3Harris Technologies
+        "TDG",   # TransDigm Group
+        "HWM",   # Howmet Aerospace
+        "TXT",   # Textron
+        "HII",   # Huntington Ingalls
+        "AXON",  # Axon Enterprise
+    ],
+    
+    "Building Products": [
+        "JCI",   # Johnson Controls
+        "TT",    # Trane Technologies
+        "CARR",  # Carrier Global
+        "MAS",   # Masco Corporation
+        "LII",   # Lennox International
+        "AOS",   # A. O. Smith
+        "FBHS",  # Fortune Brands
+        "AWI",   # Armstrong World Industries
+    ],
+    
+    "Construction & Engineering": [
+        "ACM",   # AECOM
+        "PWR",   # Quanta Services
+        "EME",   # EMCOR Group
+        "FLR",   # Fluor Corporation
+        "MTZ",   # MasTec Inc
+        "J",     # Jacobs Solutions
+        "DY",    # Dycom Industries
+        "STRL",  # Sterling Infrastructure
+    ],
+    
+    "Electrical Components & Equipment": [
+        "ETN",   # Eaton Corporation
+        "EMR",   # Emerson Electric
+        "GNRC",  # Generac Holdings
+        "HUBB",  # Hubbell Incorporated
+        "AYI",   # Acuity Brands
+        "NVT",   # nVent Electric
+        "VRT",   # Vertiv Holdings
+    ],
+    
+    "Industrial Conglomerates": [
+        "HON",   # Honeywell International
+        "MMM",   # 3M Company
+        "GE",    # GE Aerospace
+        "ROP",   # Roper Technologies
+        "ITW",   # Illinois Tool Works
+    ],
+    
+    "Construction Machinery & Heavy Transportation Equipment": [
+        "CAT",   # Caterpillar
+        "DE",    # Deere & Company
+        "PCAR",  # PACCAR
+        "CMI",   # Cummins Inc
+        "OSK",   # Oshkosh Corporation
+        "TEX",   # Terex Corporation
+    ],
+    
+    "Industrial Machinery & Supplies & Components": [
+        "DOV",   # Dover Corporation
+        "ITT",   # ITT Inc
+        "PH",    # Parker-Hannifin
+        "IR",    # Ingersoll Rand
+        "XYL",   # Xylem Inc
+        "IEX",   # IDEX Corporation
+        "NDSN",  # Nordson Corporation
+        "FLS",   # Flowserve Corporation
+    ],
+    
+    "Trading Companies & Distributors": [
+        "FAST",  # Fastenal Company
+        "GWW",   # W.W. Grainger
+        "WSO",   # Watsco Inc
+        "SITE",  # SiteOne Landscape
+        "MSM",   # MSC Industrial Direct
+        "AIT",   # Applied Industrial Technologies
+    ],
+    
+    "Environmental & Facilities Services": [
+        "WM",    # Waste Management
+        "RSG",   # Republic Services
+        "WCN",   # Waste Connections
+        "CTAS",  # Cintas Corporation
+        "CLH",   # Clean Harbors
+        "CWST",  # Casella Waste Systems
+        "ABM",   # ABM Industries
+    ],
+    
+    "Human Resource & Employment Services": [
+        "ADP",   # Automatic Data Processing
+        "PAYX",  # Paychex
+        "DAY",   # Dayforce Inc
+        "RHI",   # Robert Half
+        "MAN",   # ManpowerGroup
+        "KFRC",  # Kforce Inc
+        "TBI",   # TrueBlue Inc
+    ],
+    
+    "Research & Consulting Services": [
+        "VRSK",  # Verisk Analytics
+        "INFO",  # IHS Markit
+        "FTV",   # Fortive Corporation
+        "BR",    # Broadridge Financial
+        "EXPO",  # Exponent Inc
+        "FCN",   # FTI Consulting
+        "HURN",  # Huron Consulting
+    ],
+    
+    "Air Freight & Logistics": [
+        "FDX",   # FedEx Corporation
+        "UPS",   # United Parcel Service
+        "EXPD",  # Expeditors International
+        "CHRW",  # C.H. Robinson
+        "XPO",   # XPO Inc
+        "GXO",   # GXO Logistics
+    ],
+    
+    "Passenger Airlines": [
+        "DAL",   # Delta Air Lines
+        "UAL",   # United Airlines
+        "LUV",   # Southwest Airlines
+        "AAL",   # American Airlines
+        "ALK",   # Alaska Air Group
+        "JBLU",  # JetBlue Airways
+    ],
+    
+    "Rail Transportation": [
+        "UNP",   # Union Pacific
+        "CSX",   # CSX Corporation
+        "NSC",   # Norfolk Southern
+        "CP",    # Canadian Pacific
+        "CNI",   # Canadian National Railway
+    ],
+    
+    "Cargo Ground Transportation": [
+        "ODFL",  # Old Dominion Freight Line
+        "JBHT",  # J.B. Hunt Transport
+        "SAIA",  # Saia Inc
+        "WERN",  # Werner Enterprises
+        "SNDR",  # Schneider National
+        "KNX",   # Knight-Swift
+        "LSTR",  # Landstar System
+    ],
+    
+    # Consumer Discretionary Sub-Industries
+    "Automobile Manufacturers": [
+        "TSLA",  # Tesla Inc
+        "GM",    # General Motors
+        "F",     # Ford Motor
+        "RIVN",  # Rivian Automotive
+        "LCID",  # Lucid Group
+        "NIO",   # NIO Inc
+    ],
+    
+    "Automotive Parts & Equipment": [
+        "APTV",  # Aptiv PLC
+        "BWA",   # BorgWarner
+        "LEA",   # Lear Corporation
+        "MGA",   # Magna International
+        "ALV",   # Autoliv Inc
+        "GNTX",  # Gentex Corporation
+        "VC",    # Visteon Corporation
+    ],
+    
+    "Homebuilding": [
+        "DHI",   # D.R. Horton
+        "LEN",   # Lennar Corporation
+        "PHM",   # PulteGroup
+        "NVR",   # NVR Inc
+        "TOL",   # Toll Brothers
+        "KBH",   # KB Home
+        "TMHC",  # Taylor Morrison
+        "MHO",   # M/I Homes
+        "MTH",   # Meritage Homes
+    ],
+    
+    "Home Furnishings": [
+        "WSM",   # Williams-Sonoma
+        "MHK",   # Mohawk Industries
+        "LEG",   # Leggett & Platt
+        "SNBR",  # Sleep Number
+        "TPX",   # Tempur Sealy
+        "LOVE",  # Lovesac Company
+        "ARHS",  # Arhaus Inc
+    ],
+    
+    "Leisure Products": [
+        "HAS",   # Hasbro
+        "POOL",  # Pool Corporation
+        "YETI",  # YETI Holdings
+        "BC",    # Brunswick Corporation
+        "PTON",  # Peloton Interactive
+        "MAT",   # Mattel
+    ],
+    
+    "Apparel, Accessories & Luxury Goods": [
+        "NKE",   # Nike Inc
+        "LULU",  # Lululemon Athletica
+        "TPR",   # Tapestry Inc
+        "VFC",   # VF Corporation
+        "PVH",   # PVH Corp
+        "RL",    # Ralph Lauren
+        "CPRI",  # Capri Holdings
+        "HBI",   # Hanesbrands
+    ],
+    
+    "Footwear": [
+        # NKE removed - primary classification is Apparel, Accessories & Luxury Goods
+        "DECK",  # Deckers Outdoor
+        "CROX",  # Crocs Inc
+        "SKX",   # Skechers USA
+        "ONON",  # On Holding
+        "SHOO",  # Steven Madden
+        "WWW",   # Wolverine World Wide
+    ],
+    
+    "Casinos & Gaming": [
+        "LVS",   # Las Vegas Sands
+        "WYNN",  # Wynn Resorts
+        "MGM",   # MGM Resorts
+        "CZR",   # Caesars Entertainment
+        "PENN",  # Penn Entertainment
+        "DKNG",  # DraftKings
+        "BYD",   # Boyd Gaming
+        "MLCO",  # Melco Resorts
+    ],
+    
+    "Hotels, Resorts & Cruise Lines": [
+        "MAR",   # Marriott International
+        "HLT",   # Hilton Worldwide
+        "H",     # Hyatt Hotels
+        "WH",    # Wyndham Hotels
+        "CCL",   # Carnival Corporation
+        "RCL",   # Royal Caribbean
+        "NCLH",  # Norwegian Cruise Line
+        "ABNB",  # Airbnb Inc
+        "BKNG",  # Booking Holdings
+    ],
+    
+    "Restaurants": [
+        "MCD",   # McDonald's
+        "SBUX",  # Starbucks
+        "CMG",   # Chipotle Mexican Grill
+        "YUM",   # Yum! Brands
+        "DPZ",   # Domino's Pizza
+        "DRI",   # Darden Restaurants
+        "TXRH",  # Texas Roadhouse
+        "WING",  # Wingstop
+        "CAVA",  # CAVA Group
+    ],
+    
+    "Education Services": [
+        "LOPE",  # Grand Canyon Education
+        "LRN",   # Stride Inc
+        "DUOL",  # Duolingo
+        "CHGG",  # Chegg Inc
+        "COUR",  # Coursera
+        "UDMY",  # Udemy Inc
+        "STRA",  # Strategic Education
+    ],
+    
+    "Specialized Consumer Services": [
+        "DASH",  # DoorDash
+        "UBER",  # Uber Technologies
+        "LYFT",  # Lyft Inc
+        # ABNB removed - primary classification is Hotels, Resorts & Cruise Lines
+        "EXPE",  # Expedia Group
+        # BKNG removed - primary classification is Hotels, Resorts & Cruise Lines
+    ],
+    
+    "Broadline Retail": [
+        "AMZN",  # Amazon.com
+        "EBAY",  # eBay Inc
+        "ETSY",  # Etsy Inc
+        "W",     # Wayfair
+        "SHOP",  # Shopify
+    ],
+    
+    "Apparel Retail": [
+        "TJX",   # TJX Companies
+        "ROST",  # Ross Stores
+        "BURL",  # Burlington Stores
+        "GPS",   # Gap Inc
+        "AEO",   # American Eagle
+        "ANF",   # Abercrombie & Fitch
+    ],
+    
+    "Home Improvement Retail": [
+        "HD",    # Home Depot
+        "LOW",   # Lowe's Companies
+        "FND",   # Floor & Decor
+        "TSCO",  # Tractor Supply
+    ],
+    
+    "Automotive Retail": [
+        "AZO",   # AutoZone
+        "ORLY",  # O'Reilly Automotive
+        "GPC",   # Genuine Parts
+        "AAP",   # Advance Auto Parts
+        "KMX",   # CarMax
+        "AN",    # AutoNation
+        "LAD",   # Lithia Motors
+        "CVNA",  # Carvana
+    ],
+    
+    "Other Specialty Retail": [
+        "ULTA",  # Ulta Beauty
+        "BBY",   # Best Buy
+        "DKS",   # Dick's Sporting Goods
+        "FIVE",  # Five Below
+        "OLLI",  # Ollie's Bargain Outlet
+        # WSM removed - primary classification is Home Furnishings
+        "RH",    # RH (Restoration Hardware)
+    ],
+    
+    "Distributors": [
+        # GPC removed - primary classification is Automotive Retail
+        # POOL removed - primary classification is Leisure Products
+        "LKQ",   # LKQ Corporation
+        # SITE removed - primary classification is Trading Companies & Distributors
+        # FAST removed - primary classification is Trading Companies & Distributors
+        "WESCO", # WESCO International
+        "DNOW",  # DNOW Inc
+    ],
+    
+    # Consumer Staples Sub-Industries
+    "Packaged Foods & Meats": [
+        "GIS",   # General Mills
+        "K",     # Kellanova
+        "CAG",   # Conagra Brands
+        "SJM",   # J.M. Smucker
+        "CPB",   # Campbell Soup
+        "HRL",   # Hormel Foods
+        "TSN",   # Tyson Foods
+        "KHC",   # Kraft Heinz
+        "HSY",   # Hershey Company
+        "MKC",   # McCormick & Company
+        "MDLZ",  # Mondelez International
+    ],
+    
+    "Soft Drinks & Non-alcoholic Beverages": [
+        "KO",    # Coca-Cola Company
+        "PEP",   # PepsiCo Inc
+        "MNST",  # Monster Beverage
+        "KDP",   # Keurig Dr Pepper
+        "CELH",  # Celsius Holdings
+    ],
+    
+    "Distillers & Vintners": [
+        "STZ",   # Constellation Brands
+        "BF.B",  # Brown-Forman
+        "DEO",   # Diageo plc
+        "SAM",   # Boston Beer Company
+        "TAP",   # Molson Coors Beverage
+        "BUD",   # Anheuser-Busch InBev
+    ],
+    
+    "Agricultural Products & Services": [
+        "ADM",   # Archer-Daniels-Midland
+        "BG",    # Bunge Global
+        "INGR",  # Ingredion
+        "DAR",   # Darling Ingredients
+        "CALM",  # Cal-Maine Foods
+    ],
+    
+    "Household Products": [
+        "PG",    # Procter & Gamble
+        "CL",    # Colgate-Palmolive
+        "CHD",   # Church & Dwight
+        "CLX",   # Clorox Company
+        "KMB",   # Kimberly-Clark
+        "SPB",   # Spectrum Brands
+        "ENR",   # Energizer Holdings
+    ],
+    
+    "Personal Care Products": [
+        "EL",    # Estee Lauder
+        "COTY",  # Coty Inc
+        "ELF",   # e.l.f. Beauty
+        "ULTA",  # Ulta Beauty
+        "OLPX",  # Olaplex Holdings
+    ],
+    
+    "Tobacco": [
+        "PM",    # Philip Morris International
+        "MO",    # Altria Group
+        "BTI",   # British American Tobacco
+        "TPB",   # Turning Point Brands
+    ],
+    
+    "Consumer Staples Merchandise Retail": [
+        "WMT",   # Walmart
+        "COST",  # Costco Wholesale
+        "TGT",   # Target Corporation
+        "DG",    # Dollar General
+        "DLTR",  # Dollar Tree
+        "BJ",    # BJ's Wholesale Club
+    ],
+    
+    "Drug Retail": [
+        "WBA",   # Walgreens Boots Alliance
+        "CVS",   # CVS Health
+        "RAD",   # Rite Aid
+    ],
+    
+    "Food Retail": [
+        "KR",    # Kroger Company
+        "ACI",   # Albertsons Companies
+        "SFM",   # Sprouts Farmers Market
+        "GO",    # Grocery Outlet
+    ],
+    
+    "Food Distributors": [
+        "SYY",   # Sysco Corporation
+        "USFD",  # US Foods Holding
+        "PFGC",  # Performance Food Group
+        "UNFI",  # United Natural Foods
+        "SPTN",  # SpartanNash
+    ],
+    
+    # Health Care Sub-Industries  
+    "Biotechnology": [
+        "ABBV",  # AbbVie Inc
+        "AMGN",  # Amgen Inc
+        "GILD",  # Gilead Sciences
+        "VRTX",  # Vertex Pharmaceuticals
+        "REGN",  # Regeneron Pharmaceuticals
+        "BIIB",  # Biogen Inc
+        "MRNA",  # Moderna Inc
+        "ALNY",  # Alnylam Pharmaceuticals
+        "SGEN",  # Seagen Inc
+        "INCY",  # Incyte Corporation
+        "BMRN",  # BioMarin Pharmaceutical
+    ],
+    
+    "Pharmaceuticals": [
+        "JNJ",   # Johnson & Johnson
+        "PFE",   # Pfizer Inc
+        "LLY",   # Eli Lilly
+        "MRK",   # Merck & Co
+        "BMY",   # Bristol-Myers Squibb
+        "ZTS",   # Zoetis Inc
+        "VTRS",  # Viatris Inc
+        "TEVA",  # Teva Pharmaceutical
+        "CTLT",  # Catalent Inc
+    ],
+    
+    "Health Care Equipment": [
+        "ABT",   # Abbott Laboratories
+        "MDT",   # Medtronic
+        "SYK",   # Stryker Corporation
+        "BSX",   # Boston Scientific
+        "ISRG",  # Intuitive Surgical
+        "EW",    # Edwards Lifesciences
+        "ZBH",   # Zimmer Biomet
+        "DXCM",  # Dexcom Inc
+        "ALGN",  # Align Technology
+        "RMD",   # ResMed Inc
+        "HOLX",  # Hologic Inc
+        "TFX",   # Teleflex
+        "PODD",  # Insulet Corporation
+    ],
+    
+    "Health Care Supplies": [
+        "COO",   # Cooper Companies
+        "WST",   # West Pharmaceutical
+        "BIO",   # Bio-Rad Laboratories
+        "HSIC",  # Henry Schein
+    ],
+    
+    "Health Care Distributors": [
+        "MCK",   # McKesson Corporation
+        "CAH",   # Cardinal Health
+        "COR",   # Cencora Inc
+        "HSIC",  # Henry Schein
+    ],
+    
+    "Health Care Services": [
+        "CVS",   # CVS Health
+        "CI",    # The Cigna Group
+        "DGX",   # Quest Diagnostics
+        "LH",    # Labcorp Holdings
+        "DVA",   # DaVita Inc
+        "GEHC",  # GE HealthCare
+    ],
+    
+    "Health Care Facilities": [
+        "HCA",   # HCA Healthcare
+        "UHS",   # Universal Health Services
+        "THC",   # Tenet Healthcare
+        "ACHC",  # Acadia Healthcare
+        "SEM",   # Select Medical Holdings
+    ],
+    
+    "Managed Health Care": [
+        "UNH",   # UnitedHealth Group
+        "ELV",   # Elevance Health
+        "HUM",   # Humana Inc
+        "CNC",   # Centene Corporation
+        "MOH",   # Molina Healthcare
+        "CI",    # The Cigna Group
+    ],
+    
+    "Life Sciences Tools & Services": [
+        "TMO",   # Thermo Fisher Scientific
+        "DHR",   # Danaher Corporation
+        "A",     # Agilent Technologies
+        "IQV",   # IQVIA Holdings
+        "MTD",   # Mettler-Toledo
+        "WAT",   # Waters Corporation
+        "CRL",   # Charles River Laboratories
+        "PKI",   # Revvity Inc
+        "TECH",  # Bio-Techne
+        "ILMN",  # Illumina Inc
+    ],
+    
+    "Health Care Technology": [
+        "VEEV",  # Veeva Systems
+        "HCAT",  # Health Catalyst
+        "DOCS",  # Doximity Inc
+        "TDOC",  # Teladoc Health
+        "AMWL",  # Amwell
+        "GDRX",  # GoodRx Holdings
+    ],
+    
+    # Financials Sub-Industries
+    "Diversified Banks": [
+        "JPM",   # JPMorgan Chase
+        "BAC",   # Bank of America
+        "WFC",   # Wells Fargo
+        "C",     # Citigroup
+        "USB",   # U.S. Bancorp
+        "PNC",   # PNC Financial
+        "TFC",   # Truist Financial
+        "MTB",   # M&T Bank
+    ],
+    
+    "Regional Banks": [
+        "FITB",  # Fifth Third Bancorp
+        "RF",    # Regions Financial
+        "HBAN",  # Huntington Bancshares
+        "CFG",   # Citizens Financial
+        "KEY",   # KeyCorp
+        "CMA",   # Comerica
+        "ZION",  # Zions Bancorporation
+        "FHN",   # First Horizon
+        "EWBC",  # East West Bancorp
+        "WAL",   # Western Alliance
+        "FCNCA", # First Citizens BancShares
+    ],
+    
+    "Investment Banking & Brokerage": [
+        "GS",    # Goldman Sachs
+        "MS",    # Morgan Stanley
+        "SCHW",  # Charles Schwab
+        "RJF",   # Raymond James
+        "IBKR",  # Interactive Brokers
+        "JEF",   # Jefferies Financial
+        "LPL",   # LPL Financial
+        "LPLA",  # LPL Financial Holdings
+    ],
+    
+    "Asset Management & Custody Banks": [
+        "BLK",   # BlackRock
+        "TROW",  # T. Rowe Price
+        "BEN",   # Franklin Resources
+        "IVZ",   # Invesco Ltd
+        "BK",    # Bank of New York Mellon
+        "STT",   # State Street
+        "NTRS",  # Northern Trust
+        "SEIC",  # SEI Investments
+        "AMG",   # Affiliated Managers
+    ],
+    
+    "Financial Exchanges & Data": [
+        "CME",   # CME Group
+        "ICE",   # Intercontinental Exchange
+        "NDAQ",  # Nasdaq Inc
+        "CBOE",  # Cboe Global Markets
+        "SPGI",  # S&P Global
+        "MSCI",  # MSCI Inc
+        "MCO",   # Moody's Corporation
+        "MKTX",  # MarketAxess
+        "FDS",   # FactSet Research
+    ],
+    
+    "Consumer Finance": [
+        "COF",   # Capital One
+        "AXP",   # American Express
+        "DFS",   # Discover Financial
+        "SYF",   # Synchrony Financial
+        "ALLY",  # Ally Financial
+        "OMF",   # OneMain Holdings
+        "SLM",   # SLM Corporation
+    ],
+    
+    "Transaction & Payment Processing Services": [
+        "V",     # Visa Inc
+        "MA",    # Mastercard
+        "PYPL",  # PayPal Holdings
+        "FIS",   # Fidelity National
+        "FISV",  # Fiserv Inc
+        "GPN",   # Global Payments
+        "SQ",    # Block Inc
+        "AFRM",  # Affirm Holdings
+    ],
+    
+    "Property & Casualty Insurance": [
+        "PGR",   # Progressive Corporation
+        "ALL",   # Allstate Corporation
+        "TRV",   # Travelers Companies
+        "CB",    # Chubb Limited
+        "AIG",   # American International Group
+        "WRB",   # W. R. Berkley
+        "CNA",   # CNA Financial
+        "CINF",  # Cincinnati Financial
+    ],
+    
+    "Life & Health Insurance": [
+        "AFL",   # Aflac
+        "MET",   # MetLife
+        "PRU",   # Prudential Financial
+        "LNC",   # Lincoln National
+        "PFG",   # Principal Financial
+        "GL",    # Globe Life
+        "VOYA",  # Voya Financial
+    ],
+    
+    "Insurance Brokers": [
+        "MMC",   # Marsh & McLennan
+        "AON",   # Aon plc
+        "WTW",   # Willis Towers Watson
+        "AJG",   # Arthur J. Gallagher
+        "BRO",   # Brown & Brown
+        "RYAN",  # Ryan Specialty
+    ],
+    
+    "Reinsurance": [
+        "RNR",   # RenaissanceRe Holdings
+        "ACGL",  # Arch Capital Group
+        "EG",    # Everest Group
+        "RE",    # Everest Re Group
+    ],
+    
+    # Information Technology Sub-Industries
+    "Application Software": [
+        "MSFT",  # Microsoft
+        "CRM",   # Salesforce
+        "ADBE",  # Adobe Inc
+        "INTU",  # Intuit Inc
+        "NOW",   # ServiceNow
+        "WDAY",  # Workday
+        "TEAM",  # Atlassian
+        "HUBS",  # HubSpot
+        "DDOG",  # Datadog
+        "ZS",    # Zscaler
+        "CRWD",  # CrowdStrike
+        "SNOW",  # Snowflake
+        "PLTR",  # Palantir Technologies
+        "MDB",   # MongoDB
+    ],
+    
+    "Systems Software": [
+        "ORCL",  # Oracle Corporation
+        "PANW",  # Palo Alto Networks
+        "FTNT",  # Fortinet
+        "GEN",   # Gen Digital
+        "VMW",   # VMware
+        "KEYS",  # Keysight Technologies
+        "ANSS",  # ANSYS Inc
+        "SNPS",  # Synopsys
+        "CDNS",  # Cadence Design Systems
+    ],
+    
+    "IT Consulting & Other Services": [
+        "ACN",   # Accenture
+        "IBM",   # IBM Corporation
+        "CTSH",  # Cognizant Technology
+        "IT",    # Gartner Inc
+        "EPAM",  # EPAM Systems
+        "GLOB",  # Globant
+        "GDYN",  # Grid Dynamics
+        "DXC",   # DXC Technology
+    ],
+    
+    "Internet Services & Infrastructure": [
+        "GOOGL", # Alphabet Inc
+        "META",  # Meta Platforms
+        "AKAM",  # Akamai Technologies
+        "NET",   # Cloudflare
+        "FSLY",  # Fastly
+        "CDN",   # CDN Technologies
+        "FFIV",  # F5 Inc
+    ],
+    
+    "Data Processing & Outsourced Services": [
+        "V",     # Visa Inc
+        "MA",    # Mastercard
+        "PYPL",  # PayPal Holdings
+        "ADP",   # Automatic Data Processing
+        "PAYX",  # Paychex
+        "FIS",   # Fidelity National
+        "FISV",  # Fiserv
+        "GPN",   # Global Payments
+        "JKHY",  # Jack Henry & Associates
+        "BR",    # Broadridge Financial
+    ],
+    
+    "Communications Equipment": [
+        "CSCO",  # Cisco Systems
+        "MSI",   # Motorola Solutions
+        "JNPR",  # Juniper Networks
+        "HPE",   # Hewlett Packard Enterprise
+        "ANET",  # Arista Networks
+        "CIEN",  # Ciena Corporation
+        "UI",    # Ubiquiti Inc
+    ],
+    
+    "Technology Hardware, Storage & Peripherals": [
+        "AAPL",  # Apple Inc
+        "DELL",  # Dell Technologies
+        "HPQ",   # HP Inc
+        "STX",   # Seagate Technology
+        "WDC",   # Western Digital
+        "NTAP",  # NetApp
+        "PSTG",  # Pure Storage
+        "LOGI",  # Logitech International
+        "ZBRA",  # Zebra Technologies
+    ],
+    
+    "Electronic Equipment & Instruments": [
+        "KEYS",  # Keysight Technologies
+        "TDY",   # Teledyne Technologies
+        "FTV",   # Fortive Corporation
+        "GRMN",  # Garmin Ltd
+        "ZBRA",  # Zebra Technologies
+        "TER",   # Teradyne
+        "COHR",  # Coherent Corp
+    ],
+    
+    "Electronic Components": [
+        "APH",   # Amphenol Corporation
+        "TEL",   # TE Connectivity
+        "GLW",   # Corning Incorporated
+        "FLEX",  # Flex Ltd
+        "JBL",   # Jabil Inc
+        "CLS",   # Celestica Inc
+    ],
+    
+    "Electronic Manufacturing Services": [
+        "FLEX",  # Flex Ltd
+        "JBL",   # Jabil Inc
+        "PLXS",  # Plexus Corp
+        "SANM",  # Sanmina Corporation
+        "BHE",   # Benchmark Electronics
+    ],
+    
+    "Semiconductors": [
+        "NVDA",  # NVIDIA Corporation
+        "AMD",   # Advanced Micro Devices
+        "AVGO",  # Broadcom Inc
+        "INTC",  # Intel Corporation
+        "QCOM",  # Qualcomm
+        "TXN",   # Texas Instruments
+        "ADI",   # Analog Devices
+        "MU",    # Micron Technology
+        "NXPI",  # NXP Semiconductors
+        "MCHP",  # Microchip Technology
+        "MRVL",  # Marvell Technology
+        "ON",    # ON Semiconductor
+        "SWKS",  # Skyworks Solutions
+        "QRVO",  # Qorvo
+        "MPWR",  # Monolithic Power
+    ],
+    
+    "Semiconductor Materials & Equipment": [
+        "AMAT",  # Applied Materials
+        "LRCX",  # Lam Research
+        "KLAC",  # KLA Corporation
+        "ASML",  # ASML Holding
+        "TER",   # Teradyne
+        "ENTG",  # Entegris
+        "MKSI",  # MKS Instruments
+        "ONTO",  # Onto Innovation
+        "UCTT",  # Ultra Clean Holdings
+    ],
+    
+    # Communication Services Sub-Industries
+    "Interactive Media & Services": [
+        "GOOGL", # Alphabet Inc
+        "META",  # Meta Platforms
+        "SNAP",  # Snap Inc
+        "PINS",  # Pinterest
+        "MTCH",  # Match Group
+        "IAC",   # IAC Inc
+        "ZG",    # Zillow Group
+        "YELP",  # Yelp Inc
+        "TTD",   # The Trade Desk
+    ],
+    
+    "Movies & Entertainment": [
+        "DIS",   # Walt Disney
+        "NFLX",  # Netflix
+        "WBD",   # Warner Bros. Discovery
+        "PARA",  # Paramount Global
+        "LYV",   # Live Nation Entertainment
+        "IMAX",  # IMAX Corporation
+        "WMG",   # Warner Music Group
+    ],
+    
+    "Interactive Home Entertainment": [
+        "EA",    # Electronic Arts
+        "TTWO",  # Take-Two Interactive
+        "ATVI",  # Activision Blizzard
+        "RBLX",  # Roblox Corporation
+        "U",     # Unity Software
+        "PLTK",  # Playtika Holding
+    ],
+    
+    "Broadcasting": [
+        "FOX",   # Fox Corporation
+        "FOXA",  # Fox Corporation Class A
+        "NWS",   # News Corp
+        "NWSA",  # News Corp Class A
+        "PARA",  # Paramount Global
+        "TGNA",  # TEGNA Inc
+        "NXST",  # Nexstar Media
+        "GTN",   # Gray Television
+    ],
+    
+    "Cable & Satellite": [
+        "CMCSA", # Comcast Corporation
+        "CHTR",  # Charter Communications
+        "CABO",  # Cable One
+        "SIRI",  # Sirius XM
+        "DISH",  # DISH Network
+        "LBRDK", # Liberty Broadband
+    ],
+    
+    "Publishing": [
+        "NWSA",  # News Corp
+        "NYT",   # New York Times
+        "GCI",   # Gannett Co
+        "SCHL",  # Scholastic
+    ],
+    
+    "Advertising": [
+        "OMC",   # Omnicom Group
+        "IPG",   # Interpublic Group
+        "MGNI",  # Magnite Inc
+        "PUBM",  # PubMatic
+        "TTD",   # The Trade Desk
+        "TBLA",  # Taboola.com
+        "DSP",   # Viant Technology
+        "IAS",   # Integral Ad Science
+    ],
+    
+    "Integrated Telecommunication Services": [
+        "T",     # AT&T Inc
+        "VZ",    # Verizon Communications
+        "LUMN",  # Lumen Technologies
+        "FTR",   # Frontier Communications
+    ],
+    
+    "Wireless Telecommunication Services": [
+        "TMUS",  # T-Mobile US
+        "USM",   # United States Cellular
+        "SHEN",  # Shenandoah Telecommunications
+    ],
+    
+    "Alternative Carriers": [
+        "LUMN",  # Lumen Technologies
+        "CCOI",  # Cogent Communications
+        "BAND",  # Bandwidth Inc
+        "CIEN",  # Ciena Corporation
+    ],
+    
+    # Utilities Sub-Industries
+    "Electric Utilities": [
+        "NEE",   # NextEra Energy
+        "DUK",   # Duke Energy
+        "SO",    # Southern Company
+        "AEP",   # American Electric Power
+        "EXC",   # Exelon Corporation
+        "SRE",   # Sempra
+        "XEL",   # Xcel Energy
+        "ED",    # Consolidated Edison
+        "EIX",   # Edison International
+        "WEC",   # WEC Energy Group
+        "ES",    # Eversource Energy
+        "DTE",   # DTE Energy
+        "PCG",   # PG&E Corporation
+        "FE",    # FirstEnergy
+        "PPL",   # PPL Corporation
+        "PEG",   # Public Service Enterprise
+    ],
+    
+    "Gas Utilities": [
+        "ATO",   # Atmos Energy
+        "NJR",   # New Jersey Resources
+        "SWX",   # Southwest Gas
+        "UGI",   # UGI Corporation
+        "NFG",   # National Fuel Gas
+        "NI",    # NiSource Inc
+        "OGS",   # ONE Gas
+        "SR",    # Spire Inc
+    ],
+    
+    "Multi-Utilities": [
+        "D",     # Dominion Energy
+        "CNP",   # CenterPoint Energy
+        "AEE",   # Ameren Corporation
+        "CMS",   # CMS Energy
+        "NI",    # NiSource
+        "LNT",   # Alliant Energy
+        "EVRG",  # Evergy Inc
+        "PNW",   # Pinnacle West Capital
+    ],
+    
+    "Water Utilities": [
+        "AWK",   # American Water Works
+        "WTRG",  # Essential Utilities
+        "CWT",   # California Water Service
+        "SJW",   # SJW Group
+        "AWR",   # American States Water
+        "MSEX",  # Middlesex Water
+        "YORW",  # York Water Company
+    ],
+    
+    "Independent Power Producers & Energy Traders": [
+        "AES",   # AES Corporation
+        "NRG",   # NRG Energy
+        "VST",   # Vistra Corp
+        "CWEN",  # Clearway Energy
+        "TAL",   # TAL Education Group
+    ],
+    
+    "Renewable Electricity": [
+        "NEP",   # NextEra Energy Partners
+        "BEP",   # Brookfield Renewable
+        "ENPH",  # Enphase Energy
+        "FSLR",  # First Solar
+        "SEDG",  # SolarEdge Technologies
+        "RUN",   # Sunrun Inc
+        "NOVA",  # Sunnova Energy
+        "ARRY",  # Array Technologies
+    ],
+    
+    # Real Estate Sub-Industries
+    "Industrial REITs": [
+        "PLD",   # Prologis
+        "DRE",   # Duke Realty
+        "REXR",  # Rexford Industrial
+        "STAG",  # STAG Industrial
+        "FR",    # First Industrial Realty
+        "EGP",   # EastGroup Properties
+        "TRNO",  # Terreno Realty
+    ],
+    
+    "Office REITs": [
+        "BXP",   # Boston Properties
+        "ARE",   # Alexandria Real Estate
+        "KRC",   # Kilroy Realty
+        "VNO",   # Vornado Realty
+        "SLG",   # SL Green Realty
+        "HIW",   # Highwoods Properties
+        "DEI",   # Douglas Emmett
+        "CUZ",   # Cousins Properties
+    ],
+    
+    "Retail REITs": [
+        "SPG",   # Simon Property Group
+        "REG",   # Regency Centers
+        "FRT",   # Federal Realty
+        "KIM",   # Kimco Realty
+        "O",     # Realty Income
+        "NNN",   # NNN REIT
+        "BRX",   # Brixmor Property
+        "SITC",  # SITE Centers
+    ],
+    
+    "Multi-Family Residential REITs": [
+        "EQR",   # Equity Residential
+        "AVB",   # AvalonBay Communities
+        "ESS",   # Essex Property Trust
+        "UDR",   # UDR Inc
+        "MAA",   # Mid-America Apartment
+        "CPT",   # Camden Property Trust
+        "INVH",  # Invitation Homes
+        "AMH",   # American Homes 4 Rent
+    ],
+    
+    "Single-Family Residential REITs": [
+        "INVH",  # Invitation Homes
+        "AMH",   # American Homes 4 Rent
+        "RESI",  # Front Yard Residential
+    ],
+    
+    "Health Care REITs": [
+        "WELL",  # Welltower
+        "VTR",   # Ventas
+        "PEAK",  # Healthpeak Properties
+        "OHI",   # Omega Healthcare
+        "HR",    # Healthcare Realty
+        "DOC",   # Physicians Realty Trust
+        "LTC",   # LTC Properties
+        "NHI",   # National Health Investors
+        "SBRA",  # Sabra Health Care
+        "MPW",   # Medical Properties Trust
+    ],
+    
+    "Hotel & Resort REITs": [
+        "HST",   # Host Hotels & Resorts
+        "VICI",  # VICI Properties
+        "PK",    # Park Hotels & Resorts
+        "RHP",   # Ryman Hospitality
+        "SHO",   # Sunstone Hotel
+        "PEB",   # Pebblebrook Hotel
+        "XHR",   # Xenia Hotels
+        "DRH",   # DiamondRock Hospitality
+    ],
+    
+    "Diversified REITs": [
+        "VNQ",   # Vanguard Real Estate ETF
+        "WPC",   # W. P. Carey
+        "STOR",  # STORE Capital
+        "IRM",   # Iron Mountain
+        "GLPI",  # Gaming and Leisure Properties
+    ],
+    
+    "Infrastructure REITs": [
+        "AMT",   # American Tower
+        "CCI",   # Crown Castle
+        "SBAC",  # SBA Communications
+        "UNIT",  # Uniti Group
+    ],
+    
+    "Real Estate Services": [
+        "CBRE",  # CBRE Group
+        "JLL",   # Jones Lang LaSalle
+        "CWK",   # Cushman & Wakefield
+        "NMRK",  # Newmark Group
+        "EXPI",  # eXp World Holdings
+        "RDFN",  # Redfin
+        "ZG",    # Zillow Group
+        "OPEN",  # Opendoor Technologies
+        "COMP",  # Compass Inc
+    ],
+    
+    "Real Estate Operating Companies": [
+        "CSGP",  # CoStar Group
+        "HHH",   # Howard Hughes
+        "JOE",   # St. Joe Company
+        "FOR",   # Forestar Group
     ],
 }
 

@@ -3,6 +3,9 @@ Sub-Industry Aggregator.
 
 Aggregates individual stock RS values into sub-industry level RS.
 Uses market-cap weighting for more accurate representation.
+
+For sub-industries with StockCharts industry index symbols ($DJUS*), uses
+the corresponding ETF as a direct proxy for more accurate RS calculation.
 """
 import logging
 from datetime import date, timedelta
@@ -15,6 +18,7 @@ from sqlalchemy.orm import Session
 from src.config import settings
 from src.models import Stock, StockPrice, GICSSubIndustry, RSWeekly
 from src.services.rs_calculator import MansfieldRSCalculator, calculate_percentile_ranks
+from src.data.gics_subindustry_etf_mapping import GICS_SUBINDUSTRY_ETF_MAP
 
 logger = logging.getLogger(__name__)
 
@@ -25,18 +29,63 @@ class SubIndustryAggregator:
     
     Uses market-cap weighting for accurate representation of
     sub-industry performance.
+    
+    For sub-industries with StockCharts industry index symbols, uses
+    the primary ETF as a direct proxy for RS calculation.
     """
     
-    def __init__(self, db: Session, rs_calculator: Optional[MansfieldRSCalculator] = None):
+    def __init__(
+        self, 
+        db: Session, 
+        rs_calculator: Optional[MansfieldRSCalculator] = None,
+        use_industry_indices: bool = True
+    ):
         """
         Initialize aggregator.
         
         Args:
             db: SQLAlchemy database session
             rs_calculator: Optional RS calculator instance
+            use_industry_indices: If True, use ETF proxies for sub-industries
+                                  with StockCharts index symbols
         """
         self.db = db
         self.rs_calc = rs_calculator or MansfieldRSCalculator()
+        self.use_industry_indices = use_industry_indices
+    
+    def get_subindustry_etf(self, subindustry_code: str) -> Optional[str]:
+        """
+        Get the ETF ticker to use as proxy for a sub-industry RS calculation.
+        
+        Returns an ETF if it's a high-confidence representation of the sub-industry:
+        - The ETF is not a broad sector fallback (is_sector_fallback=False)
+        - The ETF specifically tracks the sub-industry or a closely related index
+        
+        Examples of high-confidence ETFs:
+        - XBI for Biotechnology
+        - XOP for Oil & Gas E&P
+        - KBE for Banks
+        - SMH for Semiconductors
+        - JETS for Passenger Airlines
+        
+        Args:
+            subindustry_code: GICS sub-industry code
+        
+        Returns:
+            ETF ticker or None if should use aggregated calculation
+        """
+        if not self.use_industry_indices:
+            return None
+        
+        mapping = GICS_SUBINDUSTRY_ETF_MAP.get(subindustry_code)
+        if not mapping:
+            return None
+        
+        # Use ETF proxy if it's NOT a sector fallback (i.e., it's specific to the sub-industry)
+        if not mapping.is_sector_fallback:
+            return mapping.primary_etf
+        
+        return None
     
     def get_stock_prices(
         self,
@@ -176,19 +225,41 @@ class SubIndustryAggregator:
         """
         Calculate Mansfield RS for a sub-industry.
         
+        If the sub-industry has a StockCharts industry index symbol, uses the
+        primary ETF as a direct proxy for RS calculation. Otherwise, falls back
+        to aggregating individual stock prices.
+        
         Args:
             subindustry_code: GICS sub-industry code
             start_date: Start date (should include 52+ weeks of history)
             end_date: End date
-            method: Aggregation method
+            method: Aggregation method (used only for fallback calculation)
         
         Returns:
             DataFrame with RS components and metadata
         """
-        # Get aggregated sub-industry prices
-        subindustry_prices = self.calculate_subindustry_prices(
-            subindustry_code, start_date, end_date, method
-        )
+        # Check if we should use ETF proxy for this sub-industry
+        etf_ticker = self.get_subindustry_etf(subindustry_code)
+        use_etf = False
+        
+        if etf_ticker:
+            # Try to use ETF prices directly
+            etf_prices = self.get_stock_prices(etf_ticker, start_date, end_date)
+            if not etf_prices.empty and len(etf_prices) >= 200:  # Need ~1 year of data
+                subindustry_prices = etf_prices
+                use_etf = True
+                logger.debug(f"Using ETF {etf_ticker} for sub-industry {subindustry_code}")
+            else:
+                logger.debug(
+                    f"ETF {etf_ticker} has insufficient data for {subindustry_code}, "
+                    f"falling back to aggregated calculation"
+                )
+        
+        if not use_etf:
+            # Fall back to aggregated sub-industry prices
+            subindustry_prices = self.calculate_subindustry_prices(
+                subindustry_code, start_date, end_date, method
+            )
         
         if subindustry_prices.empty:
             return pd.DataFrame()
@@ -205,6 +276,9 @@ class SubIndustryAggregator:
         
         # Add metadata
         rs_result['subindustry_code'] = subindustry_code
+        rs_result['uses_etf_proxy'] = use_etf
+        if use_etf:
+            rs_result['etf_ticker'] = etf_ticker
         
         # Count constituents
         constituents_count = self.db.query(Stock).filter(
