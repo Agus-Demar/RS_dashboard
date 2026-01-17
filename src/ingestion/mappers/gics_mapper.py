@@ -1,31 +1,31 @@
 """
-GICS Mapper for mapping tickers to sub-industries.
+Industry Mapper for mapping tickers to StockCharts industries.
 
 Uses Wikipedia S&P index data (500 + 400 + 600) as the primary source for 
-GICS classification. Provides approximately 1,500 stocks with GICS data.
-Generates 8-digit GICS codes based on sub-industry names.
+industry classification. Maps Wikipedia sub-industry names to StockCharts
+industry codes for consistency with the RS calculation system.
+
+Provides approximately 1,500 stocks with industry classification data.
 """
-import hashlib
 import logging
 from typing import Dict, List, Optional
 
 import pandas as pd
 
 from src.ingestion.sources.wikipedia_source import wikipedia_source
+from src.data.stockcharts_industry_mapping import INDUSTRY_ETF_MAP, SECTOR_NAMES
 
 logger = logging.getLogger(__name__)
 
 
-# Known GICS sub-industry to correct sector mappings
+# Known sub-industry to correct sector mappings
 # Some Wikipedia data has incorrect sector assignments - this fixes them
-# Format: {sub_industry_name: correct_sector_name}
 GICS_SECTOR_CORRECTIONS = {
-    # Agricultural & Farm Machinery is an Industrials sub-industry (20106015), not Materials
     "Agricultural & Farm Machinery": "Industrials",
 }
 
 
-# GICS Sector codes (2-digit)
+# GICS/StockCharts Sector codes (2-digit)
 GICS_SECTORS = {
     "Energy": "10",
     "Materials": "15",
@@ -35,26 +35,213 @@ GICS_SECTORS = {
     "Health Care": "35",
     "Financials": "40",
     "Information Technology": "45",
+    "Technology": "45",
     "Communication Services": "50",
     "Utilities": "55",
     "Real Estate": "60",
 }
 
 
+# Mapping from Wikipedia sub-industry names to StockCharts industry codes
+# This provides a consistent translation between the two classification systems
+SUBINDUSTRY_TO_STOCKCHARTS: Dict[str, str] = {
+    # Energy
+    "Oil & Gas Drilling": "100200",
+    "Oil & Gas Equipment & Services": "100400",
+    "Integrated Oil & Gas": "100500",
+    "Oil & Gas Exploration & Production": "100300",
+    "Oil & Gas Refining & Marketing": "100700",
+    "Oil & Gas Storage & Transportation": "100600",
+    "Coal & Consumable Fuels": "100100",
+    
+    # Materials
+    "Commodity Chemicals": "150300",
+    "Diversified Chemicals": "150300",
+    "Specialty Chemicals": "151100",
+    "Fertilizers & Agricultural Chemicals": "150600",
+    "Industrial Gases": "150300",
+    "Construction Materials": "150200",
+    "Metal, Glass & Plastic Containers": "150400",
+    "Paper & Plastic Packaging Products & Materials": "150400",
+    "Aluminum": "150100",
+    "Diversified Metals & Mining": "150800",
+    "Copper": "150500",
+    "Gold": "150700",
+    "Precious Metals & Minerals": "150700",
+    "Silver": "151000",
+    "Steel": "151200",
+    "Forest Products": "150900",
+    "Paper Products": "150900",
+    
+    # Industrials
+    "Aerospace & Defense": "200100",
+    "Building Products": "200400",
+    "Construction & Engineering": "200900",
+    "Electrical Components & Equipment": "201100",
+    "Heavy Electrical Equipment": "201100",
+    "Industrial Conglomerates": "200800",
+    "Construction Machinery & Heavy Transportation Equipment": "201500",
+    "Agricultural & Farm Machinery": "201400",
+    "Industrial Machinery & Supplies & Components": "201500",
+    "Trading Companies & Distributors": "201600",
+    "Commercial Printing": "200500",
+    "Environmental & Facilities Services": "201300",
+    "Office Services & Supplies": "200500",
+    "Diversified Support Services": "200500",
+    "Security & Alarm Services": "202000",
+    "Human Resource & Employment Services": "202100",
+    "Research & Consulting Services": "200500",
+    "Data Processing & Outsourced Services": "200500",
+    "Air Freight & Logistics": "200200",
+    "Passenger Airlines": "200300",
+    "Marine Transportation": "201700",
+    "Rail Transportation": "201900",
+    "Cargo Ground Transportation": "202200",
+    "Passenger Ground Transportation": "202200",
+    
+    # Consumer Discretionary
+    "Auto Parts & Equipment": "250100",
+    "Tires & Rubber": "252000",
+    "Automobile Manufacturers": "250200",
+    "Motorcycle Manufacturers": "250200",
+    "Consumer Electronics": "250400",
+    "Home Furnishings": "250700",
+    "Homebuilding": "251000",
+    "Household Appliances": "251200",
+    "Housewares & Specialties": "251200",
+    "Leisure Products": "251300",
+    "Apparel, Accessories & Luxury Goods": "251700",
+    "Footwear": "250600",
+    "Textiles": "251900",
+    "Casinos & Gaming": "250300",
+    "Hotels, Resorts & Cruise Lines": "251100",
+    "Leisure Facilities": "251400",
+    "Restaurants": "251600",
+    "Education Services": "200500",
+    "Specialized Consumer Services": "251800",
+    "Advertising": "500100",
+    "Broadcasting": "500200",
+    "Cable & Satellite": "500300",
+    "Publishing": "500600",
+    "Movies & Entertainment": "500400",
+    "Interactive Home Entertainment": "500400",
+    "Interactive Media & Services": "500500",
+    "Distributors": "251800",
+    "Broadline Retail": "250800",
+    "Apparel Retail": "251700",
+    "Computer & Electronics Retail": "251800",
+    "Home Improvement Retail": "250900",
+    "Other Specialty Retail": "251800",
+    "Automotive Retail": "251800",
+    "Homefurnishing Retail": "250700",
+    
+    # Consumer Staples
+    "Brewers": "300100",
+    "Distillers & Vintners": "300100",
+    "Soft Drinks & Non-alcoholic Beverages": "300200",
+    "Agricultural Products & Services": "300400",
+    "Packaged Foods & Meats": "300400",
+    "Tobacco": "300800",
+    "Household Products": "300600",
+    "Personal Care Products": "300700",
+    "Drug Retail": "300300",
+    "Food Distributors": "300500",
+    "Food Retail": "300500",
+    "Consumer Staples Merchandise Retail": "300500",
+    
+    # Health Care
+    "Biotechnology": "350100",
+    "Pharmaceuticals": "350900",
+    "Life Sciences Tools & Services": "350200",
+    "Health Care Equipment": "350700",
+    "Health Care Supplies": "350700",
+    "Health Care Distributors": "350300",
+    "Health Care Services": "350600",
+    "Health Care Facilities": "350400",
+    "Managed Health Care": "350500",
+    "Health Care Technology": "350600",
+    
+    # Financials
+    "Diversified Banks": "400200",
+    "Regional Banks": "400300",
+    "Diversified Financial Services": "400600",
+    "Multi-Sector Holdings": "400600",
+    "Specialized Finance": "400600",
+    "Consumer Finance": "400500",
+    "Asset Management & Custody Banks": "400100",
+    "Investment Banking & Brokerage": "400400",
+    "Diversified Capital Markets": "400400",
+    "Financial Exchanges & Data": "400400",
+    "Mortgage Real Estate Investment Trusts (REITs)": "600500",
+    "Insurance Brokers": "400700",
+    "Life & Health Insurance": "400800",
+    "Multi-line Insurance": "400900",
+    "Property & Casualty Insurance": "400900",
+    "Reinsurance": "400900",
+    "Transaction & Payment Processing Services": "400600",
+    
+    # Technology
+    "IT Consulting & Other Services": "450900",
+    "Internet Services & Infrastructure": "450200",
+    "Application Software": "450100",
+    "Systems Software": "451300",
+    "Communications Equipment": "450300",
+    "Technology Hardware, Storage & Peripherals": "450400",
+    "Electronic Equipment & Instruments": "451000",
+    "Electronic Components": "450800",
+    "Electronic Manufacturing Services": "450800",
+    "Technology Distributors": "450500",
+    "Semiconductor Materials & Equipment": "451100",
+    "Semiconductors": "451200",
+    
+    # Communication Services
+    "Alternative Carriers": "500800",
+    "Integrated Telecommunication Services": "500800",
+    "Wireless Telecommunication Services": "500800",
+    
+    # Utilities
+    "Electric Utilities": "550100",
+    "Gas Utilities": "550200",
+    "Multi-Utilities": "550400",
+    "Water Utilities": "550600",
+    "Independent Power Producers & Energy Traders": "550300",
+    "Renewable Electricity": "550500",
+    
+    # Real Estate
+    "Diversified REITs": "600100",
+    "Industrial REITs": "600400",
+    "Hotel & Resort REITs": "600300",
+    "Office REITs": "600600",
+    "Health Care REITs": "600200",
+    "Multi-Family Residential REITs": "600700",
+    "Single-Family Residential REITs": "600700",
+    "Retail REITs": "600800",
+    "Specialized REITs": "600900",
+    "Data Center REITs": "600900",
+    "Telecom Tower REITs": "600900",
+    "Timber REITs": "600900",
+    "Other Specialized REITs": "600900",
+    "Diversified Real Estate Activities": "601100",
+    "Real Estate Operating Companies": "601000",
+    "Real Estate Development": "601000",
+    "Real Estate Services": "601100",
+}
+
+
 class GICSMapper:
     """
-    Maps tickers to GICS sub-industries.
+    Maps tickers to StockCharts industries.
     
     Uses Wikipedia S&P index data (S&P 500, S&P 400 MidCap, S&P 600 SmallCap)
-    as the source of truth for GICS classification.
-    Generates consistent 8-digit codes for sub-industries based on hashing.
+    as the source of truth for classification, then maps to StockCharts
+    industry codes for RS calculation consistency.
     
-    This provides approximately 1,500 stocks with GICS sub-industry data.
+    This provides approximately 1,500 stocks with industry data.
     """
     
     def __init__(self, use_all_indices: bool = True):
         """
-        Initialize GICS mapper.
+        Initialize industry mapper.
         
         Args:
             use_all_indices: If True, use all S&P indices (500+400+600).
@@ -89,10 +276,7 @@ class GICSMapper:
     
     def _apply_sector_corrections(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Apply sector corrections for known GICS misclassifications in Wikipedia data.
-        
-        Some sub-industries are incorrectly assigned to the wrong sector in Wikipedia.
-        This method filters out those incorrect assignments.
+        Apply sector corrections for known misclassifications in Wikipedia data.
         
         Args:
             df: DataFrame with stock data
@@ -105,9 +289,7 @@ class GICSMapper:
         
         initial_count = len(df)
         
-        # Remove rows where sub_industry is in the wrong sector
         for sub_industry, correct_sector in GICS_SECTOR_CORRECTIONS.items():
-            # Find rows with this sub-industry but wrong sector
             wrong_sector_mask = (
                 (df['sub_industry'] == sub_industry) & 
                 (df['sector'] != correct_sector)
@@ -122,7 +304,7 @@ class GICSMapper:
         
         removed = initial_count - len(df)
         if removed > 0:
-            logger.info(f"Removed {removed} stocks with incorrect GICS sector assignments")
+            logger.info(f"Removed {removed} stocks with incorrect sector assignments")
         
         return df
     
@@ -136,63 +318,68 @@ class GICSMapper:
         return wikipedia_source.fetch_all_sp_constituents()
     
     def _build_subindustry_codes(self) -> None:
-        """Build mapping of sub-industry names to 8-digit codes."""
+        """Build mapping of sub-industry names to StockCharts codes."""
         if self._all_data is None:
             return
         
-        # Get unique sub-industries with their sectors
         subindustries = self._all_data.groupby(['sector', 'sub_industry']).size().reset_index()
         
         for _, row in subindustries.iterrows():
             sector = row['sector']
             sub_industry = row['sub_industry']
             
-            code = self._generate_subindustry_code(sector, sub_industry)
+            # Try to find a mapping to StockCharts code
+            code = self._map_to_stockcharts_code(sector, sub_industry)
             self._subindustry_codes[sub_industry] = code
     
-    def _generate_subindustry_code(self, sector: str, sub_industry: str) -> str:
+    def _map_to_stockcharts_code(self, sector: str, sub_industry: str) -> str:
         """
-        Generate an 8-digit GICS-style code for a sub-industry.
+        Map a Wikipedia sub-industry to a StockCharts industry code.
         
-        Format: SSGGIIUU
-        - SS: Sector code (2 digits)
-        - GG: Industry group (derived from sub-industry hash)
-        - II: Industry (derived from sub-industry hash)
-        - UU: Sub-industry (derived from sub-industry hash)
+        Args:
+            sector: GICS sector name
+            sub_industry: GICS sub-industry name
+        
+        Returns:
+            6-digit StockCharts industry code
         """
-        # Get sector code
-        sector_code = GICS_SECTORS.get(sector, "00")
+        # Try exact match first
+        if sub_industry in SUBINDUSTRY_TO_STOCKCHARTS:
+            return SUBINDUSTRY_TO_STOCKCHARTS[sub_industry]
         
-        # Generate consistent 6-digit suffix from sub-industry name
-        hash_input = f"{sector}:{sub_industry}".encode()
-        hash_digest = hashlib.md5(hash_input).hexdigest()
+        # Try partial matching
+        sub_lower = sub_industry.lower()
+        for wiki_name, code in SUBINDUSTRY_TO_STOCKCHARTS.items():
+            if wiki_name.lower() in sub_lower or sub_lower in wiki_name.lower():
+                return code
         
-        # Convert first 6 hex chars to 6 decimal digits
-        suffix = ""
-        for i in range(3):
-            hex_pair = hash_digest[i*2:i*2+2]
-            num = int(hex_pair, 16) % 100
-            suffix += f"{num:02d}"
+        # Fall back to sector-based default
+        sector_code = GICS_SECTORS.get(sector, "45")
         
-        return sector_code + suffix
+        # Try to find any industry in that sector
+        for code, info in INDUSTRY_ETF_MAP.items():
+            if info.sector_code == sector_code:
+                return code
+        
+        # Ultimate fallback - return a generic code for the sector
+        return f"{sector_code}0100"
     
     def get_subindustry_code(self, sub_industry_name: str) -> Optional[str]:
         """
-        Get GICS code for a sub-industry name.
+        Get StockCharts industry code for a sub-industry name.
         
         Args:
             sub_industry_name: Full sub-industry name from Wikipedia
         
         Returns:
-            8-digit GICS code or None if not found
+            6-digit StockCharts code or None if not found
         """
-        # Ensure data is loaded
         self.load_sp500_data()
         return self._subindustry_codes.get(sub_industry_name)
     
     def map_ticker(self, ticker: str) -> Optional[Dict]:
         """
-        Map a ticker to its GICS classification.
+        Map a ticker to its industry classification.
         
         Args:
             ticker: Stock ticker symbol
@@ -201,10 +388,8 @@ class GICSMapper:
             Dict with subindustry_code, subindustry_name, sector_code, sector_name
             or None if ticker not found
         """
-        # Ensure data is loaded
         df = self.load_sp500_data()
         
-        # Find ticker in data
         match = df[df['ticker'] == ticker.upper()]
         
         if match.empty:
@@ -218,32 +403,39 @@ class GICSMapper:
         subindustry_code = self.get_subindustry_code(sub_industry)
         
         if not subindustry_code:
-            logger.warning(f"Could not generate code for sub-industry: {sub_industry}")
+            logger.warning(f"Could not map sub-industry: {sub_industry}")
             return None
+        
+        # Get sector code from the industry code
+        sector_code = subindustry_code[:2]
+        sector_name = SECTOR_NAMES.get(sector_code, sector)
+        
+        # Get industry info from mapping
+        industry_info = INDUSTRY_ETF_MAP.get(subindustry_code)
+        industry_name = industry_info.name if industry_info else sub_industry
         
         return {
             'ticker': ticker.upper(),
             'name': row.get('name', ticker),
             'subindustry_code': subindustry_code,
-            'subindustry_name': sub_industry,
-            'sector_code': subindustry_code[:2],
-            'sector_name': sector,
-            # These are derived from the full code
+            'subindustry_name': industry_name,
+            'sector_code': sector_code,
+            'sector_name': sector_name,
             'industry_group_code': subindustry_code[:4],
-            'industry_group_name': sub_industry.split(' - ')[0] if ' - ' in sub_industry else sub_industry,
-            'industry_code': subindustry_code[:6],
-            'industry_name': sub_industry,
+            'industry_group_name': industry_name,
+            'industry_code': subindustry_code,
+            'industry_name': industry_name,
         }
     
     def map_batch(self, tickers: List[str]) -> pd.DataFrame:
         """
-        Map multiple tickers to GICS classifications.
+        Map multiple tickers to industry classifications.
         
         Args:
             tickers: List of ticker symbols
         
         Returns:
-            DataFrame with GICS mappings for found tickers
+            DataFrame with industry mappings for found tickers
         """
         results = []
         for ticker in tickers:
@@ -258,23 +450,20 @@ class GICSMapper:
         Get all unique sub-industries from S&P index data.
         
         Returns:
-            DataFrame with sub-industry details including generated codes
+            DataFrame with sub-industry details including codes
         """
         df = self.load_sp500_data()
         
-        # Group by sub-industry
         subindustries = df.groupby(['sector', 'sub_industry']).agg({
             'ticker': 'count'
         }).reset_index()
         
         subindustries = subindustries.rename(columns={'ticker': 'stock_count'})
         
-        # Add codes
         subindustries['code'] = subindustries['sub_industry'].apply(
             lambda x: self._subindustry_codes.get(x, '')
         )
         
-        # Add derived codes
         subindustries['sector_code'] = subindustries['code'].str[:2]
         subindustries['industry_group_code'] = subindustries['code'].str[:4]
         subindustries['industry_code'] = subindustries['code'].str[:6]
@@ -283,17 +472,16 @@ class GICSMapper:
     
     def get_tickers_by_subindustry(self, subindustry_code: str) -> List[str]:
         """
-        Get all tickers belonging to a sub-industry.
+        Get all tickers belonging to an industry.
         
         Args:
-            subindustry_code: 8-digit GICS code
+            subindustry_code: 6-digit industry code
         
         Returns:
             List of ticker symbols
         """
         df = self.load_sp500_data()
         
-        # Find sub-industry name from code
         subindustry_name = None
         for name, code in self._subindustry_codes.items():
             if code == subindustry_code:
@@ -360,4 +548,3 @@ class GICSMapper:
 
 # Singleton instance - uses all indices by default for comprehensive coverage
 gics_mapper = GICSMapper(use_all_indices=True)
-

@@ -1,13 +1,13 @@
 """
-ETF Mapper for GICS Sectors and Industries.
+ETF Mapper for StockCharts Sectors and Industries.
 
-Maps GICS sectors and sub-industries to their representative ETFs
+Maps sectors and industries to their representative ETFs
 for display in the TradingView widget.
 
 Prioritizes industry-level ETFs over sector-level ETFs for more granular analysis.
 
 This module provides backward-compatible name-based lookups while also supporting
-the official GICS 8-digit code-based mappings from the data module.
+the official industry code-based mappings from the data module.
 """
 import logging
 from functools import lru_cache
@@ -15,13 +15,14 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# Import the comprehensive GICS code-based mapping
-from src.data.gics_subindustry_etf_mapping import (
-    GICS_SUBINDUSTRY_ETF_MAP,
+# Import the comprehensive industry code-based mapping
+# Uses backward-compatible aliases for existing code
+from src.data.stockcharts_industry_mapping import (
+    INDUSTRY_ETF_MAP as GICS_SUBINDUSTRY_ETF_MAP,
     SECTOR_ETFS,
-    get_etf_for_gics_code,
-    get_alt_etf_for_gics_code,
-    get_subindustry_info,
+    get_etf_for_industry_code as get_etf_for_gics_code,
+    get_alt_etf_for_industry_code as get_alt_etf_for_gics_code,
+    get_industry_info as get_subindustry_info,
 )
 
 

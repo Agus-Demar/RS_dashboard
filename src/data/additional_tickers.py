@@ -4,2014 +4,1204 @@ Extended list of US stock tickers for database expansion.
 This module provides additional ticker symbols beyond S&P 500/400/600 indices.
 These are sourced from Russell 3000, Nasdaq listings, and other US exchanges.
 
-Organized by GICS sector for easier prioritization of underrepresented industries.
+Organized by StockCharts industry codes for proper sub-industry assignment.
+
+Code Format: SSIIXX
+- SS: Sector code (2 digits)
+- II: Industry number within sector (2 digits, 01-99)
+- XX: Reserved for sub-industry expansion (00 by default)
 """
 
+from typing import Dict, List
+
 # =============================================================================
-# ADDITIONAL TICKERS BY SECTOR
+# SECTOR 10: ENERGY
 # =============================================================================
 
-SECTOR_10_ENERGY = [
-    # Oil & Gas Drilling
+# 100100 - Coal
+INDUSTRY_100100_COAL: List[str] = [
+    "ARCH", "HCC", "BTU", "CEIX", "ARLP", "AMR", "METC", "SXC", "HNRG",
+]
+
+# 100200 - Oil & Gas - Drilling
+INDUSTRY_100200_OIL_GAS_DRILLING: List[str] = [
     "HP", "NBR", "RIG", "VAL", "DO", "NE", "PTEN", "PDS", "BORR", "DRQ", "NINE",
     "USWS", "KLXE", "VTOL",
-    # Oil & Gas E&P
+]
+
+# 100300 - Oil & Gas - E&P
+INDUSTRY_100300_OIL_GAS_EP: List[str] = [
     "APA", "DVN", "FANG", "EOG", "PXD", "COP", "OXY", "MRO", "CLR", "SU", "CVE",
-    "PR", "MTDR", "CTRA", "CHRD", "OVV", "MGY", "SM", "CRGY", "SBOW", "CNX", 
-    "AR", "SWN", "EQT", "VTLE", "REPX", "ESTE", "REI", "PARR", "SD", "AXAS",
+    "PR", "MTDR", "CTRA", "CHRD", "OVV", "MGY", "SM", "CRGY", "SBOW", "CNX",
+    "AR", "SWN", "EQT", "VTLE", "REPX", "ESTE", "REI", "SD", "AXAS",
     "SNDE", "EPSN", "WTI", "NGAS", "WFRD", "BRY", "SGML", "CIVI", "BKV", "VNOM",
-    "CPE", "GPOR", "GRNT", "HPK", "CDEV", "WLL", "NOG", "CRZO", "KOS", "RRC",
-    "TELL", "NEXT", "ZN", "LONE", "PTR",
-    # Oil & Gas Refining
-    "VLO", "PSX", "MPC", "DK", "PBF", "CVI", "DINO", "CLMT", "CAPL", "HEP",
-    "NS", "HFC", "INT", "CVRR", "NTI", "REGI", "PACD", "GPRK", "AMCF",
-    # Oil & Gas Midstream/Storage
-    "KMI", "WMB", "OKE", "ET", "MPLX", "EPD", "PAA", "WES", "TRGP", "AM",
-    "DCP", "USAC", "SMLP", "NGL", "CEQP", "ENLC", "ETRN", "KNTK", "DTM",
-    "GLP", "PAGP", "BSM", "CLNE", "CPLP", "NBLX", "SPH",
-    # Oil Services & Equipment
+    "CPE", "GPOR", "GRNT", "HPK", "CDEV", "WLL", "NOG", "KOS", "RRC",
+    "TELL", "NEXT", "ZN", "LONE",
+]
+
+# 100400 - Oil & Gas - Equipment & Services
+INDUSTRY_100400_OIL_GAS_EQUIPMENT: List[str] = [
     "SLB", "HAL", "BKR", "NOV", "FTI", "WHD", "WTTR", "OII", "LBRT", "NEX",
     "RES", "HLX", "CLB", "XPRO", "BOOM", "GEL", "TTI", "PUMP", "DWSN",
     "AROC", "SOI", "TDW", "GIFI", "MTRX", "MPLN", "OIS",
 ]
 
-SECTOR_15_MATERIALS = [
-    # Chemicals - Diversified & Specialty
-    "DOW", "LYB", "CE", "EMN", "HUN", "WLK", "OLN", "TROX", "KRO", "MEOH",
-    "ASIX", "IOSP", "KWR", "NGVT", "FUL", "RPM", "GRA", "BCPC", "HWKN",
-    "APD", "ECL", "SHW", "PPG", "ALB", "IFF", "AVNT", "AXTA", "ASH", "GCP",
-    "CBT", "CC", "FOE", "LTH", "MTX", "LTHM", "UNVR", "KALM",
-    "NVZMY", "HXL", "NEU", "GPRE", "RYAM", "ZEUS", "GLATF", "AREC",
-    # Industrial Gases
-    "LIN",   # Linde plc
-    # Agricultural Chemicals
-    "NTR", "CF", "MOS", "FMC", "SMG", "CTVA", "ICL", "IPI", "ADM",
-    "AGFY", "GRWG", "APPH", "AVO", "AGRO", "SEED", "LMNR", "SMID",
-    # Construction Materials
-    "VMC", "MLM", "EXP", "USLM", "SUM", "ROCK", "ITE", "MDU", "CNHI", "CRH",
-    "CMCO", "KNF", "TGLS", "APOG", "ASTE", "PGTI",
-    # Metals & Mining - Copper
-    "SCCO", "TECK", "HBM", "ERO", "NEXA",  # Copper producers
-    # Metals & Mining (Gold, Silver, Other)
-    "NEM", "FCX", "GOLD", "NUE", "CLF", "X", "AA", "ATI",
-    "RS", "CRS", "WOR", "HAYN", "CENX", "KALU", "ARCH", "HCC", "BTU", 
-    "CEIX", "ARLP", "AMR", "HL", "PAAS", "AG", "EXK", "CDE", "FSM", "RGLD",
-    "WPM", "FNV", "SBSW", "OR", "SAND", "SSRM", "BTG", "IAG", "HMY", "DRD",
-    "NGD", "GATO", "GPL", "SILV", "MAG", "SVM", "MUX", "EGO", "USAS",
-    # Aluminum
-    "ARNC", "CSTM", "NHYDY",  # Aluminum producers
-    # Steel
-    "TX", "TMST", "SCHN", "RYI", "SXC", "UFAB", "WS", "WIRE", "NMM", "PRLB",
-    "MATV", "CMC", "STLD", "MT", "PKX", "SID", "VALE", "RIO", "BHP",
-    # Paper & Forest Products
-    "IP", "WRK", "PKG", "SON", "SEE", "BLL", "CCK", "ATR", "GEF", "BERY",
-    "UFPT", "PACK", "KRT", "CLW", "LSB", "SWM", "TG", "GLT", "RYN", "WY",
-    "PCH", "PPC", "SLVM", "GPK", "TRS", "TREC", "CKH", "UFS", "UFPI", "LPX",
+# 100500 - Oil & Gas - Integrated
+INDUSTRY_100500_OIL_GAS_INTEGRATED: List[str] = [
+    "XOM", "CVX", "SHEL", "TTE", "BP", "ENB", "IMO",
 ]
 
-SECTOR_20_INDUSTRIALS = [
-    # Aerospace & Defense
+# 100600 - Oil & Gas - Pipelines
+INDUSTRY_100600_OIL_GAS_PIPELINES: List[str] = [
+    "KMI", "WMB", "OKE", "ET", "MPLX", "EPD", "PAA", "WES", "TRGP", "AM",
+    "DCP", "USAC", "SMLP", "NGL", "CEQP", "ENLC", "ETRN", "KNTK", "DTM",
+    "GLP", "PAGP", "BSM", "CLNE", "CPLP", "SPH",
+]
+
+# 100700 - Oil & Gas - Refining
+INDUSTRY_100700_OIL_GAS_REFINING: List[str] = [
+    "VLO", "PSX", "MPC", "DK", "PBF", "CVI", "DINO", "CLMT", "CAPL", "HEP",
+    "NS", "INT", "PARR", "NTI",
+]
+
+
+# =============================================================================
+# SECTOR 15: MATERIALS
+# =============================================================================
+
+# 150100 - Aluminum
+INDUSTRY_150100_ALUMINUM: List[str] = [
+    "AA", "ARNC", "CENX", "KALU", "CSTM",
+]
+
+# 150200 - Building Materials
+INDUSTRY_150200_BUILDING_MATERIALS: List[str] = [
+    "VMC", "MLM", "EXP", "USLM", "SUM", "ROCK", "MDU", "CNHI", "CRH",
+    "CMCO", "KNF", "TGLS", "APOG", "ASTE", "PGTI",
+]
+
+# 150300 - Chemicals
+INDUSTRY_150300_CHEMICALS: List[str] = [
+    "DOW", "LYB", "CE", "EMN", "HUN", "WLK", "OLN", "TROX", "KRO", "MEOH",
+    "ASIX", "IOSP", "KWR", "NGVT", "FUL", "RPM", "BCPC", "HWKN",
+    "APD", "ECL", "SHW", "PPG", "ALB", "IFF", "AVNT", "AXTA", "ASH",
+    "CBT", "CC", "FOE", "LTH", "MTX", "LTHM", "LIN",
+]
+
+# 150400 - Containers & Packaging
+INDUSTRY_150400_CONTAINERS_PACKAGING: List[str] = [
+    "IP", "WRK", "PKG", "SON", "SEE", "BLL", "CCK", "ATR", "GEF", "BERY",
+    "UFPT", "PACK", "GPK",
+]
+
+# 150500 - Copper
+INDUSTRY_150500_COPPER: List[str] = [
+    "SCCO", "FCX", "TECK", "HBM", "ERO", "NEXA",
+]
+
+# 150600 - Fertilizers
+INDUSTRY_150600_FERTILIZERS: List[str] = [
+    "NTR", "CF", "MOS", "FMC", "SMG", "CTVA", "ICL", "IPI", "ADM",
+    "AGFY", "GRWG", "APPH", "AVO", "SEED", "LMNR",
+]
+
+# 150700 - Gold
+INDUSTRY_150700_GOLD: List[str] = [
+    "NEM", "GOLD", "AEM", "KGC", "AU", "RGLD", "WPM", "FNV", "OR", "SAND",
+    "SSRM", "BTG", "IAG", "HMY", "DRD", "NGD", "GATO", "EGO",
+]
+
+# 150800 - Metals & Mining
+INDUSTRY_150800_METALS_MINING: List[str] = [
+    "NUE", "CLF", "X", "ATI", "RS", "CRS", "WOR", "HAYN",
+    "VALE", "RIO", "BHP", "MP", "LAC", "UUUU", "CCJ",
+]
+
+# 150900 - Paper & Forest Products
+INDUSTRY_150900_PAPER_FOREST: List[str] = [
+    "CLW", "LSB", "SWM", "RYN", "WY", "PCH", "UFS", "UFPI", "LPX",
+]
+
+# 151000 - Silver
+INDUSTRY_151000_SILVER: List[str] = [
+    "HL", "PAAS", "AG", "EXK", "CDE", "FSM", "MAG", "SVM", "MUX",
+    "SILV", "GPL",
+]
+
+# 151100 - Specialty Chemicals
+INDUSTRY_151100_SPECIALTY_CHEMICALS: List[str] = [
+    "HXL", "NEU", "GPRE", "RYAM",
+]
+
+# 151200 - Steel
+INDUSTRY_151200_STEEL: List[str] = [
+    "TX", "TMST", "SCHN", "RYI", "SXC", "WS", "WIRE",
+    "MATV", "CMC", "STLD", "MT", "PKX", "SID",
+]
+
+
+# =============================================================================
+# SECTOR 20: INDUSTRIALS
+# =============================================================================
+
+# 200100 - Aerospace
+INDUSTRY_200100_AEROSPACE: List[str] = [
     "BA", "LMT", "NOC", "GD", "RTX", "HII", "TDG", "LHX", "HWM", "TXT",
     "AXON", "CW", "SPR", "HXL", "DCO", "AIR", "VSEC", "KTOS", "MRCY",
-    "AVAV", "RCAT", "BWXT", "LDOS", "CACI", "SAIC", "PSN", "VVX", "PKE",
-    "SPCE", "ACHR", "JOBY", "LILM", "BLDE", "RDW", "ASTR", "RKLB", "ASTS",
-    "IRDM", "GSAT", "SATS", "VSAT", "GILT", "MANU", "ISDR", "SPIR", "BKSY",
-    # Building Products
+    "AVAV", "BWXT", "LDOS", "CACI", "SAIC", "PSN",
+    "SPCE", "ACHR", "JOBY", "LILM", "BLDE", "ASTR", "RKLB", "ASTS",
+    "IRDM", "GSAT", "SATS", "VSAT",
+]
+
+# 200200 - Air Freight
+INDUSTRY_200200_AIR_FREIGHT: List[str] = [
+    "FDX", "UPS", "EXPD", "CHRW", "XPO", "GXO", "FWRD",
+]
+
+# 200300 - Airlines
+INDUSTRY_200300_AIRLINES: List[str] = [
+    "DAL", "UAL", "LUV", "AAL", "ALK", "JBLU", "SAVE", "ALGT", "SKYW", "ULCC",
+    "HA", "MESA", "RYAAY", "AZUL", "GOL",
+]
+
+# 200400 - Building Products
+INDUSTRY_200400_BUILDING_PRODUCTS: List[str] = [
     "JCI", "CARR", "TT", "LII", "MAS", "FBHS", "AWI", "DOOR", "AZEK", "BLD",
     "APOG", "GFF", "PGTI", "JELD", "TILE", "TREX", "SSD", "BLDR", "BCC",
-    "OC", "IBP", "CSWI", "AAON", "NX", "UFPI", "SMG", "AMWD", "CNR",
-    # Construction & Engineering
+    "OC", "IBP", "CSWI", "AAON", "NX", "UFPI", "AMWD", "CNR",
+]
+
+# 200500 - Business Services
+INDUSTRY_200500_BUSINESS_SERVICES: List[str] = [
+    "ACN", "VRSK", "FTV", "TRI", "BR", "EEFT", "EFX", "EXPO", "FCN", "FORR",
+    "HURN", "INFO", "KFRC", "MAN", "MMS", "TNET", "WST", "RHI", "HSKA", "BAH",
+    "CRAI", "ICFI", "GMS", "MANT", "EXLS", "PRGS",
+]
+
+# 200600 - Capital Goods
+INDUSTRY_200600_CAPITAL_GOODS: List[str] = [
+    "MMM", "HON", "ITW", "ROP", "DHR", "IEP",
+]
+
+# 200700 - Commercial Vehicles
+INDUSTRY_200700_COMMERCIAL_VEHICLES: List[str] = [
+    "PCAR", "CMI", "OSK", "NAV", "WABCO",
+]
+
+# 200800 - Conglomerates
+INDUSTRY_200800_CONGLOMERATES: List[str] = [
+    "GE", "ABB",
+]
+
+# 200900 - Construction Materials
+INDUSTRY_200900_CONSTRUCTION_MATERIALS: List[str] = [
     "ACM", "MTZ", "PWR", "DY", "EME", "FIX", "PRIM", "TPC", "MYRG", "STRL",
-    "ORN", "CTO", "IESC", "GVA", "KBR", "FLR", "AGX", "NVEE", "TTEK", "WSC",
-    "AAMC", "AGS", "GLT", "ROAD", "CENX", "LPG",
-    # Electrical Equipment (incl. Heavy Electrical)
+    "ORN", "IESC", "GVA", "KBR", "FLR", "AGX", "NVEE", "TTEK", "WSC",
+]
+
+# 201000 - Defense
+INDUSTRY_201000_DEFENSE: List[str] = [
+    "RCAT", "VVX", "PKE", "GILT",
+]
+
+# 201100 - Electrical Equipment
+INDUSTRY_201100_ELECTRICAL_EQUIPMENT: List[str] = [
     "ETN", "ROK", "EMR", "AME", "RBC", "GNRC", "AZZ", "ATKR", "WCC", "HUBB",
-    "POWL", "AYI", "EAF", "WIRE", "NVT", "VRT", "PLUG", "FLUX", "LTCH",
-    "FCEL", "BLDP", "HYLN", "BLNK", "CHPT", "EVGO", "NKLA", "RIDE", "GOEV",
-    "ABB", "GE",  # Heavy Electrical Equipment
-    # Industrial Conglomerates
-    "MMM", "HON", "ITW", "ROP", "DHR", "IEP", "MGRC", "MDC", "GTES", "ESE",
-    # Machinery
-    "CAT", "DE", "PCAR", "CMI", "SWK", "TTC", "OSK", "AGCO", "CNHI", "ALG",
-    "KMT", "MEC", "NPO", "CFX", "HAYW", "HLIO", "LNN", "MIDD", "MTW", "SXI",
+    "POWL", "AYI", "EAF", "WIRE", "NVT", "VRT", "PLUG", "FLUX",
+    "FCEL", "BLDP", "HYLN", "BLNK", "CHPT", "EVGO",
+]
+
+# 201200 - Engineering & Construction
+INDUSTRY_201200_ENGINEERING_CONSTRUCTION: List[str] = [
+    "ROAD",
+]
+
+# 201300 - Environmental Services
+INDUSTRY_201300_ENVIRONMENTAL_SERVICES: List[str] = [
+    "WM", "RSG", "WCN", "CWST", "SRCL", "CLH", "ECOL", "HCCI", "NVRI",
+]
+
+# 201400 - Farm Machinery
+INDUSTRY_201400_FARM_MACHINERY: List[str] = [
+    "CAT", "DE", "AGCO", "CNHI", "ALG", "LNN", "TITN",
+]
+
+# 201500 - Heavy Machinery
+INDUSTRY_201500_HEAVY_MACHINERY: List[str] = [
+    "SWK", "TTC", "KMT", "MEC", "NPO", "CFX", "HAYW", "HLIO", "MIDD", "MTW", "SXI",
     "TWI", "WTS", "BMI", "FLOW", "HI", "AIT", "GTLS", "IDEX", "IEX",
     "ITT", "LECO", "PNR", "RXO", "TKR", "WMS", "XYL", "CR", "PH",
     "IR", "FLS", "DOV",
-    # Trading Companies & Distributors
-    "GWW", "FAST", "WSO", "MSM", "SITE", "DXPE", "DNOW", "DXP", "HDSN", "PKOH",
-    "SYX", "TITN", "HDS", "CCMP", "POOL", "HWKN", "EVI", "FELE",
-    # Commercial Printing
-    "RRD", "DFIN", "CMPR",  # Commercial printing companies
-    # Security & Alarm Services
-    "ALLE", "MSA", "NSSC", "PRSP", "OSIS", "ARLO",  # Security services
-    # Passenger Ground Transportation
-    "LYFT", "UBER", "CAR", "HTZ", "YELL",  # Ground transportation
-    # Commercial Services
-    "WM", "RSG", "WCN", "CWST", "SRCL", "CLH", "ECOL", "HCCI", "NVRI", "VSE",
-    "ABM", "CTAS", "ARMK", "BCO", "BRC", "NSIT", "TISI", "SP", "CPRT", "ADMS",
-    "SLQT", "ROLL", "LAUR", "MNST", "BFAM", "BCOV", "HMST", "TBI", "UONE",
-    # Professional Services
-    "ACN", "VRSK", "FTV", "TRI", "BR", "EEFT", "EFX", "EXPO", "FCN", "FORR",
-    "HURN", "INFO", "KFRC", "MAN", "MMS", "TNET", "WST", "RHI", "HSKA", "BAH",
-    "CRAI", "ICFI", "GMS", "MANT", "EXLS", "PRGS", "NV", "IIIV", "FRPT", "SSTI",
-    # Airlines
-    "DAL", "UAL", "LUV", "AAL", "ALK", "JBLU", "SAVE", "ALGT", "SKYW", "ULCC",
-    "HA", "MESA", "RYAAY", "AZUL", "GOL", "CEA", "CPA", "ZNH", "SNCY",
-    # Transportation - Rail, Trucking, Freight
-    "UNP", "CSX", "NSC", "WAB", "GBX", "RAIL", "TRN", "FDX", "UPS", "XPO",
-    "JBHT", "ODFL", "SAIA", "WERN", "LSTR", "HTLD", "KNX", "MRTN", "SNDR",
-    "ARCB", "CHRW", "EXPD", "HUBG", "ECHO", "GXO", "FWRD", "RLGT", "DSKE",
-    "PTVE", "USAK", "USX", "TLRY", "SBLK", "DAC", "ZIM", "INSW", "NMM",
-    "GOGL", "STNG", "EURN", "FLNG", "TNK", "CPLP", "SALT", "DSX", "GNK",
 ]
 
-SECTOR_25_CONSUMER_DISCRETIONARY = [
-    # Auto Manufacturers
-    "F", "GM", "TSLA", "RIVN", "LCID", "FSR", "NIO", "XPEV", "LI", "GOEV",
-    "WKHS", "RIDE", "SOLO", "NKLA", "FFIE", "ARVL", "LAZR", "MVIS", "LIDR",
-    "OUST", "VLDR", "CPTN", "AEVA", "INVZ", "AEHR", "OSK", "WGO", "THO", "CWH",
-    "LCII", "REV", "CVII", "HYLN", "XL",
-    # Auto Parts (removed duplicates from Auto Manufacturers)
+# 201600 - Industrial Distribution
+INDUSTRY_201600_INDUSTRIAL_DISTRIBUTION: List[str] = [
+    "GWW", "FAST", "WSO", "MSM", "SITE", "DXPE", "DNOW", "DXP", "HDSN", "PKOH",
+    "SYX", "HDS", "CCMP", "POOL", "EVI", "FELE",
+]
+
+# 201700 - Marine Shipping
+INDUSTRY_201700_MARINE_SHIPPING: List[str] = [
+    "SBLK", "DAC", "ZIM", "INSW", "NMM", "GOGL", "STNG", "EURN", "FLNG", "TNK",
+    "CPLP", "SALT", "DSX", "GNK",
+]
+
+# 201800 - Packaging
+INDUSTRY_201800_PACKAGING: List[str] = [
+    "TRS", "TREC", "CKH",
+]
+
+# 201900 - Railroads
+INDUSTRY_201900_RAILROADS: List[str] = [
+    "UNP", "CSX", "NSC", "WAB", "GBX", "TRN",
+]
+
+# 202000 - Security Services
+INDUSTRY_202000_SECURITY_SERVICES: List[str] = [
+    "ALLE", "MSA", "NSSC", "OSIS", "ARLO",
+]
+
+# 202100 - Staffing
+INDUSTRY_202100_STAFFING: List[str] = [
+    "ABM", "CTAS", "ARMK", "BCO", "BRC", "NSIT", "SP", "CPRT",
+    "ROLL", "LAUR", "BFAM", "TBI",
+]
+
+# 202200 - Trucking
+INDUSTRY_202200_TRUCKING: List[str] = [
+    "JBHT", "ODFL", "SAIA", "WERN", "LSTR", "HTLD", "KNX", "MRTN", "SNDR",
+    "ARCB", "HUBG", "ECHO", "RLGT", "DSKE", "USAK", "USX",
+]
+
+# 202300 - Waste Management
+INDUSTRY_202300_WASTE_MANAGEMENT: List[str] = [
+    "VSE", "ADMS",
+]
+
+
+# =============================================================================
+# SECTOR 25: CONSUMER DISCRETIONARY
+# =============================================================================
+
+# 250100 - Auto Parts
+INDUSTRY_250100_AUTO_PARTS: List[str] = [
     "APTV", "BWA", "LEA", "MGA", "ALV", "ADNT", "AXL", "GNTX", "VC", "DAN",
-    "MOD", "PHIN", "SMP", "THRM", "AEY", "DORM", "FOXF", "LKQ", "SRI",
-    "STRT", "SUP", "TEN", "MTOR", "CDMO", "SHYF", "GTXMQ", "FRSX", "BSQR",
-    # Tires & Rubber
-    "GT", "CTB", "ALSN",  # Tire and rubber companies
-    # Motorcycle Manufacturers
-    "HOG", "PII",  # Motorcycle/powersports
-    # Auto Retail
-    "AN", "ABG", "GPI", "PAG", "LAD", "SAH", "RUSHA", "KMX", "CVNA", "SFT",
-    "CARS", "CARG", "VRM", "CZOO", "LOTZ", "DRVN", "HYRE", "SOS", "FRSH",
-    # Home Improvement Retail
+    "MOD", "PHIN", "SMP", "THRM", "DORM", "FOXF", "LKQ", "SRI",
+    "STRT", "SUP", "TEN", "MTOR", "SHYF",
+]
+
+# 250200 - Automobiles
+INDUSTRY_250200_AUTOMOBILES: List[str] = [
+    "F", "GM", "TSLA", "RIVN", "LCID", "FSR", "NIO", "XPEV", "LI",
+    "WKHS", "SOLO", "LAZR", "MVIS", "LIDR",
+    "OUST", "AEVA", "INVZ", "HOG", "PII", "WGO", "THO", "CWH", "LCII",
+]
+
+# 250300 - Casinos & Gaming
+INDUSTRY_250300_CASINOS_GAMING: List[str] = [
+    "LVS", "WYNN", "MGM", "CZR", "DKNG", "PENN", "BYD", "MLCO", "RRR", "GDEN",
+    "IGT", "SGMS", "GAN", "RSI", "BALY", "CHDN", "EVRI",
+    "AGS",
+]
+
+# 250400 - Consumer Electronics
+INDUSTRY_250400_CONSUMER_ELECTRONICS: List[str] = [
+    "GPRO", "KOSS", "VUZI", "UEIC", "VOXX", "SONY",
+]
+
+# 250500 - Department Stores
+INDUSTRY_250500_DEPARTMENT_STORES: List[str] = [
+    "M", "JWN", "DDS", "KSS",
+]
+
+# 250600 - Footwear
+INDUSTRY_250600_FOOTWEAR: List[str] = [
+    "NKE", "SKX", "DECK", "CROX", "SHOO", "WWW", "WEYS", "CAL",
+]
+
+# 250700 - Furnishings
+INDUSTRY_250700_FURNISHINGS: List[str] = [
+    "RH", "WSM", "ARHS", "ETH", "LOVE", "SNBR", "PRPL", "CSPR", "TPX", "LEG",
+    "HVT", "FLXS", "PATK", "AMWD", "LCUT",
+]
+
+# 250800 - General Merchandise
+INDUSTRY_250800_GENERAL_MERCHANDISE: List[str] = [
+    "WMT", "TGT", "COST", "DG", "DLTR", "FIVE", "OLLI", "BIG",
+]
+
+# 250900 - Home Improvement
+INDUSTRY_250900_HOME_IMPROVEMENT: List[str] = [
     "HD", "LOW", "FND", "LL", "SHC",
-    # Homebuilding
+]
+
+# 251000 - Homebuilders
+INDUSTRY_251000_HOMEBUILDERS: List[str] = [
     "DHI", "LEN", "PHM", "NVR", "TOL", "KBH", "TMHC", "MDC", "MTH", "MHO",
     "TPH", "SKY", "CCS", "HOV", "BZH", "GRBK", "CVCO", "LGIH", "DFH", "LEGH",
-    "UHG", "MERH", "NOAH", "STRW", "MSCI", "CBG", "JLL", "CWK", "RMR",
-    # Household Appliances & Durables
-    "WHR", "SEB", "IRBT", "NPK", "HBB", "IBP", "SN", "ALTO",
-    "SHCAY", "SONY",  # Consumer electronics/appliances
-    # Housewares & Specialties
-    "COOK",  # Traeger grills
-    # Leisure Products & Facilities
-    "HAS", "MAT", "POOL", "BC", "PTON", "NLS", "PRKS", "FNKO", "JAKK", "PLNT",
-    "PLAY", "TRAK", "VSTO", "YETI", "FIZZ", "NILE", "CLVR", "PRPH",
-    "GOLF", "ESGL", "FUN", "SIX", "SEAS", "SUM", "MTN", "SKI", "EPR",
-    "XPOF",  # Xponential Fitness
-    # Apparel & Luxury
-    "NKE", "LULU", "TPR", "VFC", "PVH", "RL", "CPRI", "GIII", "GIL", "COLM",
-    "UAA", "CROX", "DECK", "SKX", "SHOO", "WWW", "WEYS", "CATO", "HNST", "GES",
-    "LEVI", "GOOS", "HBI", "SCVL", "CAL", "SMRT", "FIGS", "ONON", "HELE",
-    "BOOT", "CURV", "DXLG", "CTRN", "EXPR", "AEO", "ANF", "BKE", "ZUMZ",
-    # Home Furnishings
-    "RH", "WSM", "ARHS", "ETH", "LOVE", "SNBR", "PRPL", "CSPR", "TPX", "LEG",
-    "HVT", "FLXS", "PATK", "AMWD", "LCUT", "TILE",
-    # Casinos & Gaming
-    "LVS", "WYNN", "MGM", "CZR", "DKNG", "PENN", "BYD", "MLCO", "RRR", "GDEN",
-    "IGT", "SGMS", "GAN", "RSI", "BALY", "CHDN", "WBET", "GMBL", "SGHC", "EVRI",
-    "AGS", "NUVB", "BETZ", "NGMS", "GIG", "PUCK", "LUCK", "WMS",
-    # Hotels & Resorts
+    "UHG", "NOAH",
+]
+
+# 251100 - Hotels & Motels
+INDUSTRY_251100_HOTELS_MOTELS: List[str] = [
     "MAR", "HLT", "H", "IHG", "WH", "CHH", "VAC", "TNL", "PLYA", "HGV",
-    "BHR", "STAY", "CLDT", "HT", "RHP", "WYNDQ", "SVC", "APTS", "AHT", "DRH",
-    "PK", "PEB", "RLJ", "SHO", "XHR", "INN", "SOHO", "HTGC", "ASHF", "HTLD",
-    # Restaurants
+    "BHR", "STAY", "CLDT", "HT", "RHP", "SVC", "AHT", "DRH",
+    "PK", "PEB", "RLJ", "SHO", "XHR", "INN", "SOHO",
+]
+
+# 251200 - Housewares
+INDUSTRY_251200_HOUSEWARES: List[str] = [
+    "WHR", "IRBT", "HBB",
+]
+
+# 251300 - Leisure Products
+INDUSTRY_251300_LEISURE_PRODUCTS: List[str] = [
+    "HAS", "MAT", "POOL", "BC", "PTON", "NLS", "FNKO", "JAKK", "PLNT",
+    "PLAY", "VSTO", "YETI", "FIZZ",
+    "GOLF", "FUN", "SIX", "SEAS", "MTN",
+]
+
+# 251400 - Recreational Services
+INDUSTRY_251400_RECREATIONAL_SERVICES: List[str] = [
+    "XPOF",
+]
+
+# 251500 - Recreational Vehicles
+INDUSTRY_251500_RECREATIONAL_VEHICLES: List[str] = [
+    "LCII", "REV",
+]
+
+# 251600 - Restaurants
+INDUSTRY_251600_RESTAURANTS: List[str] = [
     "MCD", "SBUX", "DPZ", "CMG", "YUM", "QSR", "WEN", "DNUT", "PZZA", "DRI",
     "TXRH", "BLMN", "EAT", "CAKE", "DIN", "JACK", "TACO", "WING", "SHAK", "BROS",
-    "CAVA", "SG", "LOCO", "ARCO", "ARKR", "NDLS", "PBPB", "KRUS", "BJRI", "FAT",
-    "RAVE", "RRGB", "RUTH", "BAGR", "KTRA", "RICK", "MSSR", "NATH", "CBRL",
-    # Computer & Electronics Retail
-    "CONN", "WINA", "RST",  # Electronics retailers
-    # Consumer Electronics
-    "GPRO", "KOSS", "VUZI", "UEIC", "VOXX",  # Consumer electronics manufacturers
-    # Specialty Retail
-    "AMZN", "TGT", "COST", "WMT", "DG", "DLTR", "FIVE", "OLLI", "BBY", "GME",
-    "CHWY", "W", "ETSY", "EBAY", "WISH", "SHOP", "GRPN", "OPEN", "RENT",
-    "BIRD", "TDUP", "REAL", "PRTS", "SSTK", "TCS", "ASO", "DKS", "HIBB", "SPWH",
-    "PLCE", "BURL", "ROST", "TJX", "GPS", "AAP",
-    "AZO", "ORLY", "GPC", "MNRO", "MPAA", "MOV", "FUL",
-    "SIG", "KAR", "CPRT", "SBH", "ULTA", "EYE", "WOOF", "HEAR",
-    # Education Services
-    "CHGG", "COUR", "DUOL", "LRN", "ATGE", "LOPE", "PRDO", "STRA", "TWOU",
-    "UDMY", "LAUR", "LINC", "HLG", "AFYA", "GHC", "MEDP", "UTI", "APEI",
+    "CAVA", "SG", "LOCO", "ARCO", "NDLS", "PBPB", "KRUS", "BJRI", "FAT",
+    "RAVE", "RRGB", "RUTH", "NATH", "CBRL",
 ]
 
-SECTOR_30_CONSUMER_STAPLES = [
-    # Food & Beverage
-    "PEP", "KO", "MDLZ", "KHC", "GIS", "K", "CAG", "CPB", "SJM", "HRL",
-    "TSN", "PPC", "JJSF", "LANC", "INGR", "DAR", "CALM", "HAIN", "SMPL", "THS",
-    "BRBR", "SENEA", "USFD", "DOLE", "CELH", "FIZZ", "MNST",
-    "ZVIA", "FRPT", "FREE", "FARM", "LNDC", "SFD", "CVGW", "STKL", "BERY",
-    "MGPI", "PSMT", "CSWI", "SEB", "BRCC", "VFF", "SFIX", "BWMN",
-    # Beverages
-    "BUD", "TAP", "SAM", "STZ", "DEO", "ABEV", "CCU", "PRMW", "WVVI", "COCO",
-    "NAPA", "NBEV", "WEYS", "COKE", "CCEP", "REED",
-    # Tobacco
-    "PM", "MO", "BTI", "TPB", "VGR", "UVV", "CRLBF", "GRNH", "CURLF", "AYRWF",
-    "TCNNF", "GTBIF", "CCHWF", "TRSSF", "JUSHF", "MSOS", "MJ", "POTX",
-    # Household Products
+# 251700 - Retail Apparel
+INDUSTRY_251700_RETAIL_APPAREL: List[str] = [
+    "LULU", "TPR", "VFC", "PVH", "RL", "CPRI", "GIII", "GIL", "COLM",
+    "UAA", "GES", "LEVI", "GOOS", "HBI", "SCVL", "FIGS", "ONON", "HELE",
+    "BOOT", "CURV", "DXLG", "CTRN", "EXPR", "AEO", "ANF", "BKE", "ZUMZ",
+]
+
+# 251800 - Specialty Retail
+INDUSTRY_251800_SPECIALTY_RETAIL: List[str] = [
+    "AMZN", "BBY", "GME", "CHWY", "W", "ETSY", "EBAY", "WISH", "SHOP",
+    "TDUP", "REAL", "PRTS", "TCS", "ASO", "DKS", "HIBB", "SPWH",
+    "PLCE", "BURL", "ROST", "TJX", "GPS", "AAP",
+    "AZO", "ORLY", "GPC", "MNRO", "MPAA", "MOV",
+    "SIG", "KAR", "CPRT", "SBH", "ULTA", "EYE", "WOOF",
+]
+
+# 251900 - Textiles & Apparel
+INDUSTRY_251900_TEXTILES_APPAREL: List[str] = [
+    "CATO", "HNST",
+]
+
+# 252000 - Tires
+INDUSTRY_252000_TIRES: List[str] = [
+    "GT", "CTB", "ALSN",
+]
+
+# 252100 - Toys
+INDUSTRY_252100_TOYS: List[str] = [
+    # Merged into Leisure Products (HAS, MAT already there)
+]
+
+
+# =============================================================================
+# SECTOR 30: CONSUMER STAPLES
+# =============================================================================
+
+# 300100 - Beverages: Alcoholic
+INDUSTRY_300100_BEVERAGES_ALCOHOLIC: List[str] = [
+    "BUD", "TAP", "SAM", "STZ", "DEO", "ABEV", "CCU",
+    "NAPA", "WVVI",
+]
+
+# 300200 - Beverages: Non-Alcoholic
+INDUSTRY_300200_BEVERAGES_NON_ALCOHOLIC: List[str] = [
+    "PEP", "KO", "COKE", "CCEP", "MNST", "CELH", "FIZZ", "ZVIA", "REED",
+]
+
+# 300300 - Drug Retailers
+INDUSTRY_300300_DRUG_RETAILERS: List[str] = [
+    "WBA", "CVS", "RAD",
+]
+
+# 300400 - Food Products
+INDUSTRY_300400_FOOD_PRODUCTS: List[str] = [
+    "MDLZ", "KHC", "GIS", "K", "CAG", "CPB", "SJM", "HRL",
+    "TSN", "JJSF", "LANC", "INGR", "DAR", "CALM", "HAIN", "SMPL", "THS",
+    "BRBR", "USFD", "DOLE", "FARM", "LNDC", "SFD", "CVGW", "STKL",
+    "MGPI", "PSMT", "VFF", "BWMN",
+]
+
+# 300500 - Food Retailers
+INDUSTRY_300500_FOOD_RETAILERS: List[str] = [
+    "KR", "ACI", "SFM", "IMKTA", "BGS", "GO", "CASY", "VLGEA", "WMK",
+    "NGVC", "CHEF", "PFGC", "UNFI", "SPTN", "FWRG",
+]
+
+# 300600 - Household Products
+INDUSTRY_300600_HOUSEHOLD_PRODUCTS: List[str] = [
     "PG", "CL", "CHD", "CLX", "KMB", "SPB", "EPC", "ELF", "IPAR",
     "CENT", "NUS", "USNA", "ENR", "REV", "COTY", "SKIN", "OLPX",
-    "GROV", "HLF", "NU", "HIMS", "HYFM", "NATR", "CMBM", "NWL", "SBH", "REVG",
-    # Personal Products
-    "EL", "PRGO", "HNST", "MAMA", "OMI", "TREE", "BNED",
-    # Retail - Grocery
-    "KR", "ACI", "SFM", "IMKTA", "BGS", "GO", "NDLS", "CASY", "VLGEA", "WMK",
-    "NGVC", "CHEF", "PFGC", "UNFI", "SPTN", "OLLI", "FWRG",
+    "GROV", "NWL", "SBH",
 ]
 
-SECTOR_35_HEALTHCARE = [
-    # Biotechnology
+# 300700 - Personal Products
+INDUSTRY_300700_PERSONAL_PRODUCTS: List[str] = [
+    "EL", "PRGO", "HNST", "OMI",
+]
+
+# 300800 - Tobacco
+INDUSTRY_300800_TOBACCO: List[str] = [
+    "PM", "MO", "BTI", "TPB", "VGR", "UVV",
+]
+
+
+# =============================================================================
+# SECTOR 35: HEALTH CARE
+# =============================================================================
+
+# 350100 - Biotechnology
+INDUSTRY_350100_BIOTECHNOLOGY: List[str] = [
     "AMGN", "GILD", "VRTX", "REGN", "BIIB", "MRNA", "BNTX", "SGEN", "ALNY",
     "INCY", "BMRN", "EXEL", "IONS", "UTHR", "RARE", "NBIX", "SRPT", "BLUE",
     "SGMO", "EDIT", "CRSP", "NTLA", "BEAM", "VERV", "TWST", "DNA", "ALLO",
     "RXRX", "KRYS", "ARWR", "FOLD", "DNLI", "KYMR", "KROS", "BCRX", "ARQT",
     "DRNA", "MYOV", "BGNE", "LEGN", "RPRX", "ROIV", "JANX", "VERA", "IDYA",
     "RCUS", "NVAX", "VXRT", "INO", "MRVI", "CRBU", "ATAI", "MNMD", "CMPS",
-    "IMVT", "PRTA", "SRRK", "SANA", "VIR", "ABCL", "PTGX", "MORF", "CCCC",
+    "IMVT", "PRTA", "SRRK", "SANA", "VIR", "ABCL", "PTGX", "MORF",
     "XNCR", "APLS", "RXDX", "TNGX", "ETNB", "SWTX", "AVXL", "LXRX",
-    "CGEM", "VRDN", "DAWN", "ACAD", "ANNX", "GERN", "REPL", "ALLK",
+    "CGEM", "VRDN", "DAWN", "ACAD", "GERN", "REPL", "ALLK",
     "BOLT", "MLYS", "TARS", "ARDX", "AKRO", "CRMD", "KRON", "BCAB",
-    "IMMP", "LYRA", "NRIX", "OLMA", "PRTC", "ZYME", "DCPH", "FGEN", "CMRX",
-    "ADVM", "BLCM", "ELVN", "FATE", "FULC", "ORIC", "PHVS", "RVMD", "SPRO",
-    # Pharmaceuticals
-    "JNJ", "PFE", "LLY", "MRK", "ABBV", "BMY", "ZTS", "VTRS", "TEVA", "PRGO",
-    "HLN", "ELAN", "SUPN", "CTLT", "JAZZ", "PCRX", "IRWD", "PAHC", "RVNC",
-    "SLNO", "AKBA", "ITCI", "AMPH", "ANI", "CORT", "CPRX", "DRRX", "EOLS",
-    "ENTA", "GHRS", "GTHX", "HRTX", "KMPH", "LBPH", "MNOV", "ORGO", "PDCO",
-    "PLRX", "PRTX", "RETA", "SIGA", "THTX", "USPH", "VNDA", "XERS", "ZLAB",
-    # Medical Devices
+]
+
+# 350200 - Diagnostics & Research
+INDUSTRY_350200_DIAGNOSTICS_RESEARCH: List[str] = [
+    "TMO", "DHR", "A", "BIO", "ILMN", "MTD", "WAT", "PKI", "TECH", "CRL",
+    "ICLR", "MEDP", "RVTY", "CDNA", "EXAS", "VCYT", "NVTA", "ME", "VEEV",
+    "MYGN", "NTRA", "PACB", "TXG", "FLGT", "NEO", "MXCT",
+]
+
+# 350300 - Healthcare Distributors
+INDUSTRY_350300_HEALTHCARE_DISTRIBUTORS: List[str] = [
+    "MCK", "ABC", "CAH", "HSIC", "PDCO",
+]
+
+# 350400 - Healthcare Facilities
+INDUSTRY_350400_HEALTHCARE_FACILITIES: List[str] = [
+    "HCA", "UHS", "THC", "ACHC", "DVA", "ADUS", "ENSG", "PNTG", "SEM", "NHC",
+    "SGRY", "OPCH", "ALHC", "HCSG", "BKD",
+]
+
+# 350500 - Healthcare Plans
+INDUSTRY_350500_HEALTHCARE_PLANS: List[str] = [
+    "UNH", "ELV", "HUM", "CI", "CNC", "MOH",
+]
+
+# 350600 - Healthcare Services
+INDUSTRY_350600_HEALTHCARE_SERVICES: List[str] = [
+    "CCRN", "EVH", "GH", "PRVB", "EHAB", "DOCS", "PHR", "TALK", "AMWL",
+    "TDOC", "HIMS", "PGNY", "OSCR",
+]
+
+# 350700 - Medical Devices
+INDUSTRY_350700_MEDICAL_DEVICES: List[str] = [
     "ABT", "MDT", "SYK", "BSX", "ISRG", "EW", "ZBH", "DXCM", "HOLX", "ALGN",
     "RMD", "TFX", "NVST", "SWAV", "PEN", "GMED", "RGEN", "PODD", "INSP",
     "TNDM", "GKOS", "LIVN", "STAA", "ATRC", "MMSI", "IRTC", "OFIX", "CNMD",
     "NARI", "LMAT", "NUVA", "NVCR", "MASI", "HAE", "ESTA", "ATEC", "AXGN",
-    "INGN", "LUNG", "ICAD", "SIBN", "SILK", "OPRX", "PROC", "PRPH", "KIDS",
-    "STIM", "NNOX", "NURO", "BTCY", "OSH", "AXNX", "CUTR", "GHDX", "SRDX",
-    # Health Care Facilities & Services
-    "UNH", "ELV", "HUM", "CI", "CNC", "MOH", "UHS", "THC", "ACHC", "HCA",
-    "DVA", "ADUS", "ENSG", "PNTG", "SEM", "NHC", "CCRN", "SGRY",
-    "OPCH", "ALHC", "HCSG", "BKD", "AFMD", "EVH", "GH", "ONEM", "PRVA",
-    "EHAB", "DOCS", "PHR", "TALK", "AMWL", "TDOC", "HIMS", "HURN", "PGNY",
-    "OSCR", "LFST", "CLVR", "SHCR", "ACCD", "SOPH", "HLAH", "PHAR", "CMAX",
-    # Life Sciences Tools
-    "TMO", "DHR", "A", "BIO", "ILMN", "MTD", "WAT", "PKI", "TECH", "CRL",
-    "ICLR", "MEDP", "RVTY", "CDNA", "EXAS", "VCYT", "NVTA", "ME", "VEEV",
-    "MYGN", "NTRA", "PACB", "TXG", "FLGT", "NEO", "MXCT",
-    "CSTL", "NGMS", "PSNL", "RDNT", "SDGR", "SEER", "CHRS", "HCAT", "MTSI",
 ]
 
-SECTOR_40_FINANCIALS = [
-    # Banks - Diversified & Regional
-    "JPM", "BAC", "WFC", "C", "GS", "MS", "SCHW", "BK", "STT", "PNC",
-    "TFC", "USB", "COF", "AXP", "DFS", "SYF", "ALLY", "HBAN", "KEY", "RF",
-    "CFG", "FITB", "MTB", "ZION", "CMA", "SIVB", "PACW", "WAL", "FHN",
+# 350800 - Medical Instruments
+INDUSTRY_350800_MEDICAL_INSTRUMENTS: List[str] = [
+    "INGN", "LUNG", "ICAD", "SILK", "OPRX", "PROC",
+    "STIM", "NNOX", "AXNX", "CUTR", "GHDX", "SRDX",
+]
+
+# 350900 - Pharmaceuticals
+INDUSTRY_350900_PHARMACEUTICALS: List[str] = [
+    "JNJ", "PFE", "LLY", "MRK", "ABBV", "BMY", "ZTS", "VTRS", "TEVA", "PRGO",
+    "HLN", "ELAN", "SUPN", "CTLT", "JAZZ", "PCRX", "IRWD", "PAHC", "RVNC",
+    "SLNO", "AKBA", "ITCI", "AMPH", "ANI", "CORT", "CPRX", "DRRX", "EOLS",
+    "ENTA", "GHRS", "GTHX", "HRTX", "KMPH", "LBPH", "ORGO",
+    "PLRX", "PRTX", "RETA", "SIGA", "USPH", "VNDA", "XERS", "ZLAB",
+]
+
+
+# =============================================================================
+# SECTOR 40: FINANCIALS
+# =============================================================================
+
+# 400100 - Asset Management
+INDUSTRY_400100_ASSET_MANAGEMENT: List[str] = [
+    "BLK", "BX", "KKR", "APO", "ARES", "OWL", "CG", "TPG", "TROW", "IVZ",
+    "BEN", "FHI", "VCTR", "PZN", "GHL", "PJT", "MC", "LPLA",
+    "EVR", "HLI", "JEF", "RJF", "SF", "PIPR", "SNEX", "COWN",
+    "SCU", "STEP", "WETF", "WDR",
+]
+
+# 400200 - Banks: Diversified
+INDUSTRY_400200_BANKS_DIVERSIFIED: List[str] = [
+    "JPM", "BAC", "WFC", "C", "GS", "MS", "BK", "STT",
+]
+
+# 400300 - Banks: Regional
+INDUSTRY_400300_BANKS_REGIONAL: List[str] = [
+    "PNC", "TFC", "USB", "SCHW", "HBAN", "KEY", "RF",
+    "CFG", "FITB", "MTB", "ZION", "CMA", "PACW", "WAL", "FHN",
     "BOKF", "SNV", "VLY", "WBS", "EWBC", "GBCI", "ONB", "PNFP",
-    "SBCF", "SEIC", "TOWN", "UBSI", "WAFD", "WSFS", "ASB", "BHF", "FBK",
-    "FFIN", "FULT", "IBOC", "NBTB", "SBNY", "TBBK", "TCBI", "UCBI", "COLB",
+    "SBCF", "SEIC", "TOWN", "UBSI", "WAFD", "WSFS", "ASB", "FBK",
+    "FFIN", "FULT", "IBOC", "NBTB", "TBBK", "TCBI", "UCBI", "COLB",
     "CATY", "CVBF", "DCOM", "EFSC", "FMBI", "FRME", "GABC", "HWC", "INDB",
     "IBTX", "OFG", "PRK", "RNST", "SBSI", "SFBS", "STBA", "NYCB",
-    "BPOP", "FBP", "BANC", "CPF", "LBAI", "MBFI", "ORRF", "PVBC", "SASR",
-    "SMBC", "SYBT", "THFF", "UVSP", "BHLB", "BOCH", "CFFI", "CHCO", "CHMG",
+    "BPOP", "FBP", "BANC", "CPF", "LBAI", "MBFI", "SASR",
+    "SMBC", "SYBT", "THFF", "UVSP",
+]
+
+# 400400 - Brokers & Exchanges
+INDUSTRY_400400_BROKERS_EXCHANGES: List[str] = [
+    "MKTX", "CBOE", "CME", "ICE", "NDAQ", "COIN", "HOOD", "IBKR",
+    "VIRT",
+]
+
+# 400500 - Consumer Finance
+INDUSTRY_400500_CONSUMER_FINANCE: List[str] = [
+    "COF", "AXP", "DFS", "SYF", "ALLY", "NAVI", "SLM",
+    "CACC", "ELVT", "OMF", "CURO", "ENVA", "FCFS",
+]
+
+# 400600 - Financial Services
+INDUSTRY_400600_FINANCIAL_SERVICES: List[str] = [
+    "V", "MA", "PYPL", "SQ", "FIS", "FISV", "GPN", "AFRM", "UPST", "SOFI",
+    "OPEN", "BILL", "PAYO", "MQ", "TOST",
+    "ESNT", "MTG", "RDFN", "UWMC", "RKT", "TREE",
+    "OZK", "PFSI", "PRAA", "QFIN", "RELY", "WRLD",
+    "GSKY", "LPRO", "MGNI", "MOGO", "MSCI",
+    "RPAY", "STNE", "XP",
+]
+
+# 400700 - Insurance: Brokers
+INDUSTRY_400700_INSURANCE_BROKERS: List[str] = [
+    "AJG", "MMC", "AON", "WTW", "BRO",
+]
+
+# 400800 - Insurance: Life
+INDUSTRY_400800_INSURANCE_LIFE: List[str] = [
+    "MET", "PRU", "AFL", "LNC", "PFG", "RGA", "SLF", "CNO", "GL",
+]
+
+# 400900 - Insurance_PC: List[str] = [
+INDUSTRY_400900_INSURANCE_PC: List[str] = [
+    "PGR", "ALL", "TRV", "CB", "AIG", "ERIE", "CNA", "Y", "RNR", "THG",
+    "WRB", "AIZ", "FAF", "FNF", "HIG", "KMPR", "L",
+    "ORI", "PLMR", "RDN", "SIGI", "CINF", "KNSL",
+    "MCY", "NMIH", "RYAN", "ROOT", "ACGL", "AFG", "AGO", "ANAT",
+    "AXS", "LMND", "STC", "STFC",
+]
+
+# 401000 - Insurance: Specialty
+INDUSTRY_401000_INSURANCE_SPECIALTY: List[str] = [
+    "GNW", "HMN", "JRVR", "KREF", "MHLD", "NWLI", "OSCR",
+]
+
+# 401100 - Mortgage Finance
+INDUSTRY_401100_MORTGAGE_FINANCE: List[str] = [
+    "GHLD", "IMXI",
+]
+
+# 401200 - Savings & Loans
+INDUSTRY_401200_SAVINGS_LOANS: List[str] = [
+    "BHLB", "BOCH", "CFFI", "CHCO", "CHMG",
     "CNOB", "EQBK", "FBIZ", "FCBC", "FMBH", "HNVR", "HOMB", "HTBK", "HTLF",
     "IBCP", "LCNB", "MBWM", "MNSB", "MOFG", "NBHC", "NRIM", "OPBK", "OSBC",
     "PKBK", "PLBC", "RBCAA", "SFNC", "SRCE", "SSB", "TRMK", "WABC", "WSBC",
-    # Asset Management & Investment Banking
-    "BLK", "BX", "KKR", "APO", "ARES", "OWL", "CG", "TPG", "TROW", "IVZ",
-    "BEN", "FHI", "VCTR", "PZN", "GHL", "PJT", "MC", "MKTX", "LPLA", "CBOE",
-    "CME", "ICE", "NDAQ", "COIN", "HOOD", "IBKR", "ETFC",
-    "VIRT", "EVR", "HLI", "JEF", "LPL", "RJF", "SF", "PIPR", "SNEX", "COWN",
-    "OPCH", "SCU", "STEP", "TWST", "WETF", "WDR", "DHF", "DSL", "EXG",
-    # Insurance
-    "BRK.A", "BRK.B", "PGR", "ALL", "TRV", "CB", "AIG", "MET", "PRU", "AFL",
-    "AJG", "MMC", "AON", "WTW", "BRO", "ERIE", "CNA", "Y", "RNR", "THG",
-    "WRB", "AIZ", "CNO", "FAF", "FNF", "GL", "HIG", "KMPR", "L", "LNC",
-    "ORI", "PFG", "PLMR", "RDN", "RGA", "SLF", "SIGI", "CINF", "KNSL",
-    "MCY", "MGRC", "NMIH", "RYAN", "ROOT", "ACGL", "AFG", "AGO", "ANAT",
-    "AXS", "BCRH", "GNW", "HMN", "JRVR", "KREF", "LMND", "LTPZ", "MHLD",
-    "NWLI", "OSCR", "PRIM", "RILY", "STC", "STFC",
-    # Multi-Sector Holdings
-    "FWONA", "SPLP", "LORL", "LTRPA", "GNE",  # Diversified holding companies
-    # Financial Services
-    "V", "MA", "PYPL", "SQ", "FIS", "FISV", "GPN", "AFRM", "UPST", "SOFI",
-    "OPEN", "BILL", "PAYO", "MQ", "TOST", "NAVI", "SLM",
-    "ESNT", "MTG", "RDFN", "UWMC", "RKT", "GHLD", "CURO", "ENVA", "TREE",
-    "OMF", "OZK", "PFSI", "PRAA", "QFIN", "RELY", "WRLD", "CACC", "ELVT",
-    "FCFS", "GSKY", "LPRO", "MGNI", "MOGO", "MSCI",
-    "RPAY", "STNE", "VNT", "XP", "LSCC", "FRHC", "IMXI", "CNNE",
 ]
 
-SECTOR_45_INFORMATION_TECHNOLOGY = [
-    # Software - Application
-    "MSFT", "ORCL", "CRM", "ADBE", "INTU", "NOW", "WDAY", "PANW", "ZS",
-    "CRWD", "NET", "DDOG", "ZM", "SNOW", "PLTR", "TEAM", "SPLK", "OKTA",
-    "HUBS", "MDB", "TWLO", "U", "PATH", "CFLT", "BILL", "DOCU", "ASAN",
-    "APPF", "APPS", "AVLR", "BLKB", "BSY", "CDNS", "CHKP", "CLDR", "COUP",
-    "CRTO", "DCT", "DOMO", "ESTC", "EVBG", "FIVN", "FROG", "FSLY", "GTLB",
-    "JAMF", "MANH", "MSTR", "NCNO", "NICE", "OOMA", "PD", "PING", "PLAN",
-    "PS", "PYCR", "QTWO", "RAMP", "RNG", "RPD", "SAIL", "SITM", "SMAR",
-    "SPT", "SUMO", "TYL", "VEEV", "WIX", "WKME", "ZEN", "ZI", "ZUO", "BOX",
-    "CCCS", "CLVT", "COMM", "CSGP", "DOCN", "DT", "ECOM", "ENVX", "EVCM",
-    "EVOP", "FRSH", "GENI", "GWRE", "INFA", "KNBE", "LSPD", "MCFE",
-    "MGNI", "MNDY", "NEWR", "OPAD", "QLYS", "REKR", "S", "SCWX",
-    "SNCR", "SPNS", "SQSP", "SVMK", "TASK", "TBIO", "UPST", "WK",
-    "WOLF", "XMTR", "YEXT", "YOU", "ZUORA", "ATVI", "EA", "TTWO",
-    # Software - Infrastructure
-    "IBM", "VMW", "FTNT", "SNPS", "KEYS", "AKAM", "FFIV", "GEN",
-    "TENB", "VRNS", "VRNT", "RDWR", "NLOK", "MIME", "LDOS",
-    "CTXS", "ANSS", "SYNC", "NTNX", "PSTG", "NATI", "CDK",
-    # Semiconductors
-    "NVDA", "AMD", "INTC", "TXN", "AVGO", "QCOM", "MU", "ADI", "NXPI",
-    "MCHP", "LRCX", "AMAT", "KLAC", "MRVL", "ON", "SWKS", "QRVO", "MPWR",
-    "SLAB", "DIOD", "RMBS", "CRUS", "FORM", "HIMX", "IMOS", "LSCC", "MTSI",
-    "POWI", "SIMO", "SMTC", "ENTG", "KLIC", "MKSI", "ONTO", "UCTT",
-    "ACMR", "AMKR", "AOSL", "ASML", "COHU", "LEDS", "NVMI", "PLAB", "SMCI",
-    "TSM", "UMC", "AEHR", "ALGM", "AMBA", "AXTI", "CCMP", "CEVA", "CRDO",
-    "GFS", "GSIT", "ICHR", "MXIM", "OLED", "PDFS",
-    "SGH", "SYNA", "TER", "TSEM", "UTSI",
-    # IT Services
-    "ACN", "CTSH", "FIS", "FISV", "IT", "WIT", "EPAM", "GLOB", "GDYN",
-    "EXLS", "PEGA", "PRFT", "SSNC", "TTEC", "VNET", "WEX", "BR", "CACI",
-    "CNXC", "DXC", "FAF", "FOUR", "G", "GIB", "JKHY", "KD",
-    "LPSN", "MANT", "MAXN", "SAIC", "SSTI", "TLRY", "UPWK",
-    # Hardware
-    "AAPL", "HPQ", "HPE", "DELL", "NTAP", "WDC", "STX", "LOGI",
-    "CRSR", "DGII", "DSGX", "HEAR", "IMMR", "NTGR", "SSYS", "ZBRA",
-    "LQDT", "VIAV", "GLW", "APH", "TEL", "CDW", "NSIT", "SNX", "ATEN",
-    "CLFD", "INSG", "SILC", "TRMB", "VICR",
-    # Communications Equipment
-    "CSCO", "MSI", "JNPR", "UI", "CIEN", "LITE", "CALX", "HLIT",
-    "INFN", "IRDM", "CASA", "DZSI", "IDCC", "VCNX",
-]
-
-SECTOR_50_COMMUNICATION_SERVICES = [
-    # Cable & Satellite
-    "CABO", "DISH", "WOW",  # Cable/satellite operators
-    # Interactive Media & Services
-    "GOOGL", "META", "SNAP", "PINS", "MTCH", "BMBL", "IAC", "ZG", "YELP",
-    "GRPN", "ANGI", "TTD", "MGNI", "PUBM", "CARG", "CARS", "EVER",
-    "QNST", "DHC", "SPOT", "SONO", "SSTK", "EDIT", "VNET", "WB", "LZ",
-    # Entertainment
-    "DIS", "NFLX", "CMCSA", "CHTR", "WBD", "AMC", "CNK", "IMAX", "ROKU",
-    "SIRI", "TME", "WMG", "MSGS", "MSGE", "LYV", "FOX",
-    "FOXA", "NWS", "NWSA", "VIAC", "DISCB", "DISCK", "DISCA", "GTN", "SSP",
-    "IHRT", "CTO", "EVC", "GCI", "GME", "ISIG", "KNSL", "LBTYB", "LBTYK",
-    "LSXMA", "LSXMB", "LSXMK", "NRDY", "PARA", "SCHL", "TGNA", "TRIP",
-    # Gaming
-    "RBLX", "DKNG", "GOGO", "GLBE", "HUYA", "BILI", "DDL",
-    "DOYU", "GRVY", "PLTK", "SKLZ", "SOHU", "AGFY", "PERI", "ZNGA",
-    "SRAD", "TSQ", "FUBO", "MYPS", "NCTY", "SLGG", "ESPO", "HERO", "NERD",
-    # Telecom
-    "T", "VZ", "TMUS", "LUMN", "USM", "TDS", "SHEN", "LBRDA",
-    "LBRDK", "SBAC", "CCI", "AMT", "EQIX", "DLR", "UNIT", "CCOI", "GDS",
-    "CORD", "OOMA", "BAND", "LNTH", "CMTL", "CNSL", "IRDM",
-    # Advertising & Media
-    "OMC", "IPG", "DLX", "ZETA", "MGID", "ADT",
-    "SCOR", "DSP", "IAS", "NCMI", "NEXS", "QUAD", "STCN",
-    "TBLA", "VERX", "ADV", "BIGC", "BKNG", "EXPE", "SABR",
-]
-
-SECTOR_55_UTILITIES = [
-    # Electric Utilities
-    "NEE", "DUK", "SO", "D", "AEP", "EXC", "SRE", "XEL", "ED", "PCG",
-    "EIX", "WEC", "ES", "DTE", "AEE", "ETR", "FE", "PPL", "CMS", "EVRG",
-    "PNW", "AES", "LNT", "OGE", "NWE", "NRG", "POR", "IDA", "AVA", "EE",
-    "BKH", "NWN", "PNM", "UTL", "AWA", "AQN", "AGR",
-    "AEG", "AMPS", "ATO", "BIPC", "BIP", "CWEN", "CNP", "CPK", "CWENA",
-    "DUKB", "EMRAF", "ENPH", "FSLR", "GPJA", "GPRK", "HE", "HIFR", "MGEE",
-    "NFG", "NI", "NJR", "OGS", "OTTR", "PEGI", "PEG", "SBS",
-    # Gas Utilities
-    "SR", "SWX", "UGI", "ONE", "SJI",
-    "RGCO", "SMLP", "SPH", "APU",
-    # Multi-Utilities & Water
-    "AWK", "WTRG", "CWT", "SJW", "YORW", "MSEX", "AWR", "ARTNA", "CWCO",
-    "GWRS", "PNR", "WTR", "XYL", "RXN", "AQUA", "TTC", "BMI", "FELE",
-    # Renewable Energy
-    "NEP", "BEP", "HASI", "ORA", "RUN", "SPWR", "NOVA",
-    "SEDG", "JKS", "ARRY", "CSIQ", "MAXN", "SHLS", "STEM",
-    "OPAL", "PLUG", "BLDP", "FCEL", "BE", "CLNE", "EVGO", "CHPT", "BLNK",
-    "DCFC", "PTRA", "PSNY", "RIVN", "LCID", "FSR", "GOEV", "NKLA", "WKHS",
-]
-
-SECTOR_60_REAL_ESTATE = [
-    # Real Estate Development
-    "FOR", "HHH", "JOE", "STRS", "BRG",  # Real estate development
-    # REITs - Diversified
-    "SPG", "O", "VICI", "WPC", "STOR", "NNN", "GTY", "GOOD", "AAT",
-    "ALX", "BDN", "BRX", "CDP", "CDR", "CERS",
-    # REITs - Industrial
-    "PLD", "DRE", "REXR", "STAG", "TRNO", "FR", "EGP", "COLD", "IIPR", "LAND",
-    "MNR", "PSTL", "PLYM", "GMRE", "ILPT", "INDT", "LXP", "NLCP",
-    # REITs - Office
-    "BXP", "KRC", "SLG", "VNO", "HIW", "CUZ", "PGRE", "JBGS", "DEI", "PDM",
-    "OFC", "ESRT", "CLI", "FSP", "ALEX", "CIO", "CXP",
-    "EQC", "ARE", "CADE", "CCIT", "COR", "DEA", "HPP", "NLY",
-    # REITs - Residential
-    "EQR", "AVB", "ESS", "UDR", "CPT", "MAA", "AIV", "IRT", "NXRT", "ELME",
-    "VRE", "CSR", "AHH", "IRET", "NEN", "SAFE", "STAR", "UMH", "VERIS",
-    # REITs - Retail
-    "REG", "FRT", "KIM", "SITC", "ROIC", "UE", "AKR", "KRG", "MAC",
-    "PEI", "CBL", "WRI", "WSR", "BFS", "FCPT", "IVT", "KITE",
-    "OLP", "PECO", "RPT", "SKT", "STON", "UBA", "URG", "WHLR",
-    # REITs - Healthcare
-    "WELL", "VTR", "PEAK", "HR", "OHI", "LTC", "NHI", "SBRA", "CTRE", "CHCT",
-    "MPW", "DOC", "GHC", "CMCT", "CTR", "HASI",
-    # REITs - Self Storage
-    "PSA", "EXR", "CUBE", "LSI", "NSA", "JCAP", "SELF", "SSS",  # Self-storage REITs
-    # REITs - Data Center & Infrastructure
-    "EQIX", "DLR", "AMT", "CCI", "SBAC", "UNIT", "CCOI", "CONE", "CORZ", "QTS",
-    "LADR", "LMRK", "SATS", "SBA", "VNET", "WIFI", "ZAYO",
-    "INXN", "SIFY",  # Data center REITs
-    # REITs - Timber
-    "CUT",  # Timber REIT/ETF
-    # REITs - Hotel
-    "HST", "PK", "RHP", "PEB", "SHO", "DRH", "XHR", "INN", "CLDT", "AHT",
-    "APLE", "BHR", "CHSP", "CPLG", "CRLBF", "FCH", "HT", "RLJ", "SOHO",
-    # Real Estate Services
-    "CBRE", "JLL", "CWK", "NMRK", "RMR", "FSV", "EXPI", "CIGI", "HF", "RMAX",
-    "COMP", "OPEN", "RDFN", "RLGY", "CSGP", "REAL", "ZG", "IMXI",
-]
 
 # =============================================================================
-# TARGETED STOCKS FOR UNDERREPRESENTED SUB-INDUSTRIES
-# These are specifically chosen to fill sub-industries with fewer than 4 stocks
+# SECTOR 45: TECHNOLOGY
 # =============================================================================
 
-# Maps GICS sub-industry name to specific tickers that belong to it
-# DEDUPLICATED - each ticker appears in only ONE sub-industry (most appropriate fit)
-TARGETED_SUBINDUSTRY_STOCKS = {
-    # === MATERIALS (Sector 15) - Industries with <4 stocks ===
-    
-    "Forest Products": [
-        # Note: WY, RYN, PCH are REITs → moved to Timber REITs
-        "LPX",   # Louisiana-Pacific Corporation - building products (not REIT)
-        "UFPI",  # UFP Industries Inc - wood products manufacturer
-        "BCC",   # Boise Cascade Company - wood products (not REIT)
-        "JELD",  # JELD-WEN Holding - windows/doors (wood)
-        "AWI",   # Armstrong World Industries - wood flooring
-        "TREX",  # Trex Company - composite decking
-    ],
-    
-    "Copper": [
-        "FCX",   # Freeport-McMoRan - largest copper producer
-        "SCCO",  # Southern Copper Corporation
-        "TECK",  # Teck Resources Limited
-        "RIO",   # Rio Tinto Group (copper exposure)
-        "BHP",   # BHP Group Limited (copper exposure)
-        "HBM",   # Hudbay Minerals Inc
-        "ERO",   # Ero Copper Corp
-        "NEXA",  # Nexa Resources S.A.
-    ],
-    
-    "Paper Products": [
-        "IP",    # International Paper Company
-        "WRK",   # WestRock Company
-        "PKG",   # Packaging Corporation of America
-        "SON",   # Sonoco Products Company
-        "GPK",   # Graphic Packaging Holding Company
-        "SEE",   # Sealed Air Corporation
-        "GEF",   # Greif Inc
-        "CLW",   # Clearwater Paper Corporation
-        "SLVM",  # Sylvamo Corporation
-        "UFS",   # Domtar Corporation
-    ],
-    
-    "Commodity Chemicals": [
-        "DOW",   # Dow Inc
-        "LYB",   # LyondellBasell Industries N.V.
-        "WLK",   # Westlake Corporation
-        "OLN",   # Olin Corporation
-        "TROX",  # Tronox Holdings plc
-        "KRO",   # Kronos Worldwide Inc
-        "CC",    # Chemours Company
-        "HUN",   # Huntsman Corporation
-        "MEOH",  # Methanex Corporation
-        "IOSP",  # Innospec Inc
-    ],
-    
-    "Aluminum": [
-        "AA",    # Alcoa Corporation
-        "CENX",  # Century Aluminum Company
-        "ARNC",  # Arconic Corporation
-        "KALU",  # Kaiser Aluminum Corporation
-        "CSTM",  # Constellium SE
-        "NHYDY", # Norsk Hydro ASA
-    ],
-    
-    "Industrial Gases": [
-        "APD",   # Air Products and Chemicals Inc
-        "LIN",   # Linde plc
-        "INGR",  # Ingredion Incorporated
-        "MTX",   # Minerals Technologies Inc
-        "HWKN",  # Hawkins Inc
-    ],
-    
-    # === INDUSTRIALS (Sector 20) - Industries with <4 stocks ===
-    
-    "Heavy Electrical Equipment": [
-        "ETN",   # Eaton Corporation plc
-        "EMR",   # Emerson Electric Co
-        "ROK",   # Rockwell Automation Inc
-        "ABB",   # ABB Ltd
-        "GE",    # General Electric Company
-        "GNRC",  # Generac Holdings Inc
-        "VRT",   # Vertiv Holdings
-        "NVT",   # nVent Electric plc
-        "HUBB",  # Hubbell Incorporated
-        "AYI",   # Acuity Brands Inc
-        "POWL",  # Powell Industries Inc
-    ],
-    
-    "Commercial Printing": [
-        "RRD",   # R.R. Donnelley & Sons Company
-        "QUAD",  # Quad/Graphics Inc
-        "DFIN",  # Donnelley Financial Solutions Inc
-        "CMPR",  # Cimpress plc
-        "SSP",   # E.W. Scripps Company
-        "DLX",   # Deluxe Corporation
-        "SCHL",  # Scholastic Corporation
-        "BNED",  # Barnes & Noble Education
-    ],
-    
-    "Security & Alarm Services": [
-        "ADT",   # ADT Inc
-        "ALLE",  # Allegion plc
-        "BCO",   # The Brink's Company
-        "MSA",   # MSA Safety Incorporated
-        "NSSC",  # NAPCO Security Technologies Inc
-        "DGII",  # Digi International Inc
-        "PRSP",  # Perspecta Inc
-        "OSIS",  # OSI Systems Inc
-        "ARLO",  # Arlo Technologies Inc
-    ],
-    
-    "Passenger Ground Transportation": [
-        "LYFT",  # Lyft Inc
-        "UBER",  # Uber Technologies Inc
-        "CAR",   # Avis Budget Group Inc
-        "HTZ",   # Hertz Global Holdings Inc
-        "DSKE",  # Daseke Inc
-        "YELL",  # Yellow Corporation
-        "ARCB",  # ArcBest Corporation
-    ],
-    
-    # === CONSUMER DISCRETIONARY (Sector 25) - Industries with <4 stocks ===
-    
-    "Housewares & Specialties": [
-        # Manufacturers of housewares, kitchen products, bedding
-        "NWL",   # Newell Brands Inc - housewares conglomerate
-        "TPX",   # Tempur Sealy International Inc - mattress manufacturer
-        "HELE",  # Helen of Troy Limited - housewares & beauty
-        "COOK",  # Traeger Inc - grills
-        "LCUT",  # Lifetime Brands Inc - kitchenware manufacturer
-        "PRPL",  # Purple Innovation Inc - mattress manufacturer
-        "CSPR",  # Casper Sleep Inc - mattress manufacturer
-    ],
-    
-    "Motorcycle Manufacturers": [
-        # Note: Removed MRVL (Marvell Technology is semiconductors, not motorcycles)
-        "HOG",   # Harley-Davidson Inc - motorcycles
-        "PII",   # Polaris Inc - powersports vehicles
-        "BC",    # Brunswick Corporation - marine/rec vehicles
-        "THO",   # Thor Industries Inc - RVs
-        "WGO",   # Winnebago Industries Inc - RVs
-        "LCII",  # LCI Industries - RV components
-        "CWH",   # Camping World Holdings Inc - RV retailer
-        "FOXF",  # Fox Factory Holding - suspension systems
-    ],
-    
-    "Tires & Rubber": [
-        # Note: Removed PZZA (Papa John's is pizza, not tires!)
-        "GT",    # The Goodyear Tire & Rubber Company
-        "CTB",   # Cooper Tire & Rubber Company
-        "GNTX",  # Gentex Corporation - auto mirrors
-        "SRI",   # Stoneridge Inc - auto electronics
-        "ALSN",  # Allison Transmission Holdings
-        "MOD",   # Modine Manufacturing Company - thermal mgmt
-        "DORM",  # Dorman Products Inc - auto parts
-        "THRM",  # Gentherm Inc - thermal comfort
-    ],
-    
-    "Household Appliances": [
-        # Note: Removed duplicates (LCUT, HELE, PRPL, SNBR) → other categories
-        "WHR",   # Whirlpool Corporation - major appliances
-        "IRBT",  # iRobot Corporation - robotic vacuums
-        "NPK",   # National Presto Industries Inc - small appliances
-        "HBB",   # Hamilton Beach Brands - small kitchen appliances
-        "SEB",   # Seaboard Corporation
-        "SHCAY", # Sharp Corporation - electronics/appliances
-        "SONY",  # Sony Group Corporation - electronics
-    ],
-    
-    "Homefurnishing Retail": [
-        # Retailers of home furnishings
-        "WSM",   # Williams-Sonoma Inc - kitchenware retail
-        "RH",    # Restoration Hardware Holdings Inc - luxury furniture
-        "ARHS",  # Arhaus Inc - furniture retailer
-        "ETH",   # Ethan Allen Interiors Inc - furniture retail
-        "SNBR",  # Sleep Number Corporation - mattress retail (has stores)
-        "LOVE",  # The Lovesac Company - furniture retail
-        "FND",   # Floor & Decor Holdings - flooring retail
-        "LL",    # LL Flooring Holdings - flooring retail
-        "TILE",  # Interface Inc - flooring
-        "HVT",   # Haverty Furniture Companies - furniture retail
-    ],
-    
-    "Leisure Facilities": [
-        "SIX",   # Six Flags Entertainment Corporation
-        "FUN",   # Cedar Fair L.P.
-        "SEAS",  # SeaWorld Entertainment Inc
-        "PLNT",  # Planet Fitness Inc
-        "XPOF",  # Xponential Fitness Inc
-        "PTON",  # Peloton Interactive
-        "MTN",   # Vail Resorts Inc
-        "SKI",   # Peak Resorts
-        "EPR",   # EPR Properties (entertainment REIT)
-        "CNK",   # Cinemark Holdings
-    ],
-    
-    "Computer & Electronics Retail": [
-        # Note: Removed HEAR, CRSR, LOGI → Consumer Electronics (manufacturers)
-        "BBY",   # Best Buy Co Inc - electronics retailer
-        "GME",   # GameStop Corp - gaming retailer
-        "CONN",  # Conn's Inc - electronics/appliance retail
-        "WINA",  # Winmark Corporation - resale retail
-        "RST",   # Rosetta Stone Inc - software retail
-        "COST",  # Costco (has electronics section)
-        "TGT",   # Target (has electronics section)
-    ],
-    
-    "Consumer Electronics": [
-        # Manufacturers of consumer electronics
-        "AAPL",  # Apple Inc - consumer electronics
-        "SONO",  # Sonos Inc - speakers
-        "GPRO",  # GoPro Inc - cameras
-        "HEAR",  # Turtle Beach Corporation - gaming headsets
-        "KOSS",  # Koss Corporation - headphones
-        "VUZI",  # Vuzix Corporation - smart glasses
-        "CRSR",  # Corsair Gaming Inc - gaming peripherals
-        "LOGI",  # Logitech International S.A. - peripherals
-        "UEIC",  # Universal Electronics Inc - remote controls
-        "VOXX",  # VOXX International Corporation - audio
-    ],
-    
-    # === FINANCIALS (Sector 40) - Industries with <4 stocks ===
-    
-    "Specialized Finance": [
-        "CACC",  # Credit Acceptance Corporation
-        "WRLD",  # World Acceptance Corporation
-        "ENVA",  # Enova International Inc
-        "TREE",  # LendingTree Inc
-        "QFIN",  # 360 Finance Inc
-        "LPRO",  # Open Lending Corporation
-        "ELVT",  # Elevate Credit Inc
-        "OMF",   # OneMain Holdings Inc
-        "SLM",   # SLM Corporation (Sallie Mae)
-        "NAVI",  # Navient Corporation
-    ],
-    
-    "Multi-Sector Holdings": [
-        # Note: Removed LBRDK → Cable & Satellite (Liberty Broadband's main business)
-        "BRK.B", # Berkshire Hathaway Inc
-        "FWONA", # Liberty Media Formula One
-        "JEF",   # Jefferies Financial Group Inc
-        "SPLP",  # Steel Partners Holdings
-        "IEP",   # Icahn Enterprises L.P.
-        "LORL",  # Loral Space & Communications
-        "LTRPA", # Liberty TripAdvisor Holdings
-        "GNE",   # Genie Energy Ltd
-    ],
-    
-    # === COMMUNICATION SERVICES (Sector 50) - Industries with <4 stocks ===
-    
-    "Cable & Satellite": [
-        "CMCSA", # Comcast Corporation
-        "CHTR",  # Charter Communications Inc
-        "CABO",  # Cable One Inc
-        "SIRI",  # Sirius XM Holdings Inc
-        "DISH",  # DISH Network Corporation
-        "WOW",   # WideOpenWest Inc
-        "LBRDA", # Liberty Broadband Corporation Class A
-        "LBRDK", # Liberty Broadband Corporation Class C
-        "TGNA",  # TEGNA Inc
-        "GTN",   # Gray Television Inc
-    ],
-    
-    # === REAL ESTATE (Sector 60) - Industries with <4 stocks ===
-    
-    "Real Estate Development": [
-        "FOR",   # Forestar Group Inc
-        "HHH",   # Howard Hughes Corporation
-        "JOE",   # St. Joe Company
-        "STRS",  # Stratus Properties Inc
-        "AHH",   # Armada Hoffler Properties Inc
-        "SAFE",  # Safehold Inc
-        "AIV",   # Apartment Investment and Management
-        "AVB",   # AvalonBay Communities
-        "BRG",   # Bluerock Residential Growth
-    ],
-    
-    "Data Center REITs": [
-        # Note: Removed AMT, CCI, SBAC, UNIT → Telecom Tower REITs (primary business)
-        "EQIX",  # Equinix Inc - data centers
-        "DLR",   # Digital Realty Trust Inc - data centers
-        "QTS",   # QTS Realty Trust - data centers
-        "CONE",  # CyrusOne Inc - data centers
-        "CCOI",  # Cogent Communications Holdings
-        "INXN",  # InterXion Holding - data centers
-        "SIFY",  # Sify Technologies - data centers
-    ],
-    
-    "Self-Storage REITs": [
-        "PSA",   # Public Storage
-        "EXR",   # Extra Space Storage Inc
-        "CUBE",  # CubeSmart
-        "LSI",   # Life Storage Inc
-        "NSA",   # National Storage Affiliates Trust
-        "SELF",  # Global Self Storage Inc
-        "SSS",   # Sovran Self Storage
-    ],
-    
-    "Telecom Tower REITs": [
-        # Primary telecom tower/infrastructure companies
-        "AMT",   # American Tower Corporation - telecom towers
-        "CCI",   # Crown Castle Inc - telecom towers
-        "SBAC",  # SBA Communications Corporation - telecom towers
-        "UNIT",  # Uniti Group Inc - fiber infrastructure
-        "LMRK",  # Landmark Infrastructure Partners
-        "SATS",  # EchoStar Corporation
-        "IRDM",  # Iridium Communications Inc
-        "GSAT",  # Globalstar Inc
-    ],
-    
-    "Timber REITs": [
-        "WY",    # Weyerhaeuser Company - timber REIT
-        "RYN",   # Rayonier Inc - timber REIT
-        "PCH",   # PotlatchDeltic Corporation - timber REIT
-        "CUT",   # Invesco MSCI Global Timber ETF
-        "PLTK",  # Pope Resources - timber
-    ],
-    
-    # === NEW SUB-INDUSTRIES FROM STOCKCHARTS DRILL-DOWN ===
-    
-    # Energy Sector Sub-Industries
-    "Integrated Oil & Gas": [
-        "XOM",   # Exxon Mobil Corporation
-        "CVX",   # Chevron Corporation
-        "COP",   # ConocoPhillips
-        "OXY",   # Occidental Petroleum
-        "HES",   # Hess Corporation
-        "MPC",   # Marathon Petroleum
-        "VLO",   # Valero Energy
-        "PSX",   # Phillips 66
-    ],
-    
-    "Oil & Gas Exploration & Production": [
-        "EOG",   # EOG Resources
-        "PXD",   # Pioneer Natural Resources
-        "DVN",   # Devon Energy
-        "FANG",  # Diamondback Energy
-        "APA",   # APA Corporation
-        "CTRA",  # Coterra Energy
-        "MRO",   # Marathon Oil
-        "EQT",   # EQT Corporation
-        "OVV",   # Ovintiv Inc
-        "CHRD",  # Chord Energy
-        "MTDR",  # Matador Resources
-        "PR",    # Permian Resources
-        "TPL",   # Texas Pacific Land
-        "MGY",   # Magnolia Oil & Gas
-        "SM",    # SM Energy
-    ],
-    
-    "Oil & Gas Refining & Marketing": [
-        "VLO",   # Valero Energy
-        "MPC",   # Marathon Petroleum
-        "PSX",   # Phillips 66
-        "DK",    # Delek US Holdings
-        "PBF",   # PBF Energy
-        "HFC",   # HollyFrontier
-        "CVI",   # CVR Energy
-        "DINO",  # HF Sinclair
-        "PARR",  # Par Pacific Holdings
-    ],
-    
-    "Oil & Gas Storage & Transportation": [
-        "WMB",   # Williams Companies
-        "KMI",   # Kinder Morgan
-        "OKE",   # ONEOK Inc
-        "TRGP",  # Targa Resources
-        "ET",    # Energy Transfer
-        "EPD",   # Enterprise Products Partners
-        "MPLX",  # MPLX LP
-        "PAA",   # Plains All American
-        "LNG",   # Cheniere Energy
-        "DTM",   # DT Midstream
-    ],
-    
-    "Oil & Gas Equipment & Services": [
-        "SLB",   # Schlumberger
-        "HAL",   # Halliburton
-        "BKR",   # Baker Hughes
-        "NOV",   # NOV Inc
-        "FTI",   # TechnipFMC
-        "CHX",   # ChampionX Corporation
-        "WHD",   # Cactus Inc
-        "LBRT",  # Liberty Energy
-        "HP",    # Helmerich & Payne
-        "RIG",   # Transocean
-    ],
-    
-    # Materials Sector Sub-Industries
-    "Construction Materials": [
-        "VMC",   # Vulcan Materials
-        "MLM",   # Martin Marietta Materials
-        "CRH",   # CRH plc
-        "EXP",   # Eagle Materials
-        "SUM",   # Summit Materials
-        "USLM",  # United States Lime
-    ],
-    
-    "Diversified Chemicals": [
-        "DD",    # DuPont de Nemours
-        "EMN",   # Eastman Chemical
-        "CE",    # Celanese
-        "HUN",   # Huntsman Corporation
-        "AXTA",  # Axalta Coating Systems
-        "AVNT",  # Avient Corporation
-    ],
-    
-    "Specialty Chemicals": [
-        "SHW",   # Sherwin-Williams
-        "ECL",   # Ecolab
-        "PPG",   # PPG Industries
-        "IFF",   # International Flavors & Fragrances
-        "ALB",   # Albemarle Corporation
-        "RPM",   # RPM International
-        "FUL",   # H.B. Fuller
-        "ASH",   # Ashland Global Holdings
-    ],
-    
-    "Fertilizers & Agricultural Chemicals": [
-        "NTR",   # Nutrien Ltd
-        "CF",    # CF Industries
-        "MOS",   # The Mosaic Company
-        "FMC",   # FMC Corporation
-        "CTVA",  # Corteva Inc
-        "SMG",   # The Scotts Miracle-Gro
-        "ICL",   # ICL Group
-    ],
-    
-    "Diversified Metals & Mining": [
-        "FCX",   # Freeport-McMoRan
-        "NUE",   # Nucor Corporation
-        "CLF",   # Cleveland-Cliffs
-        "STLD",  # Steel Dynamics
-        "RS",    # Reliance Steel
-        "CMC",   # Commercial Metals
-        "ATI",   # ATI Inc
-        "X",     # United States Steel
-    ],
-    
-    "Gold": [
-        "NEM",   # Newmont Corporation
-        "GOLD",  # Barrick Gold
-        "FNV",   # Franco-Nevada
-        "WPM",   # Wheaton Precious Metals
-        "RGLD",  # Royal Gold
-        "AEM",   # Agnico Eagle Mines
-        "KGC",   # Kinross Gold
-    ],
-    
-    "Metal, Glass & Plastic Containers": [
-        "BLL",   # Ball Corporation
-        "CCK",   # Crown Holdings
-        "AMCR",  # Amcor plc
-        "BERY",  # Berry Global
-        "SEE",   # Sealed Air Corporation
-        "ATR",   # AptarGroup
-        "SON",   # Sonoco Products
-    ],
-    
-    # Industrials Sector Sub-Industries
-    "Aerospace & Defense": [
-        "RTX",   # RTX Corporation
-        "BA",    # Boeing Company
-        "LMT",   # Lockheed Martin
-        "NOC",   # Northrop Grumman
-        "GD",    # General Dynamics
-        "LHX",   # L3Harris Technologies
-        "TDG",   # TransDigm Group
-        "HWM",   # Howmet Aerospace
-        "TXT",   # Textron
-        "HII",   # Huntington Ingalls
-        "AXON",  # Axon Enterprise
-    ],
-    
-    "Building Products": [
-        "JCI",   # Johnson Controls
-        "TT",    # Trane Technologies
-        "CARR",  # Carrier Global
-        "MAS",   # Masco Corporation
-        "LII",   # Lennox International
-        "AOS",   # A. O. Smith
-        "FBHS",  # Fortune Brands
-        "AWI",   # Armstrong World Industries
-    ],
-    
-    "Construction & Engineering": [
-        "ACM",   # AECOM
-        "PWR",   # Quanta Services
-        "EME",   # EMCOR Group
-        "FLR",   # Fluor Corporation
-        "MTZ",   # MasTec Inc
-        "J",     # Jacobs Solutions
-        "DY",    # Dycom Industries
-        "STRL",  # Sterling Infrastructure
-    ],
-    
-    "Electrical Components & Equipment": [
-        "ETN",   # Eaton Corporation
-        "EMR",   # Emerson Electric
-        "GNRC",  # Generac Holdings
-        "HUBB",  # Hubbell Incorporated
-        "AYI",   # Acuity Brands
-        "NVT",   # nVent Electric
-        "VRT",   # Vertiv Holdings
-    ],
-    
-    "Industrial Conglomerates": [
-        "HON",   # Honeywell International
-        "MMM",   # 3M Company
-        "GE",    # GE Aerospace
-        "ROP",   # Roper Technologies
-        "ITW",   # Illinois Tool Works
-    ],
-    
-    "Construction Machinery & Heavy Transportation Equipment": [
-        "CAT",   # Caterpillar
-        "DE",    # Deere & Company
-        "PCAR",  # PACCAR
-        "CMI",   # Cummins Inc
-        "OSK",   # Oshkosh Corporation
-        "TEX",   # Terex Corporation
-    ],
-    
-    "Industrial Machinery & Supplies & Components": [
-        "DOV",   # Dover Corporation
-        "ITT",   # ITT Inc
-        "PH",    # Parker-Hannifin
-        "IR",    # Ingersoll Rand
-        "XYL",   # Xylem Inc
-        "IEX",   # IDEX Corporation
-        "NDSN",  # Nordson Corporation
-        "FLS",   # Flowserve Corporation
-    ],
-    
-    "Trading Companies & Distributors": [
-        "FAST",  # Fastenal Company
-        "GWW",   # W.W. Grainger
-        "WSO",   # Watsco Inc
-        "SITE",  # SiteOne Landscape
-        "MSM",   # MSC Industrial Direct
-        "AIT",   # Applied Industrial Technologies
-    ],
-    
-    "Environmental & Facilities Services": [
-        "WM",    # Waste Management
-        "RSG",   # Republic Services
-        "WCN",   # Waste Connections
-        "CTAS",  # Cintas Corporation
-        "CLH",   # Clean Harbors
-        "CWST",  # Casella Waste Systems
-        "ABM",   # ABM Industries
-    ],
-    
-    "Human Resource & Employment Services": [
-        "ADP",   # Automatic Data Processing
-        "PAYX",  # Paychex
-        "DAY",   # Dayforce Inc
-        "RHI",   # Robert Half
-        "MAN",   # ManpowerGroup
-        "KFRC",  # Kforce Inc
-        "TBI",   # TrueBlue Inc
-    ],
-    
-    "Research & Consulting Services": [
-        "VRSK",  # Verisk Analytics
-        "INFO",  # IHS Markit
-        "FTV",   # Fortive Corporation
-        "BR",    # Broadridge Financial
-        "EXPO",  # Exponent Inc
-        "FCN",   # FTI Consulting
-        "HURN",  # Huron Consulting
-    ],
-    
-    "Air Freight & Logistics": [
-        "FDX",   # FedEx Corporation
-        "UPS",   # United Parcel Service
-        "EXPD",  # Expeditors International
-        "CHRW",  # C.H. Robinson
-        "XPO",   # XPO Inc
-        "GXO",   # GXO Logistics
-    ],
-    
-    "Passenger Airlines": [
-        "DAL",   # Delta Air Lines
-        "UAL",   # United Airlines
-        "LUV",   # Southwest Airlines
-        "AAL",   # American Airlines
-        "ALK",   # Alaska Air Group
-        "JBLU",  # JetBlue Airways
-    ],
-    
-    "Rail Transportation": [
-        "UNP",   # Union Pacific
-        "CSX",   # CSX Corporation
-        "NSC",   # Norfolk Southern
-        "CP",    # Canadian Pacific
-        "CNI",   # Canadian National Railway
-    ],
-    
-    "Cargo Ground Transportation": [
-        "ODFL",  # Old Dominion Freight Line
-        "JBHT",  # J.B. Hunt Transport
-        "SAIA",  # Saia Inc
-        "WERN",  # Werner Enterprises
-        "SNDR",  # Schneider National
-        "KNX",   # Knight-Swift
-        "LSTR",  # Landstar System
-    ],
-    
-    # Consumer Discretionary Sub-Industries
-    "Automobile Manufacturers": [
-        "TSLA",  # Tesla Inc
-        "GM",    # General Motors
-        "F",     # Ford Motor
-        "RIVN",  # Rivian Automotive
-        "LCID",  # Lucid Group
-        "NIO",   # NIO Inc
-    ],
-    
-    "Automotive Parts & Equipment": [
-        "APTV",  # Aptiv PLC
-        "BWA",   # BorgWarner
-        "LEA",   # Lear Corporation
-        "MGA",   # Magna International
-        "ALV",   # Autoliv Inc
-        "GNTX",  # Gentex Corporation
-        "VC",    # Visteon Corporation
-    ],
-    
-    "Homebuilding": [
-        "DHI",   # D.R. Horton
-        "LEN",   # Lennar Corporation
-        "PHM",   # PulteGroup
-        "NVR",   # NVR Inc
-        "TOL",   # Toll Brothers
-        "KBH",   # KB Home
-        "TMHC",  # Taylor Morrison
-        "MHO",   # M/I Homes
-        "MTH",   # Meritage Homes
-    ],
-    
-    "Home Furnishings": [
-        "WSM",   # Williams-Sonoma
-        "MHK",   # Mohawk Industries
-        "LEG",   # Leggett & Platt
-        "SNBR",  # Sleep Number
-        "TPX",   # Tempur Sealy
-        "LOVE",  # Lovesac Company
-        "ARHS",  # Arhaus Inc
-    ],
-    
-    "Leisure Products": [
-        "HAS",   # Hasbro
-        "POOL",  # Pool Corporation
-        "YETI",  # YETI Holdings
-        "BC",    # Brunswick Corporation
-        "PTON",  # Peloton Interactive
-        "MAT",   # Mattel
-    ],
-    
-    "Apparel, Accessories & Luxury Goods": [
-        "NKE",   # Nike Inc
-        "LULU",  # Lululemon Athletica
-        "TPR",   # Tapestry Inc
-        "VFC",   # VF Corporation
-        "PVH",   # PVH Corp
-        "RL",    # Ralph Lauren
-        "CPRI",  # Capri Holdings
-        "HBI",   # Hanesbrands
-    ],
-    
-    "Footwear": [
-        # NKE removed - primary classification is Apparel, Accessories & Luxury Goods
-        "DECK",  # Deckers Outdoor
-        "CROX",  # Crocs Inc
-        "SKX",   # Skechers USA
-        "ONON",  # On Holding
-        "SHOO",  # Steven Madden
-        "WWW",   # Wolverine World Wide
-    ],
-    
-    "Casinos & Gaming": [
-        "LVS",   # Las Vegas Sands
-        "WYNN",  # Wynn Resorts
-        "MGM",   # MGM Resorts
-        "CZR",   # Caesars Entertainment
-        "PENN",  # Penn Entertainment
-        "DKNG",  # DraftKings
-        "BYD",   # Boyd Gaming
-        "MLCO",  # Melco Resorts
-    ],
-    
-    "Hotels, Resorts & Cruise Lines": [
-        "MAR",   # Marriott International
-        "HLT",   # Hilton Worldwide
-        "H",     # Hyatt Hotels
-        "WH",    # Wyndham Hotels
-        "CCL",   # Carnival Corporation
-        "RCL",   # Royal Caribbean
-        "NCLH",  # Norwegian Cruise Line
-        "ABNB",  # Airbnb Inc
-        "BKNG",  # Booking Holdings
-    ],
-    
-    "Restaurants": [
-        "MCD",   # McDonald's
-        "SBUX",  # Starbucks
-        "CMG",   # Chipotle Mexican Grill
-        "YUM",   # Yum! Brands
-        "DPZ",   # Domino's Pizza
-        "DRI",   # Darden Restaurants
-        "TXRH",  # Texas Roadhouse
-        "WING",  # Wingstop
-        "CAVA",  # CAVA Group
-    ],
-    
-    "Education Services": [
-        "LOPE",  # Grand Canyon Education
-        "LRN",   # Stride Inc
-        "DUOL",  # Duolingo
-        "CHGG",  # Chegg Inc
-        "COUR",  # Coursera
-        "UDMY",  # Udemy Inc
-        "STRA",  # Strategic Education
-    ],
-    
-    "Specialized Consumer Services": [
-        "DASH",  # DoorDash
-        "UBER",  # Uber Technologies
-        "LYFT",  # Lyft Inc
-        # ABNB removed - primary classification is Hotels, Resorts & Cruise Lines
-        "EXPE",  # Expedia Group
-        # BKNG removed - primary classification is Hotels, Resorts & Cruise Lines
-    ],
-    
-    "Broadline Retail": [
-        "AMZN",  # Amazon.com
-        "EBAY",  # eBay Inc
-        "ETSY",  # Etsy Inc
-        "W",     # Wayfair
-        "SHOP",  # Shopify
-    ],
-    
-    "Apparel Retail": [
-        "TJX",   # TJX Companies
-        "ROST",  # Ross Stores
-        "BURL",  # Burlington Stores
-        "GPS",   # Gap Inc
-        "AEO",   # American Eagle
-        "ANF",   # Abercrombie & Fitch
-    ],
-    
-    "Home Improvement Retail": [
-        "HD",    # Home Depot
-        "LOW",   # Lowe's Companies
-        "FND",   # Floor & Decor
-        "TSCO",  # Tractor Supply
-    ],
-    
-    "Automotive Retail": [
-        "AZO",   # AutoZone
-        "ORLY",  # O'Reilly Automotive
-        "GPC",   # Genuine Parts
-        "AAP",   # Advance Auto Parts
-        "KMX",   # CarMax
-        "AN",    # AutoNation
-        "LAD",   # Lithia Motors
-        "CVNA",  # Carvana
-    ],
-    
-    "Other Specialty Retail": [
-        "ULTA",  # Ulta Beauty
-        "BBY",   # Best Buy
-        "DKS",   # Dick's Sporting Goods
-        "FIVE",  # Five Below
-        "OLLI",  # Ollie's Bargain Outlet
-        # WSM removed - primary classification is Home Furnishings
-        "RH",    # RH (Restoration Hardware)
-    ],
-    
-    "Distributors": [
-        # GPC removed - primary classification is Automotive Retail
-        # POOL removed - primary classification is Leisure Products
-        "LKQ",   # LKQ Corporation
-        # SITE removed - primary classification is Trading Companies & Distributors
-        # FAST removed - primary classification is Trading Companies & Distributors
-        "WESCO", # WESCO International
-        "DNOW",  # DNOW Inc
-    ],
-    
-    # Consumer Staples Sub-Industries
-    "Packaged Foods & Meats": [
-        "GIS",   # General Mills
-        "K",     # Kellanova
-        "CAG",   # Conagra Brands
-        "SJM",   # J.M. Smucker
-        "CPB",   # Campbell Soup
-        "HRL",   # Hormel Foods
-        "TSN",   # Tyson Foods
-        "KHC",   # Kraft Heinz
-        "HSY",   # Hershey Company
-        "MKC",   # McCormick & Company
-        "MDLZ",  # Mondelez International
-    ],
-    
-    "Soft Drinks & Non-alcoholic Beverages": [
-        "KO",    # Coca-Cola Company
-        "PEP",   # PepsiCo Inc
-        "MNST",  # Monster Beverage
-        "KDP",   # Keurig Dr Pepper
-        "CELH",  # Celsius Holdings
-    ],
-    
-    "Distillers & Vintners": [
-        "STZ",   # Constellation Brands
-        "BF.B",  # Brown-Forman
-        "DEO",   # Diageo plc
-        "SAM",   # Boston Beer Company
-        "TAP",   # Molson Coors Beverage
-        "BUD",   # Anheuser-Busch InBev
-    ],
-    
-    "Agricultural Products & Services": [
-        "ADM",   # Archer-Daniels-Midland
-        "BG",    # Bunge Global
-        "INGR",  # Ingredion
-        "DAR",   # Darling Ingredients
-        "CALM",  # Cal-Maine Foods
-    ],
-    
-    "Household Products": [
-        "PG",    # Procter & Gamble
-        "CL",    # Colgate-Palmolive
-        "CHD",   # Church & Dwight
-        "CLX",   # Clorox Company
-        "KMB",   # Kimberly-Clark
-        "SPB",   # Spectrum Brands
-        "ENR",   # Energizer Holdings
-    ],
-    
-    "Personal Care Products": [
-        "EL",    # Estee Lauder
-        "COTY",  # Coty Inc
-        "ELF",   # e.l.f. Beauty
-        "ULTA",  # Ulta Beauty
-        "OLPX",  # Olaplex Holdings
-    ],
-    
-    "Tobacco": [
-        "PM",    # Philip Morris International
-        "MO",    # Altria Group
-        "BTI",   # British American Tobacco
-        "TPB",   # Turning Point Brands
-    ],
-    
-    "Consumer Staples Merchandise Retail": [
-        "WMT",   # Walmart
-        "COST",  # Costco Wholesale
-        "TGT",   # Target Corporation
-        "DG",    # Dollar General
-        "DLTR",  # Dollar Tree
-        "BJ",    # BJ's Wholesale Club
-    ],
-    
-    "Drug Retail": [
-        "WBA",   # Walgreens Boots Alliance
-        "CVS",   # CVS Health
-        "RAD",   # Rite Aid
-    ],
-    
-    "Food Retail": [
-        "KR",    # Kroger Company
-        "ACI",   # Albertsons Companies
-        "SFM",   # Sprouts Farmers Market
-        "GO",    # Grocery Outlet
-    ],
-    
-    "Food Distributors": [
-        "SYY",   # Sysco Corporation
-        "USFD",  # US Foods Holding
-        "PFGC",  # Performance Food Group
-        "UNFI",  # United Natural Foods
-        "SPTN",  # SpartanNash
-    ],
-    
-    # Health Care Sub-Industries  
-    "Biotechnology": [
-        "ABBV",  # AbbVie Inc
-        "AMGN",  # Amgen Inc
-        "GILD",  # Gilead Sciences
-        "VRTX",  # Vertex Pharmaceuticals
-        "REGN",  # Regeneron Pharmaceuticals
-        "BIIB",  # Biogen Inc
-        "MRNA",  # Moderna Inc
-        "ALNY",  # Alnylam Pharmaceuticals
-        "SGEN",  # Seagen Inc
-        "INCY",  # Incyte Corporation
-        "BMRN",  # BioMarin Pharmaceutical
-    ],
-    
-    "Pharmaceuticals": [
-        "JNJ",   # Johnson & Johnson
-        "PFE",   # Pfizer Inc
-        "LLY",   # Eli Lilly
-        "MRK",   # Merck & Co
-        "BMY",   # Bristol-Myers Squibb
-        "ZTS",   # Zoetis Inc
-        "VTRS",  # Viatris Inc
-        "TEVA",  # Teva Pharmaceutical
-        "CTLT",  # Catalent Inc
-    ],
-    
-    "Health Care Equipment": [
-        "ABT",   # Abbott Laboratories
-        "MDT",   # Medtronic
-        "SYK",   # Stryker Corporation
-        "BSX",   # Boston Scientific
-        "ISRG",  # Intuitive Surgical
-        "EW",    # Edwards Lifesciences
-        "ZBH",   # Zimmer Biomet
-        "DXCM",  # Dexcom Inc
-        "ALGN",  # Align Technology
-        "RMD",   # ResMed Inc
-        "HOLX",  # Hologic Inc
-        "TFX",   # Teleflex
-        "PODD",  # Insulet Corporation
-    ],
-    
-    "Health Care Supplies": [
-        "COO",   # Cooper Companies
-        "WST",   # West Pharmaceutical
-        "BIO",   # Bio-Rad Laboratories
-        "HSIC",  # Henry Schein
-    ],
-    
-    "Health Care Distributors": [
-        "MCK",   # McKesson Corporation
-        "CAH",   # Cardinal Health
-        "COR",   # Cencora Inc
-        "HSIC",  # Henry Schein
-    ],
-    
-    "Health Care Services": [
-        "CVS",   # CVS Health
-        "CI",    # The Cigna Group
-        "DGX",   # Quest Diagnostics
-        "LH",    # Labcorp Holdings
-        "DVA",   # DaVita Inc
-        "GEHC",  # GE HealthCare
-    ],
-    
-    "Health Care Facilities": [
-        "HCA",   # HCA Healthcare
-        "UHS",   # Universal Health Services
-        "THC",   # Tenet Healthcare
-        "ACHC",  # Acadia Healthcare
-        "SEM",   # Select Medical Holdings
-    ],
-    
-    "Managed Health Care": [
-        "UNH",   # UnitedHealth Group
-        "ELV",   # Elevance Health
-        "HUM",   # Humana Inc
-        "CNC",   # Centene Corporation
-        "MOH",   # Molina Healthcare
-        "CI",    # The Cigna Group
-    ],
-    
-    "Life Sciences Tools & Services": [
-        "TMO",   # Thermo Fisher Scientific
-        "DHR",   # Danaher Corporation
-        "A",     # Agilent Technologies
-        "IQV",   # IQVIA Holdings
-        "MTD",   # Mettler-Toledo
-        "WAT",   # Waters Corporation
-        "CRL",   # Charles River Laboratories
-        "PKI",   # Revvity Inc
-        "TECH",  # Bio-Techne
-        "ILMN",  # Illumina Inc
-    ],
-    
-    "Health Care Technology": [
-        "VEEV",  # Veeva Systems
-        "HCAT",  # Health Catalyst
-        "DOCS",  # Doximity Inc
-        "TDOC",  # Teladoc Health
-        "AMWL",  # Amwell
-        "GDRX",  # GoodRx Holdings
-    ],
-    
-    # Financials Sub-Industries
-    "Diversified Banks": [
-        "JPM",   # JPMorgan Chase
-        "BAC",   # Bank of America
-        "WFC",   # Wells Fargo
-        "C",     # Citigroup
-        "USB",   # U.S. Bancorp
-        "PNC",   # PNC Financial
-        "TFC",   # Truist Financial
-        "MTB",   # M&T Bank
-    ],
-    
-    "Regional Banks": [
-        "FITB",  # Fifth Third Bancorp
-        "RF",    # Regions Financial
-        "HBAN",  # Huntington Bancshares
-        "CFG",   # Citizens Financial
-        "KEY",   # KeyCorp
-        "CMA",   # Comerica
-        "ZION",  # Zions Bancorporation
-        "FHN",   # First Horizon
-        "EWBC",  # East West Bancorp
-        "WAL",   # Western Alliance
-        "FCNCA", # First Citizens BancShares
-    ],
-    
-    "Investment Banking & Brokerage": [
-        "GS",    # Goldman Sachs
-        "MS",    # Morgan Stanley
-        "SCHW",  # Charles Schwab
-        "RJF",   # Raymond James
-        "IBKR",  # Interactive Brokers
-        "JEF",   # Jefferies Financial
-        "LPL",   # LPL Financial
-        "LPLA",  # LPL Financial Holdings
-    ],
-    
-    "Asset Management & Custody Banks": [
-        "BLK",   # BlackRock
-        "TROW",  # T. Rowe Price
-        "BEN",   # Franklin Resources
-        "IVZ",   # Invesco Ltd
-        "BK",    # Bank of New York Mellon
-        "STT",   # State Street
-        "NTRS",  # Northern Trust
-        "SEIC",  # SEI Investments
-        "AMG",   # Affiliated Managers
-    ],
-    
-    "Financial Exchanges & Data": [
-        "CME",   # CME Group
-        "ICE",   # Intercontinental Exchange
-        "NDAQ",  # Nasdaq Inc
-        "CBOE",  # Cboe Global Markets
-        "SPGI",  # S&P Global
-        "MSCI",  # MSCI Inc
-        "MCO",   # Moody's Corporation
-        "MKTX",  # MarketAxess
-        "FDS",   # FactSet Research
-    ],
-    
-    "Consumer Finance": [
-        "COF",   # Capital One
-        "AXP",   # American Express
-        "DFS",   # Discover Financial
-        "SYF",   # Synchrony Financial
-        "ALLY",  # Ally Financial
-        "OMF",   # OneMain Holdings
-        "SLM",   # SLM Corporation
-    ],
-    
-    "Transaction & Payment Processing Services": [
-        "V",     # Visa Inc
-        "MA",    # Mastercard
-        "PYPL",  # PayPal Holdings
-        "FIS",   # Fidelity National
-        "FISV",  # Fiserv Inc
-        "GPN",   # Global Payments
-        "SQ",    # Block Inc
-        "AFRM",  # Affirm Holdings
-    ],
-    
-    "Property & Casualty Insurance": [
-        "PGR",   # Progressive Corporation
-        "ALL",   # Allstate Corporation
-        "TRV",   # Travelers Companies
-        "CB",    # Chubb Limited
-        "AIG",   # American International Group
-        "WRB",   # W. R. Berkley
-        "CNA",   # CNA Financial
-        "CINF",  # Cincinnati Financial
-    ],
-    
-    "Life & Health Insurance": [
-        "AFL",   # Aflac
-        "MET",   # MetLife
-        "PRU",   # Prudential Financial
-        "LNC",   # Lincoln National
-        "PFG",   # Principal Financial
-        "GL",    # Globe Life
-        "VOYA",  # Voya Financial
-    ],
-    
-    "Insurance Brokers": [
-        "MMC",   # Marsh & McLennan
-        "AON",   # Aon plc
-        "WTW",   # Willis Towers Watson
-        "AJG",   # Arthur J. Gallagher
-        "BRO",   # Brown & Brown
-        "RYAN",  # Ryan Specialty
-    ],
-    
-    "Reinsurance": [
-        "RNR",   # RenaissanceRe Holdings
-        "ACGL",  # Arch Capital Group
-        "EG",    # Everest Group
-        "RE",    # Everest Re Group
-    ],
-    
-    # Information Technology Sub-Industries
-    "Application Software": [
-        "MSFT",  # Microsoft
-        "CRM",   # Salesforce
-        "ADBE",  # Adobe Inc
-        "INTU",  # Intuit Inc
-        "NOW",   # ServiceNow
-        "WDAY",  # Workday
-        "TEAM",  # Atlassian
-        "HUBS",  # HubSpot
-        "DDOG",  # Datadog
-        "ZS",    # Zscaler
-        "CRWD",  # CrowdStrike
-        "SNOW",  # Snowflake
-        "PLTR",  # Palantir Technologies
-        "MDB",   # MongoDB
-    ],
-    
-    "Systems Software": [
-        "ORCL",  # Oracle Corporation
-        "PANW",  # Palo Alto Networks
-        "FTNT",  # Fortinet
-        "GEN",   # Gen Digital
-        "VMW",   # VMware
-        "KEYS",  # Keysight Technologies
-        "ANSS",  # ANSYS Inc
-        "SNPS",  # Synopsys
-        "CDNS",  # Cadence Design Systems
-    ],
-    
-    "IT Consulting & Other Services": [
-        "ACN",   # Accenture
-        "IBM",   # IBM Corporation
-        "CTSH",  # Cognizant Technology
-        "IT",    # Gartner Inc
-        "EPAM",  # EPAM Systems
-        "GLOB",  # Globant
-        "GDYN",  # Grid Dynamics
-        "DXC",   # DXC Technology
-    ],
-    
-    "Internet Services & Infrastructure": [
-        "GOOGL", # Alphabet Inc
-        "META",  # Meta Platforms
-        "AKAM",  # Akamai Technologies
-        "NET",   # Cloudflare
-        "FSLY",  # Fastly
-        "CDN",   # CDN Technologies
-        "FFIV",  # F5 Inc
-    ],
-    
-    "Data Processing & Outsourced Services": [
-        "V",     # Visa Inc
-        "MA",    # Mastercard
-        "PYPL",  # PayPal Holdings
-        "ADP",   # Automatic Data Processing
-        "PAYX",  # Paychex
-        "FIS",   # Fidelity National
-        "FISV",  # Fiserv
-        "GPN",   # Global Payments
-        "JKHY",  # Jack Henry & Associates
-        "BR",    # Broadridge Financial
-    ],
-    
-    "Communications Equipment": [
-        "CSCO",  # Cisco Systems
-        "MSI",   # Motorola Solutions
-        "JNPR",  # Juniper Networks
-        "HPE",   # Hewlett Packard Enterprise
-        "ANET",  # Arista Networks
-        "CIEN",  # Ciena Corporation
-        "UI",    # Ubiquiti Inc
-    ],
-    
-    "Technology Hardware, Storage & Peripherals": [
-        "AAPL",  # Apple Inc
-        "DELL",  # Dell Technologies
-        "HPQ",   # HP Inc
-        "STX",   # Seagate Technology
-        "WDC",   # Western Digital
-        "NTAP",  # NetApp
-        "PSTG",  # Pure Storage
-        "LOGI",  # Logitech International
-        "ZBRA",  # Zebra Technologies
-    ],
-    
-    "Electronic Equipment & Instruments": [
-        "KEYS",  # Keysight Technologies
-        "TDY",   # Teledyne Technologies
-        "FTV",   # Fortive Corporation
-        "GRMN",  # Garmin Ltd
-        "ZBRA",  # Zebra Technologies
-        "TER",   # Teradyne
-        "COHR",  # Coherent Corp
-    ],
-    
-    "Electronic Components": [
-        "APH",   # Amphenol Corporation
-        "TEL",   # TE Connectivity
-        "GLW",   # Corning Incorporated
-        "FLEX",  # Flex Ltd
-        "JBL",   # Jabil Inc
-        "CLS",   # Celestica Inc
-    ],
-    
-    "Electronic Manufacturing Services": [
-        "FLEX",  # Flex Ltd
-        "JBL",   # Jabil Inc
-        "PLXS",  # Plexus Corp
-        "SANM",  # Sanmina Corporation
-        "BHE",   # Benchmark Electronics
-    ],
-    
-    "Semiconductors": [
-        "NVDA",  # NVIDIA Corporation
-        "AMD",   # Advanced Micro Devices
-        "AVGO",  # Broadcom Inc
-        "INTC",  # Intel Corporation
-        "QCOM",  # Qualcomm
-        "TXN",   # Texas Instruments
-        "ADI",   # Analog Devices
-        "MU",    # Micron Technology
-        "NXPI",  # NXP Semiconductors
-        "MCHP",  # Microchip Technology
-        "MRVL",  # Marvell Technology
-        "ON",    # ON Semiconductor
-        "SWKS",  # Skyworks Solutions
-        "QRVO",  # Qorvo
-        "MPWR",  # Monolithic Power
-    ],
-    
-    "Semiconductor Materials & Equipment": [
-        "AMAT",  # Applied Materials
-        "LRCX",  # Lam Research
-        "KLAC",  # KLA Corporation
-        "ASML",  # ASML Holding
-        "TER",   # Teradyne
-        "ENTG",  # Entegris
-        "MKSI",  # MKS Instruments
-        "ONTO",  # Onto Innovation
-        "UCTT",  # Ultra Clean Holdings
-    ],
-    
-    # Communication Services Sub-Industries
-    "Interactive Media & Services": [
-        "GOOGL", # Alphabet Inc
-        "META",  # Meta Platforms
-        "SNAP",  # Snap Inc
-        "PINS",  # Pinterest
-        "MTCH",  # Match Group
-        "IAC",   # IAC Inc
-        "ZG",    # Zillow Group
-        "YELP",  # Yelp Inc
-        "TTD",   # The Trade Desk
-    ],
-    
-    "Movies & Entertainment": [
-        "DIS",   # Walt Disney
-        "NFLX",  # Netflix
-        "WBD",   # Warner Bros. Discovery
-        "PARA",  # Paramount Global
-        "LYV",   # Live Nation Entertainment
-        "IMAX",  # IMAX Corporation
-        "WMG",   # Warner Music Group
-    ],
-    
-    "Interactive Home Entertainment": [
-        "EA",    # Electronic Arts
-        "TTWO",  # Take-Two Interactive
-        "ATVI",  # Activision Blizzard
-        "RBLX",  # Roblox Corporation
-        "U",     # Unity Software
-        "PLTK",  # Playtika Holding
-    ],
-    
-    "Broadcasting": [
-        "FOX",   # Fox Corporation
-        "FOXA",  # Fox Corporation Class A
-        "NWS",   # News Corp
-        "NWSA",  # News Corp Class A
-        "PARA",  # Paramount Global
-        "TGNA",  # TEGNA Inc
-        "NXST",  # Nexstar Media
-        "GTN",   # Gray Television
-    ],
-    
-    "Cable & Satellite": [
-        "CMCSA", # Comcast Corporation
-        "CHTR",  # Charter Communications
-        "CABO",  # Cable One
-        "SIRI",  # Sirius XM
-        "DISH",  # DISH Network
-        "LBRDK", # Liberty Broadband
-    ],
-    
-    "Publishing": [
-        "NWSA",  # News Corp
-        "NYT",   # New York Times
-        "GCI",   # Gannett Co
-        "SCHL",  # Scholastic
-    ],
-    
-    "Advertising": [
-        "OMC",   # Omnicom Group
-        "IPG",   # Interpublic Group
-        "MGNI",  # Magnite Inc
-        "PUBM",  # PubMatic
-        "TTD",   # The Trade Desk
-        "TBLA",  # Taboola.com
-        "DSP",   # Viant Technology
-        "IAS",   # Integral Ad Science
-    ],
-    
-    "Integrated Telecommunication Services": [
-        "T",     # AT&T Inc
-        "VZ",    # Verizon Communications
-        "LUMN",  # Lumen Technologies
-        "FTR",   # Frontier Communications
-    ],
-    
-    "Wireless Telecommunication Services": [
-        "TMUS",  # T-Mobile US
-        "USM",   # United States Cellular
-        "SHEN",  # Shenandoah Telecommunications
-    ],
-    
-    "Alternative Carriers": [
-        "LUMN",  # Lumen Technologies
-        "CCOI",  # Cogent Communications
-        "BAND",  # Bandwidth Inc
-        "CIEN",  # Ciena Corporation
-    ],
-    
-    # Utilities Sub-Industries
-    "Electric Utilities": [
-        "NEE",   # NextEra Energy
-        "DUK",   # Duke Energy
-        "SO",    # Southern Company
-        "AEP",   # American Electric Power
-        "EXC",   # Exelon Corporation
-        "SRE",   # Sempra
-        "XEL",   # Xcel Energy
-        "ED",    # Consolidated Edison
-        "EIX",   # Edison International
-        "WEC",   # WEC Energy Group
-        "ES",    # Eversource Energy
-        "DTE",   # DTE Energy
-        "PCG",   # PG&E Corporation
-        "FE",    # FirstEnergy
-        "PPL",   # PPL Corporation
-        "PEG",   # Public Service Enterprise
-    ],
-    
-    "Gas Utilities": [
-        "ATO",   # Atmos Energy
-        "NJR",   # New Jersey Resources
-        "SWX",   # Southwest Gas
-        "UGI",   # UGI Corporation
-        "NFG",   # National Fuel Gas
-        "NI",    # NiSource Inc
-        "OGS",   # ONE Gas
-        "SR",    # Spire Inc
-    ],
-    
-    "Multi-Utilities": [
-        "D",     # Dominion Energy
-        "CNP",   # CenterPoint Energy
-        "AEE",   # Ameren Corporation
-        "CMS",   # CMS Energy
-        "NI",    # NiSource
-        "LNT",   # Alliant Energy
-        "EVRG",  # Evergy Inc
-        "PNW",   # Pinnacle West Capital
-    ],
-    
-    "Water Utilities": [
-        "AWK",   # American Water Works
-        "WTRG",  # Essential Utilities
-        "CWT",   # California Water Service
-        "SJW",   # SJW Group
-        "AWR",   # American States Water
-        "MSEX",  # Middlesex Water
-        "YORW",  # York Water Company
-    ],
-    
-    "Independent Power Producers & Energy Traders": [
-        "AES",   # AES Corporation
-        "NRG",   # NRG Energy
-        "VST",   # Vistra Corp
-        "CWEN",  # Clearway Energy
-        "TAL",   # TAL Education Group
-    ],
-    
-    "Renewable Electricity": [
-        "NEP",   # NextEra Energy Partners
-        "BEP",   # Brookfield Renewable
-        "ENPH",  # Enphase Energy
-        "FSLR",  # First Solar
-        "SEDG",  # SolarEdge Technologies
-        "RUN",   # Sunrun Inc
-        "NOVA",  # Sunnova Energy
-        "ARRY",  # Array Technologies
-    ],
-    
-    # Real Estate Sub-Industries
-    "Industrial REITs": [
-        "PLD",   # Prologis
-        "DRE",   # Duke Realty
-        "REXR",  # Rexford Industrial
-        "STAG",  # STAG Industrial
-        "FR",    # First Industrial Realty
-        "EGP",   # EastGroup Properties
-        "TRNO",  # Terreno Realty
-    ],
-    
-    "Office REITs": [
-        "BXP",   # Boston Properties
-        "ARE",   # Alexandria Real Estate
-        "KRC",   # Kilroy Realty
-        "VNO",   # Vornado Realty
-        "SLG",   # SL Green Realty
-        "HIW",   # Highwoods Properties
-        "DEI",   # Douglas Emmett
-        "CUZ",   # Cousins Properties
-    ],
-    
-    "Retail REITs": [
-        "SPG",   # Simon Property Group
-        "REG",   # Regency Centers
-        "FRT",   # Federal Realty
-        "KIM",   # Kimco Realty
-        "O",     # Realty Income
-        "NNN",   # NNN REIT
-        "BRX",   # Brixmor Property
-        "SITC",  # SITE Centers
-    ],
-    
-    "Multi-Family Residential REITs": [
-        "EQR",   # Equity Residential
-        "AVB",   # AvalonBay Communities
-        "ESS",   # Essex Property Trust
-        "UDR",   # UDR Inc
-        "MAA",   # Mid-America Apartment
-        "CPT",   # Camden Property Trust
-        "INVH",  # Invitation Homes
-        "AMH",   # American Homes 4 Rent
-    ],
-    
-    "Single-Family Residential REITs": [
-        "INVH",  # Invitation Homes
-        "AMH",   # American Homes 4 Rent
-        "RESI",  # Front Yard Residential
-    ],
-    
-    "Health Care REITs": [
-        "WELL",  # Welltower
-        "VTR",   # Ventas
-        "PEAK",  # Healthpeak Properties
-        "OHI",   # Omega Healthcare
-        "HR",    # Healthcare Realty
-        "DOC",   # Physicians Realty Trust
-        "LTC",   # LTC Properties
-        "NHI",   # National Health Investors
-        "SBRA",  # Sabra Health Care
-        "MPW",   # Medical Properties Trust
-    ],
-    
-    "Hotel & Resort REITs": [
-        "HST",   # Host Hotels & Resorts
-        "VICI",  # VICI Properties
-        "PK",    # Park Hotels & Resorts
-        "RHP",   # Ryman Hospitality
-        "SHO",   # Sunstone Hotel
-        "PEB",   # Pebblebrook Hotel
-        "XHR",   # Xenia Hotels
-        "DRH",   # DiamondRock Hospitality
-    ],
-    
-    "Diversified REITs": [
-        "VNQ",   # Vanguard Real Estate ETF
-        "WPC",   # W. P. Carey
-        "STOR",  # STORE Capital
-        "IRM",   # Iron Mountain
-        "GLPI",  # Gaming and Leisure Properties
-    ],
-    
-    "Infrastructure REITs": [
-        "AMT",   # American Tower
-        "CCI",   # Crown Castle
-        "SBAC",  # SBA Communications
-        "UNIT",  # Uniti Group
-    ],
-    
-    "Real Estate Services": [
-        "CBRE",  # CBRE Group
-        "JLL",   # Jones Lang LaSalle
-        "CWK",   # Cushman & Wakefield
-        "NMRK",  # Newmark Group
-        "EXPI",  # eXp World Holdings
-        "RDFN",  # Redfin
-        "ZG",    # Zillow Group
-        "OPEN",  # Opendoor Technologies
-        "COMP",  # Compass Inc
-    ],
-    
-    "Real Estate Operating Companies": [
-        "CSGP",  # CoStar Group
-        "HHH",   # Howard Hughes
-        "JOE",   # St. Joe Company
-        "FOR",   # Forestar Group
-    ],
+# 450100 - Application Software
+INDUSTRY_450100_APPLICATION_SOFTWARE: List[str] = [
+    "CRM", "ORCL", "SAP", "ADBE", "NOW", "INTU", "WDAY", "TEAM", "SNOW",
+    "DDOG", "ZS", "PANW", "CRWD", "OKTA", "MDB", "ZM", "DOCU", "HUBS",
+    "SPLK", "ZEN", "SMAR", "APPN", "FROG", "CFLT", "ESTC", "GTLB",
+    "PTC", "ANSS", "CDNS", "SNPS", "ADSK", "TYL", "GWRE", "PAYC", "PCTY",
+]
+
+# 450200 - Cloud Computing
+INDUSTRY_450200_CLOUD_COMPUTING: List[str] = [
+    "NET", "DDOG", "SNOW", "CFLT", "ESTC", "DBX", "BOX",
+]
+
+# 450300 - Communication Equipment
+INDUSTRY_450300_COMMUNICATION_EQUIPMENT: List[str] = [
+    "CSCO", "JNPR", "ANET", "CIEN", "VIAV", "COMM", "CLFD", "LITE", "INFN",
+    "CALX", "CASA", "CMTL", "DGII", "NTGR", "SLAB", "SMTC", "VIAVI",
+]
+
+# 450400 - Computer Hardware
+INDUSTRY_450400_COMPUTER_HARDWARE: List[str] = [
+    "AAPL", "HPQ", "HPE", "DELL", "WDC", "STX", "NTAP", "PSTG", "SMCI",
+    "LOGI", "SSYS", "DDD",
+]
+
+# 450500 - Computer Services
+INDUSTRY_450500_COMPUTER_SERVICES: List[str] = [
+    "IBM", "ACN", "CTSH", "INFY", "WIT", "EPAM", "GLOB", "EXLS", "GDS",
+]
+
+# 450600 - Cybersecurity
+INDUSTRY_450600_CYBERSECURITY: List[str] = [
+    "PANW", "CRWD", "ZS", "FTNT", "OKTA", "QLYS", "TENB", "CYBR", "RPD",
+    "VRNS", "SAIL", "SCWX", "BB", "NLOK", "FEYE", "PFPT",
+]
+
+# 450700 - Data Processing
+INDUSTRY_450700_DATA_PROCESSING: List[str] = [
+    "V", "MA", "PYPL", "FIS", "FISV", "GPN", "ADP", "PAYX", "JKHY", "EVTC",
+    "WEX", "GDOT", "FOUR", "PAY", "QTWO",
+]
+
+# 450800 - Electronic Components
+INDUSTRY_450800_ELECTRONIC_COMPONENTS: List[str] = [
+    "APH", "TEL", "FLEX", "JBL", "SANM", "CLS", "PLXS", "TTMI", "BHE",
+    "BELFA", "LFUS", "NOVT", "OLED", "VICR",
+]
+
+# 450900 - IT Consulting
+INDUSTRY_450900_IT_CONSULTING: List[str] = [
+    "ACN", "CTSH", "INFY", "WIT", "EPAM", "GLOB",
+]
+
+# 451000 - Scientific Instruments
+INDUSTRY_451000_SCIENTIFIC_INSTRUMENTS: List[str] = [
+    "KEYS", "TDY", "GRMN", "TRMB", "COHR", "MKSI", "IDXX", "NOVT",
+    "CGNX", "ITRI", "MLAB", "NEOG", "OLED", "ST", "FTV",
+]
+
+# 451100 - Semiconductor Equipment
+INDUSTRY_451100_SEMICONDUCTOR_EQUIPMENT: List[str] = [
+    "ASML", "LRCX", "KLAC", "AMAT", "TER", "ENTG", "ONTO", "ACLS", "COHU",
+    "ICHR", "MKSI", "UCTT", "FORM", "OLED", "KLIC", "BRKS",
+]
+
+# 451200 - Semiconductors
+INDUSTRY_451200_SEMICONDUCTORS: List[str] = [
+    "NVDA", "AMD", "INTC", "AVGO", "QCOM", "TXN", "MU", "ADI", "NXPI",
+    "MRVL", "ON", "SWKS", "QRVO", "MCHP", "MPWR", "WOLF", "GFS", "ALGM",
+    "CRUS", "DIOD", "FORM", "HIMX", "LSCC", "SIMO", "SITM", "SMTC",
+    "MTSI", "POWI", "RMBS", "SLAB", "STM", "TSM", "UMC",
+]
+
+# 451300 - Software Infrastructure
+INDUSTRY_451300_SOFTWARE_INFRASTRUCTURE: List[str] = [
+    "MSFT", "GOOG", "GOOGL", "META", "AMZN", "PLTR", "PATH", "AI", "BBAI",
+    "VMW", "RHT", "RBLX", "U", "TTWO", "EA", "ATVI", "ZNGA",
+]
+
+
+# =============================================================================
+# SECTOR 50: COMMUNICATION SERVICES
+# =============================================================================
+
+# 500100 - Advertising
+INDUSTRY_500100_ADVERTISING: List[str] = [
+    "OMC", "IPG", "MGID", "PUBM", "TTD", "APPS", "DV", "IAS",
+]
+
+# 500200 - Broadcasting
+INDUSTRY_500200_BROADCASTING: List[str] = [
+    "CMCSA", "FOX", "FOXA", "PARA", "WBD", "NXST", "SBGI", "GTN", "TGNA",
+    "SSP", "GCI", "IHRT", "TRCO", "SALM",
+]
+
+# 500300 - Cable & Satellite
+INDUSTRY_500300_CABLE_SATELLITE: List[str] = [
+    "CHTR", "CABO", "LBRDA", "LBRDK", "SIRI", "DISH",
+]
+
+# 500400 - Entertainment
+INDUSTRY_500400_ENTERTAINMENT: List[str] = [
+    "DIS", "NFLX", "ROKU", "SPOT", "LYV", "WMG", "MSGS", "EDR", "LGF.A",
+    "IMAX", "CNK", "AMC", "CINE", "NCMI",
+]
+
+# 500500 - Internet
+INDUSTRY_500500_INTERNET: List[str] = [
+    "GOOG", "GOOGL", "META", "SNAP", "PINS", "TWTR", "MTCH", "BMBL",
+    "ZG", "Z", "YELP", "IAC", "ANGI", "CARG", "GRPN", "TRIP", "EXPE", "BKNG",
+]
+
+# 500600 - Publishing
+INDUSTRY_500600_PUBLISHING: List[str] = [
+    "NYT", "NWSA", "NWS", "GCI", "TGNA", "LEE", "MNI",
+]
+
+# 500700 - Telecom Equipment
+INDUSTRY_500700_TELECOM_EQUIPMENT: List[str] = [
+    "ERIC", "NOK", "UI", "COMM", "CLFD", "VIAV",
+]
+
+# 500800 - Telecom Services
+INDUSTRY_500800_TELECOM_SERVICES: List[str] = [
+    "T", "VZ", "TMUS", "LUMN", "FTR", "USM", "TDS", "ATUS", "LILA", "LILAK",
+]
+
+
+# =============================================================================
+# SECTOR 55: UTILITIES
+# =============================================================================
+
+# 550100 - Electric Utilities
+INDUSTRY_550100_ELECTRIC_UTILITIES: List[str] = [
+    "NEE", "DUK", "SO", "D", "AEP", "XEL", "EXC", "SRE", "WEC", "ES",
+    "ED", "DTE", "PPL", "ETR", "FE", "AEE", "CMS", "EIX", "EVRG", "CNP",
+    "NI", "PNW", "OGE", "AVA", "IDA", "HE", "POR", "BKH", "NWE", "OGS",
+]
+
+# 550200 - Gas Utilities
+INDUSTRY_550200_GAS_UTILITIES: List[str] = [
+    "NJR", "SWX", "ATO", "SPH", "OGS", "NWN", "SR", "UTL",
+]
+
+# 550300 - Independent Power
+INDUSTRY_550300_INDEPENDENT_POWER: List[str] = [
+    "NRG", "VST", "ORA", "CWEN", "AES", "TAC",
+]
+
+# 550400 - Multi-Utilities
+INDUSTRY_550400_MULTI_UTILITIES: List[str] = [
+    "PCG", "EXC", "WEC", "ES", "ED", "DTE", "CMS", "NI", "PEG", "AGR",
+]
+
+# 550500 - Renewable Energy
+INDUSTRY_550500_RENEWABLE_ENERGY: List[str] = [
+    "ENPH", "SEDG", "FSLR", "RUN", "NOVA", "SPWR", "CSIQ", "JKS", "ARRY",
+    "SHLS", "MAXN", "AMPS", "NEP", "CWEN", "BEPC", "BEP", "TAN",
+]
+
+# 550600 - Water Utilities
+INDUSTRY_550600_WATER_UTILITIES: List[str] = [
+    "AWK", "WTR", "WTRG", "CWT", "SJW", "AWR", "MSEX", "YORW", "ARTNA",
+]
+
+
+# =============================================================================
+# SECTOR 60: REAL ESTATE
+# =============================================================================
+
+# 600100 - REITs - Diversified
+INDUSTRY_600100_REITS_DIVERSIFIED: List[str] = [
+    "PLD", "AMT", "CCI", "EQIX", "PSA", "DLR", "SPG", "WELL", "O", "AVB",
+    "WY", "EQR", "VTR", "ARE", "DRE", "BXP", "VNO", "SLG", "ESRT", "PGRE",
+]
+
+# 600200 - REITs - Healthcare
+INDUSTRY_600200_REITS_HEALTHCARE: List[str] = [
+    "WELL", "VTR", "PEAK", "OHI", "HR", "DOC", "SBRA", "LTC", "NHI", "CTRE",
+    "MPW", "GMRE", "GH", "CHC",
+]
+
+# 600300 - REITs - Hotel & Motel
+INDUSTRY_600300_REITS_HOTEL_MOTEL: List[str] = [
+    "HST", "PK", "RHP", "SHO", "DRH", "PEB", "RLJ", "INN", "XHR", "APTS",
+    "BHR", "CLDT", "HT", "AHT",
+]
+
+# 600400 - REITs - Industrial
+INDUSTRY_600400_REITS_INDUSTRIAL: List[str] = [
+    "PLD", "DRE", "FR", "EGP", "STAG", "TRNO", "REXR", "IIPR", "LXP", "COLD",
+    "GTY", "PLYM", "ILPT", "PINE",
+]
+
+# 600500 - REITs - Mortgage
+INDUSTRY_600500_REITS_MORTGAGE: List[str] = [
+    "AGNC", "NLY", "STWD", "BXMT", "LADR", "TWO", "MFA", "RWT", "KREF",
+    "ABR", "NYMT", "ARI", "GPMT", "DX", "IVR", "NRZ", "PMT", "ACRE",
+    "RC", "RITM", "CIM", "TRTX", "NREF", "FBRT",
+]
+
+# 600600 - REITs - Office
+INDUSTRY_600600_REITS_OFFICE: List[str] = [
+    "BXP", "VNO", "SLG", "ESRT", "PGRE", "HIW", "CUZ", "OFC", "KRC", "PDM",
+    "DEI", "HPP", "JBGS", "FSP", "EQC", "ONL", "WRE",
+]
+
+# 600700 - REITs - Residential
+INDUSTRY_600700_REITS_RESIDENTIAL: List[str] = [
+    "AVB", "EQR", "MAA", "ESS", "UDR", "CPT", "AIV", "NXRT", "IRT", "ELME",
+    "INVH", "AMH", "REXR", "SUI", "ELS",
+]
+
+# 600800 - REITs - Retail
+INDUSTRY_600800_REITS_RETAIL: List[str] = [
+    "SPG", "O", "REG", "KIM", "FRT", "BRX", "KRG", "ROIC", "SITE", "AKR",
+    "RPAI", "RPT", "UE", "SKT", "MAC", "CBL", "PEI", "WPG", "STAR",
+]
+
+# 600900 - REITs - Specialty
+INDUSTRY_600900_REITS_SPECIALTY: List[str] = [
+    "AMT", "CCI", "EQIX", "DLR", "PSA", "EXR", "CUBE", "LSI", "NSA", "REXR",
+    "SRC", "FCPT", "STOR", "ADC", "LAND", "EPRT", "NNN", "WPC", "GLPI",
+    "VICI", "RYN", "PCH", "CTO", "SAFE", "SBAC", "IRM", "MPW",
+]
+
+# 601000 - Real Estate Development
+INDUSTRY_601000_REAL_ESTATE_DEVELOPMENT: List[str] = [
+    "HHC", "FPH", "FOR", "UMH", "SNPR",
+]
+
+# 601100 - Real Estate Services
+INDUSTRY_601100_REAL_ESTATE_SERVICES: List[str] = [
+    "CBRE", "JLL", "CWK", "RMR", "NMRK", "MMI", "DOUG", "HOUS",
+]
+
+
+# =============================================================================
+# COMBINED EXPORTS - ALL TICKERS BY INDUSTRY
+# =============================================================================
+
+INDUSTRY_TICKERS: Dict[str, List[str]] = {
+    # Energy
+    "100100": INDUSTRY_100100_COAL,
+    "100200": INDUSTRY_100200_OIL_GAS_DRILLING,
+    "100300": INDUSTRY_100300_OIL_GAS_EP,
+    "100400": INDUSTRY_100400_OIL_GAS_EQUIPMENT,
+    "100500": INDUSTRY_100500_OIL_GAS_INTEGRATED,
+    "100600": INDUSTRY_100600_OIL_GAS_PIPELINES,
+    "100700": INDUSTRY_100700_OIL_GAS_REFINING,
+    # Materials
+    "150100": INDUSTRY_150100_ALUMINUM,
+    "150200": INDUSTRY_150200_BUILDING_MATERIALS,
+    "150300": INDUSTRY_150300_CHEMICALS,
+    "150400": INDUSTRY_150400_CONTAINERS_PACKAGING,
+    "150500": INDUSTRY_150500_COPPER,
+    "150600": INDUSTRY_150600_FERTILIZERS,
+    "150700": INDUSTRY_150700_GOLD,
+    "150800": INDUSTRY_150800_METALS_MINING,
+    "150900": INDUSTRY_150900_PAPER_FOREST,
+    "151000": INDUSTRY_151000_SILVER,
+    "151100": INDUSTRY_151100_SPECIALTY_CHEMICALS,
+    "151200": INDUSTRY_151200_STEEL,
+    # Industrials
+    "200100": INDUSTRY_200100_AEROSPACE,
+    "200200": INDUSTRY_200200_AIR_FREIGHT,
+    "200300": INDUSTRY_200300_AIRLINES,
+    "200400": INDUSTRY_200400_BUILDING_PRODUCTS,
+    "200500": INDUSTRY_200500_BUSINESS_SERVICES,
+    "200600": INDUSTRY_200600_CAPITAL_GOODS,
+    "200700": INDUSTRY_200700_COMMERCIAL_VEHICLES,
+    "200800": INDUSTRY_200800_CONGLOMERATES,
+    "200900": INDUSTRY_200900_CONSTRUCTION_MATERIALS,
+    "201000": INDUSTRY_201000_DEFENSE,
+    "201100": INDUSTRY_201100_ELECTRICAL_EQUIPMENT,
+    "201200": INDUSTRY_201200_ENGINEERING_CONSTRUCTION,
+    "201300": INDUSTRY_201300_ENVIRONMENTAL_SERVICES,
+    "201400": INDUSTRY_201400_FARM_MACHINERY,
+    "201500": INDUSTRY_201500_HEAVY_MACHINERY,
+    "201600": INDUSTRY_201600_INDUSTRIAL_DISTRIBUTION,
+    "201700": INDUSTRY_201700_MARINE_SHIPPING,
+    "201800": INDUSTRY_201800_PACKAGING,
+    "201900": INDUSTRY_201900_RAILROADS,
+    "202000": INDUSTRY_202000_SECURITY_SERVICES,
+    "202100": INDUSTRY_202100_STAFFING,
+    "202200": INDUSTRY_202200_TRUCKING,
+    "202300": INDUSTRY_202300_WASTE_MANAGEMENT,
+    # Consumer Discretionary
+    "250100": INDUSTRY_250100_AUTO_PARTS,
+    "250200": INDUSTRY_250200_AUTOMOBILES,
+    "250300": INDUSTRY_250300_CASINOS_GAMING,
+    "250400": INDUSTRY_250400_CONSUMER_ELECTRONICS,
+    "250500": INDUSTRY_250500_DEPARTMENT_STORES,
+    "250600": INDUSTRY_250600_FOOTWEAR,
+    "250700": INDUSTRY_250700_FURNISHINGS,
+    "250800": INDUSTRY_250800_GENERAL_MERCHANDISE,
+    "250900": INDUSTRY_250900_HOME_IMPROVEMENT,
+    "251000": INDUSTRY_251000_HOMEBUILDERS,
+    "251100": INDUSTRY_251100_HOTELS_MOTELS,
+    "251200": INDUSTRY_251200_HOUSEWARES,
+    "251300": INDUSTRY_251300_LEISURE_PRODUCTS,
+    "251400": INDUSTRY_251400_RECREATIONAL_SERVICES,
+    "251500": INDUSTRY_251500_RECREATIONAL_VEHICLES,
+    "251600": INDUSTRY_251600_RESTAURANTS,
+    "251700": INDUSTRY_251700_RETAIL_APPAREL,
+    "251800": INDUSTRY_251800_SPECIALTY_RETAIL,
+    "251900": INDUSTRY_251900_TEXTILES_APPAREL,
+    "252000": INDUSTRY_252000_TIRES,
+    "252100": INDUSTRY_252100_TOYS,
+    # Consumer Staples
+    "300100": INDUSTRY_300100_BEVERAGES_ALCOHOLIC,
+    "300200": INDUSTRY_300200_BEVERAGES_NON_ALCOHOLIC,
+    "300300": INDUSTRY_300300_DRUG_RETAILERS,
+    "300400": INDUSTRY_300400_FOOD_PRODUCTS,
+    "300500": INDUSTRY_300500_FOOD_RETAILERS,
+    "300600": INDUSTRY_300600_HOUSEHOLD_PRODUCTS,
+    "300700": INDUSTRY_300700_PERSONAL_PRODUCTS,
+    "300800": INDUSTRY_300800_TOBACCO,
+    # Health Care
+    "350100": INDUSTRY_350100_BIOTECHNOLOGY,
+    "350200": INDUSTRY_350200_DIAGNOSTICS_RESEARCH,
+    "350300": INDUSTRY_350300_HEALTHCARE_DISTRIBUTORS,
+    "350400": INDUSTRY_350400_HEALTHCARE_FACILITIES,
+    "350500": INDUSTRY_350500_HEALTHCARE_PLANS,
+    "350600": INDUSTRY_350600_HEALTHCARE_SERVICES,
+    "350700": INDUSTRY_350700_MEDICAL_DEVICES,
+    "350800": INDUSTRY_350800_MEDICAL_INSTRUMENTS,
+    "350900": INDUSTRY_350900_PHARMACEUTICALS,
+    # Financials
+    "400100": INDUSTRY_400100_ASSET_MANAGEMENT,
+    "400200": INDUSTRY_400200_BANKS_DIVERSIFIED,
+    "400300": INDUSTRY_400300_BANKS_REGIONAL,
+    "400400": INDUSTRY_400400_BROKERS_EXCHANGES,
+    "400500": INDUSTRY_400500_CONSUMER_FINANCE,
+    "400600": INDUSTRY_400600_FINANCIAL_SERVICES,
+    "400700": INDUSTRY_400700_INSURANCE_BROKERS,
+    "400800": INDUSTRY_400800_INSURANCE_LIFE,
+    "400900": INDUSTRY_400900_INSURANCE_PC,
+    "401000": INDUSTRY_401000_INSURANCE_SPECIALTY,
+    "401100": INDUSTRY_401100_MORTGAGE_FINANCE,
+    "401200": INDUSTRY_401200_SAVINGS_LOANS,
+    # Technology
+    "450100": INDUSTRY_450100_APPLICATION_SOFTWARE,
+    "450200": INDUSTRY_450200_CLOUD_COMPUTING,
+    "450300": INDUSTRY_450300_COMMUNICATION_EQUIPMENT,
+    "450400": INDUSTRY_450400_COMPUTER_HARDWARE,
+    "450500": INDUSTRY_450500_COMPUTER_SERVICES,
+    "450600": INDUSTRY_450600_CYBERSECURITY,
+    "450700": INDUSTRY_450700_DATA_PROCESSING,
+    "450800": INDUSTRY_450800_ELECTRONIC_COMPONENTS,
+    "450900": INDUSTRY_450900_IT_CONSULTING,
+    "451000": INDUSTRY_451000_SCIENTIFIC_INSTRUMENTS,
+    "451100": INDUSTRY_451100_SEMICONDUCTOR_EQUIPMENT,
+    "451200": INDUSTRY_451200_SEMICONDUCTORS,
+    "451300": INDUSTRY_451300_SOFTWARE_INFRASTRUCTURE,
+    # Communication Services
+    "500100": INDUSTRY_500100_ADVERTISING,
+    "500200": INDUSTRY_500200_BROADCASTING,
+    "500300": INDUSTRY_500300_CABLE_SATELLITE,
+    "500400": INDUSTRY_500400_ENTERTAINMENT,
+    "500500": INDUSTRY_500500_INTERNET,
+    "500600": INDUSTRY_500600_PUBLISHING,
+    "500700": INDUSTRY_500700_TELECOM_EQUIPMENT,
+    "500800": INDUSTRY_500800_TELECOM_SERVICES,
+    # Utilities
+    "550100": INDUSTRY_550100_ELECTRIC_UTILITIES,
+    "550200": INDUSTRY_550200_GAS_UTILITIES,
+    "550300": INDUSTRY_550300_INDEPENDENT_POWER,
+    "550400": INDUSTRY_550400_MULTI_UTILITIES,
+    "550500": INDUSTRY_550500_RENEWABLE_ENERGY,
+    "550600": INDUSTRY_550600_WATER_UTILITIES,
+    # Real Estate
+    "600100": INDUSTRY_600100_REITS_DIVERSIFIED,
+    "600200": INDUSTRY_600200_REITS_HEALTHCARE,
+    "600300": INDUSTRY_600300_REITS_HOTEL_MOTEL,
+    "600400": INDUSTRY_600400_REITS_INDUSTRIAL,
+    "600500": INDUSTRY_600500_REITS_MORTGAGE,
+    "600600": INDUSTRY_600600_REITS_OFFICE,
+    "600700": INDUSTRY_600700_REITS_RESIDENTIAL,
+    "600800": INDUSTRY_600800_REITS_RETAIL,
+    "600900": INDUSTRY_600900_REITS_SPECIALTY,
+    "601000": INDUSTRY_601000_REAL_ESTATE_DEVELOPMENT,
+    "601100": INDUSTRY_601100_REAL_ESTATE_SERVICES,
 }
 
 
-def get_targeted_subindustry_tickers() -> dict:
-    """Get tickers organized by targeted sub-industry name."""
-    return TARGETED_SUBINDUSTRY_STOCKS.copy()
-
-
-def get_all_targeted_tickers() -> list:
-    """Get all tickers from targeted sub-industries as a flat list."""
+def get_all_additional_tickers() -> List[str]:
+    """Get all additional tickers as a flat list."""
     all_tickers = []
-    for tickers in TARGETED_SUBINDUSTRY_STOCKS.values():
+    for tickers in INDUSTRY_TICKERS.values():
         all_tickers.extend(tickers)
-    # Remove duplicates
-    return list(set(all_tickers))
-
-
-# =============================================================================
-# COMBINED LIST
-# =============================================================================
-
-def get_all_additional_tickers() -> list:
-    """Get all additional tickers from all sectors."""
-    all_tickers = []
-    all_tickers.extend(SECTOR_10_ENERGY)
-    all_tickers.extend(SECTOR_15_MATERIALS)
-    all_tickers.extend(SECTOR_20_INDUSTRIALS)
-    all_tickers.extend(SECTOR_25_CONSUMER_DISCRETIONARY)
-    all_tickers.extend(SECTOR_30_CONSUMER_STAPLES)
-    all_tickers.extend(SECTOR_35_HEALTHCARE)
-    all_tickers.extend(SECTOR_40_FINANCIALS)
-    all_tickers.extend(SECTOR_45_INFORMATION_TECHNOLOGY)
-    all_tickers.extend(SECTOR_50_COMMUNICATION_SERVICES)
-    all_tickers.extend(SECTOR_55_UTILITIES)
-    all_tickers.extend(SECTOR_60_REAL_ESTATE)
-    
     # Remove duplicates while preserving order
     seen = set()
-    unique_tickers = []
-    for ticker in all_tickers:
-        if ticker not in seen:
-            seen.add(ticker)
-            unique_tickers.append(ticker)
-    
-    return unique_tickers
+    unique = []
+    for t in all_tickers:
+        if t not in seen:
+            seen.add(t)
+            unique.append(t)
+    return unique
 
 
-def get_tickers_by_sector() -> dict:
-    """Get tickers organized by sector code."""
-    return {
-        "10": SECTOR_10_ENERGY,
-        "15": SECTOR_15_MATERIALS,
-        "20": SECTOR_20_INDUSTRIALS,
-        "25": SECTOR_25_CONSUMER_DISCRETIONARY,
-        "30": SECTOR_30_CONSUMER_STAPLES,
-        "35": SECTOR_35_HEALTHCARE,
-        "40": SECTOR_40_FINANCIALS,
-        "45": SECTOR_45_INFORMATION_TECHNOLOGY,
-        "50": SECTOR_50_COMMUNICATION_SERVICES,
-        "55": SECTOR_55_UTILITIES,
-        "60": SECTOR_60_REAL_ESTATE,
-    }
+def get_tickers_for_industry(industry_code: str) -> List[str]:
+    """Get additional tickers for a specific industry code."""
+    return INDUSTRY_TICKERS.get(industry_code, [])
 
+
+def get_industry_code_for_ticker(ticker: str) -> str:
+    """Find the industry code for a given ticker."""
+    for code, tickers in INDUSTRY_TICKERS.items():
+        if ticker in tickers:
+            return code
+    return ""
+
+
+# Backward compatibility - sector-based exports
+SECTOR_10_ENERGY = (
+    INDUSTRY_100100_COAL +
+    INDUSTRY_100200_OIL_GAS_DRILLING +
+    INDUSTRY_100300_OIL_GAS_EP +
+    INDUSTRY_100400_OIL_GAS_EQUIPMENT +
+    INDUSTRY_100500_OIL_GAS_INTEGRATED +
+    INDUSTRY_100600_OIL_GAS_PIPELINES +
+    INDUSTRY_100700_OIL_GAS_REFINING
+)
+
+SECTOR_15_MATERIALS = (
+    INDUSTRY_150100_ALUMINUM +
+    INDUSTRY_150200_BUILDING_MATERIALS +
+    INDUSTRY_150300_CHEMICALS +
+    INDUSTRY_150400_CONTAINERS_PACKAGING +
+    INDUSTRY_150500_COPPER +
+    INDUSTRY_150600_FERTILIZERS +
+    INDUSTRY_150700_GOLD +
+    INDUSTRY_150800_METALS_MINING +
+    INDUSTRY_150900_PAPER_FOREST +
+    INDUSTRY_151000_SILVER +
+    INDUSTRY_151100_SPECIALTY_CHEMICALS +
+    INDUSTRY_151200_STEEL
+)
+
+SECTOR_20_INDUSTRIALS = (
+    INDUSTRY_200100_AEROSPACE +
+    INDUSTRY_200200_AIR_FREIGHT +
+    INDUSTRY_200300_AIRLINES +
+    INDUSTRY_200400_BUILDING_PRODUCTS +
+    INDUSTRY_200500_BUSINESS_SERVICES +
+    INDUSTRY_200600_CAPITAL_GOODS +
+    INDUSTRY_200700_COMMERCIAL_VEHICLES +
+    INDUSTRY_200800_CONGLOMERATES +
+    INDUSTRY_200900_CONSTRUCTION_MATERIALS +
+    INDUSTRY_201000_DEFENSE +
+    INDUSTRY_201100_ELECTRICAL_EQUIPMENT +
+    INDUSTRY_201200_ENGINEERING_CONSTRUCTION +
+    INDUSTRY_201300_ENVIRONMENTAL_SERVICES +
+    INDUSTRY_201400_FARM_MACHINERY +
+    INDUSTRY_201500_HEAVY_MACHINERY +
+    INDUSTRY_201600_INDUSTRIAL_DISTRIBUTION +
+    INDUSTRY_201700_MARINE_SHIPPING +
+    INDUSTRY_201800_PACKAGING +
+    INDUSTRY_201900_RAILROADS +
+    INDUSTRY_202000_SECURITY_SERVICES +
+    INDUSTRY_202100_STAFFING +
+    INDUSTRY_202200_TRUCKING +
+    INDUSTRY_202300_WASTE_MANAGEMENT
+)
+
+SECTOR_25_CONSUMER_DISCRETIONARY = (
+    INDUSTRY_250100_AUTO_PARTS +
+    INDUSTRY_250200_AUTOMOBILES +
+    INDUSTRY_250300_CASINOS_GAMING +
+    INDUSTRY_250400_CONSUMER_ELECTRONICS +
+    INDUSTRY_250500_DEPARTMENT_STORES +
+    INDUSTRY_250600_FOOTWEAR +
+    INDUSTRY_250700_FURNISHINGS +
+    INDUSTRY_250800_GENERAL_MERCHANDISE +
+    INDUSTRY_250900_HOME_IMPROVEMENT +
+    INDUSTRY_251000_HOMEBUILDERS +
+    INDUSTRY_251100_HOTELS_MOTELS +
+    INDUSTRY_251200_HOUSEWARES +
+    INDUSTRY_251300_LEISURE_PRODUCTS +
+    INDUSTRY_251400_RECREATIONAL_SERVICES +
+    INDUSTRY_251500_RECREATIONAL_VEHICLES +
+    INDUSTRY_251600_RESTAURANTS +
+    INDUSTRY_251700_RETAIL_APPAREL +
+    INDUSTRY_251800_SPECIALTY_RETAIL +
+    INDUSTRY_251900_TEXTILES_APPAREL +
+    INDUSTRY_252000_TIRES +
+    INDUSTRY_252100_TOYS
+)
+
+SECTOR_30_CONSUMER_STAPLES = (
+    INDUSTRY_300100_BEVERAGES_ALCOHOLIC +
+    INDUSTRY_300200_BEVERAGES_NON_ALCOHOLIC +
+    INDUSTRY_300300_DRUG_RETAILERS +
+    INDUSTRY_300400_FOOD_PRODUCTS +
+    INDUSTRY_300500_FOOD_RETAILERS +
+    INDUSTRY_300600_HOUSEHOLD_PRODUCTS +
+    INDUSTRY_300700_PERSONAL_PRODUCTS +
+    INDUSTRY_300800_TOBACCO
+)
+
+SECTOR_35_HEALTHCARE = (
+    INDUSTRY_350100_BIOTECHNOLOGY +
+    INDUSTRY_350200_DIAGNOSTICS_RESEARCH +
+    INDUSTRY_350300_HEALTHCARE_DISTRIBUTORS +
+    INDUSTRY_350400_HEALTHCARE_FACILITIES +
+    INDUSTRY_350500_HEALTHCARE_PLANS +
+    INDUSTRY_350600_HEALTHCARE_SERVICES +
+    INDUSTRY_350700_MEDICAL_DEVICES +
+    INDUSTRY_350800_MEDICAL_INSTRUMENTS +
+    INDUSTRY_350900_PHARMACEUTICALS
+)
+
+SECTOR_40_FINANCIALS = (
+    INDUSTRY_400100_ASSET_MANAGEMENT +
+    INDUSTRY_400200_BANKS_DIVERSIFIED +
+    INDUSTRY_400300_BANKS_REGIONAL +
+    INDUSTRY_400400_BROKERS_EXCHANGES +
+    INDUSTRY_400500_CONSUMER_FINANCE +
+    INDUSTRY_400600_FINANCIAL_SERVICES +
+    INDUSTRY_400700_INSURANCE_BROKERS +
+    INDUSTRY_400800_INSURANCE_LIFE +
+    INDUSTRY_400900_INSURANCE_PC +
+    INDUSTRY_401000_INSURANCE_SPECIALTY +
+    INDUSTRY_401100_MORTGAGE_FINANCE +
+    INDUSTRY_401200_SAVINGS_LOANS
+)
+
+SECTOR_45_TECHNOLOGY = (
+    INDUSTRY_450100_APPLICATION_SOFTWARE +
+    INDUSTRY_450200_CLOUD_COMPUTING +
+    INDUSTRY_450300_COMMUNICATION_EQUIPMENT +
+    INDUSTRY_450400_COMPUTER_HARDWARE +
+    INDUSTRY_450500_COMPUTER_SERVICES +
+    INDUSTRY_450600_CYBERSECURITY +
+    INDUSTRY_450700_DATA_PROCESSING +
+    INDUSTRY_450800_ELECTRONIC_COMPONENTS +
+    INDUSTRY_450900_IT_CONSULTING +
+    INDUSTRY_451000_SCIENTIFIC_INSTRUMENTS +
+    INDUSTRY_451100_SEMICONDUCTOR_EQUIPMENT +
+    INDUSTRY_451200_SEMICONDUCTORS +
+    INDUSTRY_451300_SOFTWARE_INFRASTRUCTURE
+)
+
+SECTOR_50_COMMUNICATION_SERVICES = (
+    INDUSTRY_500100_ADVERTISING +
+    INDUSTRY_500200_BROADCASTING +
+    INDUSTRY_500300_CABLE_SATELLITE +
+    INDUSTRY_500400_ENTERTAINMENT +
+    INDUSTRY_500500_INTERNET +
+    INDUSTRY_500600_PUBLISHING +
+    INDUSTRY_500700_TELECOM_EQUIPMENT +
+    INDUSTRY_500800_TELECOM_SERVICES
+)
+
+SECTOR_55_UTILITIES = (
+    INDUSTRY_550100_ELECTRIC_UTILITIES +
+    INDUSTRY_550200_GAS_UTILITIES +
+    INDUSTRY_550300_INDEPENDENT_POWER +
+    INDUSTRY_550400_MULTI_UTILITIES +
+    INDUSTRY_550500_RENEWABLE_ENERGY +
+    INDUSTRY_550600_WATER_UTILITIES
+)
+
+SECTOR_60_REAL_ESTATE = (
+    INDUSTRY_600100_REITS_DIVERSIFIED +
+    INDUSTRY_600200_REITS_HEALTHCARE +
+    INDUSTRY_600300_REITS_HOTEL_MOTEL +
+    INDUSTRY_600400_REITS_INDUSTRIAL +
+    INDUSTRY_600500_REITS_MORTGAGE +
+    INDUSTRY_600600_REITS_OFFICE +
+    INDUSTRY_600700_REITS_RESIDENTIAL +
+    INDUSTRY_600800_REITS_RETAIL +
+    INDUSTRY_600900_REITS_SPECIALTY +
+    INDUSTRY_601000_REAL_ESTATE_DEVELOPMENT +
+    INDUSTRY_601100_REAL_ESTATE_SERVICES
+)

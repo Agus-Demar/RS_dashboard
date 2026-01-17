@@ -1,0 +1,723 @@
+{
+  "source": "stockcharts.com",
+  "scraped_at": "2026-01-17T17:30:31.806675",
+  "method": "hardcoded",
+  "sectors": [
+    {
+      "name": "Communication Services",
+      "code": "50",
+      "industries": [
+        {
+          "name": "Advertising",
+          "code": "500100",
+          "tickers": []
+        },
+        {
+          "name": "Broadcasting",
+          "code": "500200",
+          "tickers": []
+        },
+        {
+          "name": "Cable & Satellite",
+          "code": "500300",
+          "tickers": []
+        },
+        {
+          "name": "Entertainment",
+          "code": "500400",
+          "tickers": []
+        },
+        {
+          "name": "Internet",
+          "code": "500500",
+          "tickers": []
+        },
+        {
+          "name": "Publishing",
+          "code": "500600",
+          "tickers": []
+        },
+        {
+          "name": "Telecom Equipment",
+          "code": "500700",
+          "tickers": []
+        },
+        {
+          "name": "Telecom Services",
+          "code": "500800",
+          "tickers": []
+        }
+      ]
+    },
+    {
+      "name": "Consumer Discretionary",
+      "code": "25",
+      "industries": [
+        {
+          "name": "Auto Parts",
+          "code": "250100",
+          "tickers": []
+        },
+        {
+          "name": "Automobiles",
+          "code": "250200",
+          "tickers": []
+        },
+        {
+          "name": "Casinos & Gaming",
+          "code": "250300",
+          "tickers": []
+        },
+        {
+          "name": "Consumer Electronics",
+          "code": "250400",
+          "tickers": []
+        },
+        {
+          "name": "Department Stores",
+          "code": "250500",
+          "tickers": []
+        },
+        {
+          "name": "Footwear",
+          "code": "250600",
+          "tickers": []
+        },
+        {
+          "name": "Furnishings",
+          "code": "250700",
+          "tickers": []
+        },
+        {
+          "name": "General Merchandise",
+          "code": "250800",
+          "tickers": []
+        },
+        {
+          "name": "Home Improvement",
+          "code": "250900",
+          "tickers": []
+        },
+        {
+          "name": "Homebuilders",
+          "code": "251000",
+          "tickers": []
+        },
+        {
+          "name": "Hotels & Motels",
+          "code": "251100",
+          "tickers": []
+        },
+        {
+          "name": "Housewares",
+          "code": "251200",
+          "tickers": []
+        },
+        {
+          "name": "Leisure Products",
+          "code": "251300",
+          "tickers": []
+        },
+        {
+          "name": "Recreational Services",
+          "code": "251400",
+          "tickers": []
+        },
+        {
+          "name": "Recreational Vehicles",
+          "code": "251500",
+          "tickers": []
+        },
+        {
+          "name": "Restaurants",
+          "code": "251600",
+          "tickers": []
+        },
+        {
+          "name": "Retail Apparel",
+          "code": "251700",
+          "tickers": []
+        },
+        {
+          "name": "Specialty Retail",
+          "code": "251800",
+          "tickers": []
+        },
+        {
+          "name": "Textiles & Apparel",
+          "code": "251900",
+          "tickers": []
+        },
+        {
+          "name": "Tires",
+          "code": "252000",
+          "tickers": []
+        },
+        {
+          "name": "Toys",
+          "code": "252100",
+          "tickers": []
+        }
+      ]
+    },
+    {
+      "name": "Consumer Staples",
+      "code": "30",
+      "industries": [
+        {
+          "name": "Beverages: Alcoholic",
+          "code": "300100",
+          "tickers": []
+        },
+        {
+          "name": "Beverages: Non-Alcoholic",
+          "code": "300200",
+          "tickers": []
+        },
+        {
+          "name": "Drug Retailers",
+          "code": "300300",
+          "tickers": []
+        },
+        {
+          "name": "Food Products",
+          "code": "300400",
+          "tickers": []
+        },
+        {
+          "name": "Food Retailers",
+          "code": "300500",
+          "tickers": []
+        },
+        {
+          "name": "Household Products",
+          "code": "300600",
+          "tickers": []
+        },
+        {
+          "name": "Personal Products",
+          "code": "300700",
+          "tickers": []
+        },
+        {
+          "name": "Tobacco",
+          "code": "300800",
+          "tickers": []
+        }
+      ]
+    },
+    {
+      "name": "Energy",
+      "code": "10",
+      "industries": [
+        {
+          "name": "Coal",
+          "code": "100100",
+          "tickers": []
+        },
+        {
+          "name": "Oil & Gas - Drilling",
+          "code": "100200",
+          "tickers": []
+        },
+        {
+          "name": "Oil & Gas - E&P",
+          "code": "100300",
+          "tickers": []
+        },
+        {
+          "name": "Oil & Gas - Equipment & Services",
+          "code": "100400",
+          "tickers": []
+        },
+        {
+          "name": "Oil & Gas - Integrated",
+          "code": "100500",
+          "tickers": []
+        },
+        {
+          "name": "Oil & Gas - Pipelines",
+          "code": "100600",
+          "tickers": []
+        },
+        {
+          "name": "Oil & Gas - Refining",
+          "code": "100700",
+          "tickers": []
+        }
+      ]
+    },
+    {
+      "name": "Financials",
+      "code": "40",
+      "industries": [
+        {
+          "name": "Asset Management",
+          "code": "400100",
+          "tickers": []
+        },
+        {
+          "name": "Banks: Diversified",
+          "code": "400200",
+          "tickers": []
+        },
+        {
+          "name": "Banks: Regional",
+          "code": "400300",
+          "tickers": []
+        },
+        {
+          "name": "Brokers & Exchanges",
+          "code": "400400",
+          "tickers": []
+        },
+        {
+          "name": "Consumer Finance",
+          "code": "400500",
+          "tickers": []
+        },
+        {
+          "name": "Financial Services",
+          "code": "400600",
+          "tickers": []
+        },
+        {
+          "name": "Insurance: Brokers",
+          "code": "400700",
+          "tickers": []
+        },
+        {
+          "name": "Insurance: Life",
+          "code": "400800",
+          "tickers": []
+        },
+        {
+          "name": "Insurance: P&C",
+          "code": "400900",
+          "tickers": []
+        },
+        {
+          "name": "Insurance: Specialty",
+          "code": "401000",
+          "tickers": []
+        },
+        {
+          "name": "Mortgage Finance",
+          "code": "401100",
+          "tickers": []
+        },
+        {
+          "name": "Savings & Loans",
+          "code": "401200",
+          "tickers": []
+        }
+      ]
+    },
+    {
+      "name": "Health Care",
+      "code": "35",
+      "industries": [
+        {
+          "name": "Biotechnology",
+          "code": "350100",
+          "tickers": []
+        },
+        {
+          "name": "Diagnostics & Research",
+          "code": "350200",
+          "tickers": []
+        },
+        {
+          "name": "Healthcare Distributors",
+          "code": "350300",
+          "tickers": []
+        },
+        {
+          "name": "Healthcare Facilities",
+          "code": "350400",
+          "tickers": []
+        },
+        {
+          "name": "Healthcare Plans",
+          "code": "350500",
+          "tickers": []
+        },
+        {
+          "name": "Healthcare Services",
+          "code": "350600",
+          "tickers": []
+        },
+        {
+          "name": "Medical Devices",
+          "code": "350700",
+          "tickers": []
+        },
+        {
+          "name": "Medical Instruments",
+          "code": "350800",
+          "tickers": []
+        },
+        {
+          "name": "Pharmaceuticals",
+          "code": "350900",
+          "tickers": []
+        }
+      ]
+    },
+    {
+      "name": "Industrials",
+      "code": "20",
+      "industries": [
+        {
+          "name": "Aerospace",
+          "code": "200100",
+          "tickers": []
+        },
+        {
+          "name": "Air Freight",
+          "code": "200200",
+          "tickers": []
+        },
+        {
+          "name": "Airlines",
+          "code": "200300",
+          "tickers": []
+        },
+        {
+          "name": "Building Products",
+          "code": "200400",
+          "tickers": []
+        },
+        {
+          "name": "Business Services",
+          "code": "200500",
+          "tickers": []
+        },
+        {
+          "name": "Capital Goods",
+          "code": "200600",
+          "tickers": []
+        },
+        {
+          "name": "Commercial Vehicles",
+          "code": "200700",
+          "tickers": []
+        },
+        {
+          "name": "Conglomerates",
+          "code": "200800",
+          "tickers": []
+        },
+        {
+          "name": "Construction Materials",
+          "code": "200900",
+          "tickers": []
+        },
+        {
+          "name": "Defense",
+          "code": "201000",
+          "tickers": []
+        },
+        {
+          "name": "Electrical Equipment",
+          "code": "201100",
+          "tickers": []
+        },
+        {
+          "name": "Engineering & Construction",
+          "code": "201200",
+          "tickers": []
+        },
+        {
+          "name": "Environmental Services",
+          "code": "201300",
+          "tickers": []
+        },
+        {
+          "name": "Farm Machinery",
+          "code": "201400",
+          "tickers": []
+        },
+        {
+          "name": "Heavy Machinery",
+          "code": "201500",
+          "tickers": []
+        },
+        {
+          "name": "Industrial Distribution",
+          "code": "201600",
+          "tickers": []
+        },
+        {
+          "name": "Marine Shipping",
+          "code": "201700",
+          "tickers": []
+        },
+        {
+          "name": "Packaging",
+          "code": "201800",
+          "tickers": []
+        },
+        {
+          "name": "Railroads",
+          "code": "201900",
+          "tickers": []
+        },
+        {
+          "name": "Security Services",
+          "code": "202000",
+          "tickers": []
+        },
+        {
+          "name": "Staffing",
+          "code": "202100",
+          "tickers": []
+        },
+        {
+          "name": "Trucking",
+          "code": "202200",
+          "tickers": []
+        },
+        {
+          "name": "Waste Management",
+          "code": "202300",
+          "tickers": []
+        }
+      ]
+    },
+    {
+      "name": "Materials",
+      "code": "15",
+      "industries": [
+        {
+          "name": "Aluminum",
+          "code": "150100",
+          "tickers": []
+        },
+        {
+          "name": "Building Materials",
+          "code": "150200",
+          "tickers": []
+        },
+        {
+          "name": "Chemicals",
+          "code": "150300",
+          "tickers": []
+        },
+        {
+          "name": "Containers & Packaging",
+          "code": "150400",
+          "tickers": []
+        },
+        {
+          "name": "Copper",
+          "code": "150500",
+          "tickers": []
+        },
+        {
+          "name": "Fertilizers",
+          "code": "150600",
+          "tickers": []
+        },
+        {
+          "name": "Gold",
+          "code": "150700",
+          "tickers": []
+        },
+        {
+          "name": "Metals & Mining",
+          "code": "150800",
+          "tickers": []
+        },
+        {
+          "name": "Paper & Forest Products",
+          "code": "150900",
+          "tickers": []
+        },
+        {
+          "name": "Silver",
+          "code": "151000",
+          "tickers": []
+        },
+        {
+          "name": "Specialty Chemicals",
+          "code": "151100",
+          "tickers": []
+        },
+        {
+          "name": "Steel",
+          "code": "151200",
+          "tickers": []
+        }
+      ]
+    },
+    {
+      "name": "Real Estate",
+      "code": "60",
+      "industries": [
+        {
+          "name": "REITs - Diversified",
+          "code": "600100",
+          "tickers": []
+        },
+        {
+          "name": "REITs - Healthcare",
+          "code": "600200",
+          "tickers": []
+        },
+        {
+          "name": "REITs - Hotel & Motel",
+          "code": "600300",
+          "tickers": []
+        },
+        {
+          "name": "REITs - Industrial",
+          "code": "600400",
+          "tickers": []
+        },
+        {
+          "name": "REITs - Mortgage",
+          "code": "600500",
+          "tickers": []
+        },
+        {
+          "name": "REITs - Office",
+          "code": "600600",
+          "tickers": []
+        },
+        {
+          "name": "REITs - Residential",
+          "code": "600700",
+          "tickers": []
+        },
+        {
+          "name": "REITs - Retail",
+          "code": "600800",
+          "tickers": []
+        },
+        {
+          "name": "REITs - Specialty",
+          "code": "600900",
+          "tickers": []
+        },
+        {
+          "name": "Real Estate Development",
+          "code": "601000",
+          "tickers": []
+        },
+        {
+          "name": "Real Estate Services",
+          "code": "601100",
+          "tickers": []
+        }
+      ]
+    },
+    {
+      "name": "Technology",
+      "code": "45",
+      "industries": [
+        {
+          "name": "Application Software",
+          "code": "450100",
+          "tickers": []
+        },
+        {
+          "name": "Cloud Computing",
+          "code": "450200",
+          "tickers": []
+        },
+        {
+          "name": "Communication Equipment",
+          "code": "450300",
+          "tickers": []
+        },
+        {
+          "name": "Computer Hardware",
+          "code": "450400",
+          "tickers": []
+        },
+        {
+          "name": "Computer Services",
+          "code": "450500",
+          "tickers": []
+        },
+        {
+          "name": "Cybersecurity",
+          "code": "450600",
+          "tickers": []
+        },
+        {
+          "name": "Data Processing",
+          "code": "450700",
+          "tickers": []
+        },
+        {
+          "name": "Electronic Components",
+          "code": "450800",
+          "tickers": []
+        },
+        {
+          "name": "IT Consulting",
+          "code": "450900",
+          "tickers": []
+        },
+        {
+          "name": "Scientific Instruments",
+          "code": "451000",
+          "tickers": []
+        },
+        {
+          "name": "Semiconductor Equipment",
+          "code": "451100",
+          "tickers": []
+        },
+        {
+          "name": "Semiconductors",
+          "code": "451200",
+          "tickers": []
+        },
+        {
+          "name": "Software Infrastructure",
+          "code": "451300",
+          "tickers": []
+        }
+      ]
+    },
+    {
+      "name": "Utilities",
+      "code": "55",
+      "industries": [
+        {
+          "name": "Electric Utilities",
+          "code": "550100",
+          "tickers": []
+        },
+        {
+          "name": "Gas Utilities",
+          "code": "550200",
+          "tickers": []
+        },
+        {
+          "name": "Independent Power",
+          "code": "550300",
+          "tickers": []
+        },
+        {
+          "name": "Multi-Utilities",
+          "code": "550400",
+          "tickers": []
+        },
+        {
+          "name": "Renewable Energy",
+          "code": "550500",
+          "tickers": []
+        },
+        {
+          "name": "Water Utilities",
+          "code": "550600",
+          "tickers": []
+        }
+      ]
+    }
+  ]
+}

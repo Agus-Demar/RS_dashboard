@@ -1,11 +1,11 @@
 """
-Sub-Industry Aggregator.
+Industry Aggregator.
 
-Aggregates individual stock RS values into sub-industry level RS.
+Aggregates individual stock RS values into industry level RS.
 Uses market-cap weighting for more accurate representation.
 
-For sub-industries with StockCharts industry index symbols ($DJUS*), uses
-the corresponding ETF as a direct proxy for more accurate RS calculation.
+For industries with specific ETF proxies, uses the corresponding ETF 
+as a direct proxy for more accurate RS calculation.
 """
 import logging
 from datetime import date, timedelta
@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from src.config import settings
 from src.models import Stock, StockPrice, GICSSubIndustry, RSWeekly
 from src.services.rs_calculator import MansfieldRSCalculator, calculate_percentile_ranks
-from src.data.gics_subindustry_etf_mapping import GICS_SUBINDUSTRY_ETF_MAP
+from src.data.stockcharts_industry_mapping import INDUSTRY_ETF_MAP as GICS_SUBINDUSTRY_ETF_MAP
 
 logger = logging.getLogger(__name__)
 

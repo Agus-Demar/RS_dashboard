@@ -406,18 +406,11 @@ def get_sector_rs_matrix_data(
     # Convert to DataFrame
     df = pd.DataFrame(sector_rs_data)
     
-    # Calculate percentile ranks within each week
-    def calc_percentile_rank(group):
-        """Calculate percentile rank for RS values within a week."""
-        rs_values = group['mansfield_rs']
-        # rank(pct=True) gives values from 0 to 1, multiply by 100 for percentile
-        group['rs_percentile'] = rs_values.rank(pct=True) * 100
-        return group
-    
-    df = df.groupby('week_end_date', group_keys=False).apply(calc_percentile_rank)
-    
-    # Round percentile to integer
-    df['rs_percentile'] = df['rs_percentile'].round().astype(int)
+    # Calculate percentile ranks within each week using transform
+    # rank(pct=True) gives values from 0 to 1, multiply by 100 for percentile
+    df['rs_percentile'] = df.groupby('week_end_date')['mansfield_rs'].transform(
+        lambda x: x.rank(pct=True) * 100
+    ).round().astype(int)
     
     # Add subindustry_count (0 for ETF-based calculation)
     df['subindustry_count'] = 0
