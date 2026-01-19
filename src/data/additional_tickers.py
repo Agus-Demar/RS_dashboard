@@ -31,7 +31,7 @@ INDUSTRY_100200_OIL_GAS_DRILLING: List[str] = [
 
 # 100300 - Oil & Gas - E&P
 INDUSTRY_100300_OIL_GAS_EP: List[str] = [
-    "APA", "DVN", "FANG", "EOG", "PXD", "COP", "OXY", "MRO", "CLR", "SU", "CVE",
+    "APA", "DVN", "FANG", "EOG", "PXD", "COP", "OXY", "MRO", "CLR",  # Removed: SU, CVE (Canadian)
     "PR", "MTDR", "CTRA", "CHRD", "OVV", "MGY", "SM", "CRGY", "SBOW", "CNX",
     "AR", "SWN", "EQT", "VTLE", "REPX", "ESTE", "REI", "SD", "AXAS",
     "SNDE", "EPSN", "WTI", "NGAS", "WFRD", "BRY", "SGML", "CIVI", "BKV", "VNOM",
@@ -48,7 +48,7 @@ INDUSTRY_100400_OIL_GAS_EQUIPMENT: List[str] = [
 
 # 100500 - Oil & Gas - Integrated
 INDUSTRY_100500_OIL_GAS_INTEGRATED: List[str] = [
-    "XOM", "CVX", "SHEL", "TTE", "BP", "ENB", "IMO",
+    "XOM", "CVX", "SHEL", "TTE", "BP",  # Removed: ENB, IMO (Canadian)
 ]
 
 # 100600 - Oil & Gas - Pipelines
@@ -96,18 +96,18 @@ INDUSTRY_150400_CONTAINERS_PACKAGING: List[str] = [
 
 # 150500 - Copper
 INDUSTRY_150500_COPPER: List[str] = [
-    "SCCO", "FCX", "TECK", "HBM", "ERO", "NEXA",
+    "SCCO", "FCX", "HBM", "ERO", "NEXA",  # Removed: TECK (Canadian)
 ]
 
 # 150600 - Fertilizers
 INDUSTRY_150600_FERTILIZERS: List[str] = [
-    "NTR", "CF", "MOS", "FMC", "SMG", "CTVA", "ICL", "IPI", "ADM",
+    "CF", "MOS", "FMC", "SMG", "CTVA", "ICL", "IPI", "ADM",  # Removed: NTR (Canadian)
     "AGFY", "GRWG", "APPH", "AVO", "SEED", "LMNR",
 ]
 
 # 150700 - Gold
 INDUSTRY_150700_GOLD: List[str] = [
-    "NEM", "GOLD", "AEM", "KGC", "AU", "RGLD", "WPM", "FNV", "OR", "SAND",
+    "NEM", "GOLD", "KGC", "AU", "RGLD", "FNV", "OR", "SAND",  # Removed: AEM, WPM (Canadian)
     "SSRM", "BTG", "IAG", "HMY", "DRD", "NGD", "GATO", "EGO",
 ]
 
@@ -381,14 +381,14 @@ INDUSTRY_251600_RESTAURANTS: List[str] = [
 
 # 251700 - Retail Apparel
 INDUSTRY_251700_RETAIL_APPAREL: List[str] = [
-    "LULU", "TPR", "VFC", "PVH", "RL", "CPRI", "GIII", "GIL", "COLM",
-    "UAA", "GES", "LEVI", "GOOS", "HBI", "SCVL", "FIGS", "ONON", "HELE",
+    "TPR", "VFC", "PVH", "RL", "CPRI", "GIII", "GIL", "COLM",  # Removed: LULU (Canadian)
+    "UAA", "GES", "LEVI", "HBI", "SCVL", "FIGS", "ONON", "HELE",  # Removed: GOOS (Canadian)
     "BOOT", "CURV", "DXLG", "CTRN", "EXPR", "AEO", "ANF", "BKE", "ZUMZ",
 ]
 
 # 251800 - Specialty Retail
 INDUSTRY_251800_SPECIALTY_RETAIL: List[str] = [
-    "AMZN", "BBY", "GME", "CHWY", "W", "ETSY", "EBAY", "WISH", "SHOP",
+    "AMZN", "BBY", "GME", "CHWY", "W", "ETSY", "EBAY", "WISH",  # Removed: SHOP (Canadian)
     "TDUP", "REAL", "PRTS", "TCS", "ASO", "DKS", "HIBB", "SPWH",
     "PLCE", "BURL", "ROST", "TJX", "GPS", "AAP",
     "AZO", "ORLY", "GPC", "MNRO", "MPAA", "MOV",
@@ -593,7 +593,7 @@ INDUSTRY_400700_INSURANCE_BROKERS: List[str] = [
 
 # 400800 - Insurance: Life
 INDUSTRY_400800_INSURANCE_LIFE: List[str] = [
-    "MET", "PRU", "AFL", "LNC", "PFG", "RGA", "SLF", "CNO", "GL",
+    "MET", "PRU", "AFL", "LNC", "PFG", "RGA", "CNO", "GL",  # Removed: SLF (Canadian)
 ]
 
 # 400900 - Insurance_PC: List[str] = [
@@ -661,7 +661,7 @@ INDUSTRY_450500_COMPUTER_SERVICES: List[str] = [
 # 450600 - Cybersecurity
 INDUSTRY_450600_CYBERSECURITY: List[str] = [
     "PANW", "CRWD", "ZS", "FTNT", "OKTA", "QLYS", "TENB", "CYBR", "RPD",
-    "VRNS", "SAIL", "SCWX", "BB", "NLOK", "FEYE", "PFPT",
+    "VRNS", "SAIL", "SCWX", "NLOK", "FEYE", "PFPT",  # Removed: BB (Canadian)
 ]
 
 # 450700 - Data Processing
@@ -784,7 +784,7 @@ INDUSTRY_550400_MULTI_UTILITIES: List[str] = [
 
 # 550500 - Renewable Energy
 INDUSTRY_550500_RENEWABLE_ENERGY: List[str] = [
-    "ENPH", "SEDG", "FSLR", "RUN", "NOVA", "SPWR", "CSIQ", "JKS", "ARRY",
+    "ENPH", "SEDG", "FSLR", "RUN", "NOVA", "SPWR", "JKS", "ARRY",  # Removed: CSIQ (Canadian)
     "SHLS", "MAXN", "AMPS", "NEP", "CWEN", "BEPC", "BEP", "TAN",
 ]
 

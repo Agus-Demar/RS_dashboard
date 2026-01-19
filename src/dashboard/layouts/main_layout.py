@@ -75,11 +75,13 @@ def create_layout():
                     ),
                     
                     html.H1(
-                        "📊 Relative Strength Industry Dashboard",
+                        id="main-page-title",
+                        children="📊 Industry Dashboard",
                         className="text-center mt-4 mb-2"
                     ),
                     html.P(
-                        "Mansfield RS by GICS Sub-Industry | Weekly Analysis",
+                        id="main-page-subtitle",
+                        children="GICS Sub-Industry Analysis | Weekly",
                         className="text-center text-muted mb-4"
                     ),
                 ], className="position-relative")
@@ -138,6 +140,29 @@ def create_layout():
                 ),
             ], md=4),
         ], className="mb-4 p-3 bg-dark rounded"),
+        
+        # Metric Toggle Tabs (RS vs SCTR)
+        dbc.Row([
+            dbc.Col([
+                dbc.Tabs(
+                    id="main-metric-tabs",
+                    active_tab="rs",
+                    className="mb-3",
+                    children=[
+                        dbc.Tab(
+                            label="Relative Strength (RS)",
+                            tab_id="rs",
+                            label_style={"fontWeight": "bold"},
+                        ),
+                        dbc.Tab(
+                            label="Technical Rank (SCTR)",
+                            tab_id="sctr",
+                            label_style={"fontWeight": "bold"},
+                        ),
+                    ]
+                ),
+            ])
+        ]),
         
         # Sector Heatmap (above main heatmap)
         dbc.Row([
@@ -224,14 +249,18 @@ def create_layout():
             ])
         ]),
         
-        # Color Legend
+        # Color Legend (dynamic based on RS/SCTR tab)
         dbc.Row([
             dbc.Col([
-                html.Div([
-                    html.Span("🔴 Weak (Bottom 33%)", className="mx-3"),
-                    html.Span("🟡 Neutral (Middle 34%)", className="mx-3"),
-                    html.Span("🟢 Strong (Top 33%)", className="mx-3"),
-                ], className="text-center my-3")
+                html.Div(
+                    id="color-legend",
+                    children=[
+                        html.Span("🔴 Weak (Bottom 33%)", className="mx-3"),
+                        html.Span("🟡 Neutral (Middle 34%)", className="mx-3"),
+                        html.Span("🟢 Strong (Top 33%)", className="mx-3"),
+                    ],
+                    className="text-center my-3"
+                )
             ])
         ]),
         

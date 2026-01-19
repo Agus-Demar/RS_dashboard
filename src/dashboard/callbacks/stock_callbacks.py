@@ -17,6 +17,7 @@ import dash_bootstrap_components as dbc
 from src.models import SessionLocal
 from src.services.data_service import (
     get_stock_rs_matrix_data,
+    get_stock_sctr_matrix_data,
     get_subindustry_info,
     get_stock_price_with_rs,
     get_stock_price_with_rs_weekly,
@@ -43,16 +44,37 @@ def register_stock_callbacks(app):
         Output("stock-page-subtitle", "children"),
         Output("stock-data-stats", "children"),
         Output("stock-loading-overlay", "style"),
+        Output("stock-color-legend", "children"),
         Input("stock-subindustry-code", "data"),
         Input("stock-sort-method", "value"),
         Input("stock-weeks-slider", "value"),
+        Input("stock-metric-tabs", "active_tab"),
     )
     def update_stock_heatmap(
         subindustry_code: Optional[str],
         sort_method: str,
-        num_weeks: int
+        num_weeks: int,
+        active_tab: str
     ):
-        """Generate and update the stock-level RS heatmap."""
+        """Generate and update the stock-level RS or SCTR heatmap based on active tab."""
+        
+        # Determine if we're showing RS or SCTR
+        is_sctr = active_tab == "sctr"
+        metric_name = "SCTR" if is_sctr else "RS"
+        
+        # Set legend based on active tab
+        if is_sctr:
+            legend = [
+                html.Span("🔴 Lagging (0-40)", className="mx-3"),
+                html.Span("🟡 Neutral (40-60)", className="mx-3"),
+                html.Span("🟢 Leading (60-100)", className="mx-3"),
+            ]
+        else:
+            legend = [
+                html.Span("🔴 Weak (Bottom 33%)", className="mx-3"),
+                html.Span("🟡 Neutral (Middle 34%)", className="mx-3"),
+                html.Span("🟢 Strong (Top 33%)", className="mx-3"),
+            ]
         
         # Style to hide the loading overlay
         hide_overlay = {"display": "none"}
@@ -67,10 +89,11 @@ def register_stock_callbacks(app):
             )
             return (
                 empty_fig,
-                "📈 Stock RS Heatmap",
+                f"📈 Stock {metric_name} Heatmap",
                 "Select a sub-industry from the main page",
                 "",
-                hide_overlay
+                hide_overlay,
+                legend
             )
         
         db = SessionLocal()
@@ -88,42 +111,57 @@ def register_stock_callbacks(app):
                 )
                 return (
                     empty_fig,
-                    "📈 Stock RS Heatmap",
+                    f"📈 Stock {metric_name} Heatmap",
                     "Sub-industry not found",
                     "",
-                    hide_overlay
+                    hide_overlay,
+                    legend
                 )
             
-            # Get stock RS data
-            df = get_stock_rs_matrix_data(
-                db=db,
-                subindustry_code=subindustry_code,
-                num_weeks=num_weeks,
-                sort_by=sort_method
-            )
+            # Get stock data based on active tab
+            if is_sctr:
+                df = get_stock_sctr_matrix_data(
+                    db=db,
+                    subindustry_code=subindustry_code,
+                    num_weeks=num_weeks,
+                    sort_by=sort_method
+                )
+            else:
+                df = get_stock_rs_matrix_data(
+                    db=db,
+                    subindustry_code=subindustry_code,
+                    num_weeks=num_weeks,
+                    sort_by=sort_method
+                )
             
             # Prepare title and subtitle
             title = f"📈 {subindustry_info['name']}"
-            subtitle = f"{subindustry_info['sector_name']} | Click any cell to see price chart with RS indicator"
+            if is_sctr:
+                subtitle = f"{subindustry_info['sector_name']} | SCTR Analysis | Click any cell to see price chart"
+            else:
+                subtitle = f"{subindustry_info['sector_name']} | Click any cell to see price chart with RS indicator"
             
             # Stats
             stock_count = df['ticker'].nunique() if not df.empty else 0
-            stats_text = f"Showing {stock_count} stocks | {num_weeks} weeks"
+            stats_text = f"Showing {stock_count} stocks | {num_weeks} weeks | {metric_name} ranking"
             
             if df.empty:
                 empty_fig = go.Figure()
                 empty_fig.update_layout(
-                    title="No stock RS data available for this sub-industry",
+                    title=f"No stock {metric_name} data available for this sub-industry",
                     paper_bgcolor=COLORS["paper_bg"],
                     plot_bgcolor=COLORS["plot_bg"],
                     font=dict(color=COLORS["text"]),
                 )
-                return empty_fig, title, subtitle, stats_text, hide_overlay
+                return empty_fig, title, subtitle, stats_text, hide_overlay, legend
             
             # Create heatmap figure
-            fig = create_stock_heatmap_figure(df, num_weeks)
+            if is_sctr:
+                fig = create_stock_sctr_heatmap_figure(df, num_weeks)
+            else:
+                fig = create_stock_heatmap_figure(df, num_weeks)
             
-            return fig, title, subtitle, stats_text, hide_overlay
+            return fig, title, subtitle, stats_text, hide_overlay, legend
             
         except Exception as e:
             logger.exception(f"Error updating stock heatmap: {e}")
@@ -133,7 +171,7 @@ def register_stock_callbacks(app):
                 paper_bgcolor=COLORS["paper_bg"],
                 font=dict(color="#ef4444"),
             )
-            return error_fig, "📈 Stock RS Heatmap", "Error", "Error loading data", hide_overlay
+            return error_fig, f"📈 Stock {metric_name} Heatmap", "Error", "Error loading data", hide_overlay, legend
         finally:
             db.close()
     
@@ -436,6 +474,176 @@ def create_stock_heatmap_figure(df: pd.DataFrame, num_weeks: int) -> go.Figure:
     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor=COLORS["grid"])
     
     return fig
+
+
+def create_stock_sctr_heatmap_figure(df: pd.DataFrame, num_weeks: int) -> go.Figure:
+    """
+    Create the Plotly SCTR heatmap figure for individual stocks.
+    
+    Args:
+        df: DataFrame with stock SCTR matrix data
+        num_weeks: Number of weeks to display
+    
+    Returns:
+        Plotly Figure object
+    """
+    from datetime import datetime
+    
+    # Pivot for heatmap: rows = stocks (ticker), columns = weeks
+    pivot_df = df.pivot(
+        index='ticker',
+        columns='week_label',
+        values='sctr_percentile'
+    )
+    
+    # Sort weeks: most recent FIRST (left side)
+    week_order = sorted(pivot_df.columns, key=lambda x: datetime.strptime(x, "%d/%m/%y"), reverse=True)
+    pivot_df = pivot_df[week_order]
+    
+    # Keep stock order from the sorted DataFrame
+    unique_stocks = df.drop_duplicates('ticker')['ticker'].tolist()
+    pivot_df = pivot_df.reindex(unique_stocks)
+    
+    # Create stock name map for hover text
+    stock_names = df.drop_duplicates('ticker').set_index('ticker')['stock_name'].to_dict()
+    
+    # Build hover text matrix
+    hover_text = []
+    for ticker in pivot_df.index:
+        row_text = []
+        stock_name = stock_names.get(ticker, ticker)
+        for week in pivot_df.columns:
+            value = pivot_df.loc[ticker, week]
+            if pd.isna(value):
+                text = f"<b>{ticker}</b><br>{stock_name}<br>Week: {week}<br>No data"
+            else:
+                strength = get_sctr_strength_label(value)
+                text = (
+                    f"<b>{ticker}</b><br>"
+                    f"{stock_name}<br>"
+                    f"Week: {week}<br>"
+                    f"SCTR Percentile: {value:.0f}<br>"
+                    f"Strength: {strength}"
+                )
+            row_text.append(text)
+        hover_text.append(row_text)
+    
+    # Create heatmap without colorbar
+    fig = go.Figure(data=go.Heatmap(
+        z=pivot_df.values,
+        x=pivot_df.columns.tolist(),
+        y=pivot_df.index.tolist(),
+        colorscale=get_color_scale(),
+        zmin=0,
+        zmax=100,
+        hovertemplate="%{customdata}<extra></extra>",
+        customdata=hover_text,
+        xgap=1,
+        ygap=1,
+        showscale=False,  # Hide colorbar
+    ))
+    
+    # Add invisible scatter trace to enable top x-axis labels
+    fig.add_trace(go.Scatter(
+        x=pivot_df.columns.tolist(),
+        y=[None] * len(pivot_df.columns),
+        xaxis="x2",
+        mode="markers",
+        marker=dict(opacity=0),
+        showlegend=False,
+        hoverinfo="skip",
+    ))
+    
+    # Calculate chart height with fixed row height of 32px
+    num_stocks = len(pivot_df)
+    fixed_row_height = 32
+    # Increase top margin for title/subtitle visibility
+    top_margin = 160
+    bottom_margin = STOCK_MARGINS["bottom"]
+    chart_height = num_stocks * fixed_row_height + top_margin + bottom_margin
+    
+    # Layout with title, subtitle, and dual x-axis (top and bottom)
+    fig.update_layout(
+        title=dict(
+            text="Individual Stock Technical Rank (SCTR)<br><sup>← Most Recent | Weeks | Older →</sup>",
+            font=dict(size=FONT_SIZES["subtitle"], color=COLORS["title"]),
+            x=0.5,
+            xanchor="center",
+            y=0.88,  # Lowered to prevent cutoff
+            yanchor="top",
+        ),
+        xaxis=dict(
+            title=None,
+            side="bottom",
+            dtick=1,
+            fixedrange=True,
+            showticklabels=False,  # Hide bottom x-axis labels
+        ),
+        xaxis2=dict(
+            title=None,
+            tickfont=dict(size=FONT_SIZES["axis_label"], color=COLORS["muted_text"]),
+            tickangle=-45,
+            side="top",
+            anchor="y",
+            overlaying="x",
+            fixedrange=True,
+            showticklabels=True,
+            tickmode="array",
+            tickvals=pivot_df.columns.tolist(),
+            ticktext=pivot_df.columns.tolist(),
+            range=[-0.5, len(pivot_df.columns) - 0.5],
+        ),
+        yaxis=dict(
+            title=None,
+            tickfont=dict(size=FONT_SIZES["stock_axis_label"], color=COLORS["muted_text"]),
+            autorange="reversed",
+            tickmode="linear",
+            dtick=1,
+            fixedrange=True,
+            ticklabelposition="outside",
+        ),
+        paper_bgcolor=COLORS["paper_bg"],
+        plot_bgcolor=COLORS["plot_bg"],
+        font=dict(color=COLORS["text"]),
+        height=chart_height,
+        margin=dict(
+            l=STOCK_MARGINS["left"],
+            r=STOCK_MARGINS["right"],
+            t=top_margin,
+            b=bottom_margin
+        ),
+    )
+    
+    # Add grid lines
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor=COLORS["grid"])
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor=COLORS["grid"])
+    
+    return fig
+
+
+def get_sctr_strength_label(percentile: float) -> str:
+    """
+    Get SCTR strength label based on percentile.
+    
+    SCTR interpretation:
+    - 60-100: Leading (strong technical strength)
+    - 40-60: Neutral
+    - 0-40: Lagging (weak technical strength)
+    
+    Args:
+        percentile: SCTR percentile value (0-100)
+    
+    Returns:
+        Strength label string
+    """
+    if percentile is None:
+        return "N/A"
+    if percentile >= 60:
+        return "Leading"
+    elif percentile >= 40:
+        return "Neutral"
+    else:
+        return "Lagging"
 
 
 def create_price_rs_chart(df: pd.DataFrame, ticker: str, stock_name: str, timeframe: str = "daily") -> go.Figure:

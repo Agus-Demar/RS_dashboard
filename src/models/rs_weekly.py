@@ -1,7 +1,7 @@
 """
 Weekly Relative Strength model.
 
-Stores calculated Mansfield RS values for each GICS sub-industry per week.
+Stores calculated Mansfield RS values for each StockCharts industry per week.
 """
 from datetime import date
 from typing import TYPE_CHECKING, Optional
@@ -17,10 +17,11 @@ if TYPE_CHECKING:
 
 class RSWeekly(Base, TimestampMixin):
     """
-    Weekly Mansfield RS calculations per sub-industry.
+    Weekly Mansfield RS calculations per industry.
     
     This is the core table for dashboard visualization.
-    Each record represents one sub-industry's RS for one week.
+    Each record represents one industry's RS for one week.
+    Uses 6-digit StockCharts industry codes.
     """
     __tablename__ = "rs_weekly"
     __table_args__ = (
@@ -35,9 +36,9 @@ class RSWeekly(Base, TimestampMixin):
     # Primary key
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     
-    # Foreign key to GICS sub-industry
+    # Foreign key to StockCharts industry (6-digit code)
     subindustry_code: Mapped[str] = mapped_column(
-        String(8),
+        String(6),
         ForeignKey("gics_subindustry.code"),
         nullable=False
     )

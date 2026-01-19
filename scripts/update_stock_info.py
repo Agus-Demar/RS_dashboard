@@ -58,7 +58,8 @@ def update_stocks(
     db: Session,
     limit: Optional[int] = None,
     dry_run: bool = False,
-    batch_size: int = 50
+    batch_size: int = 50,
+    missing_cap_only: bool = False
 ) -> Dict[str, int]:
     """
     Update stock info from yfinance.
@@ -68,12 +69,22 @@ def update_stocks(
         limit: Max number of stocks to update
         dry_run: If True, don't save changes
         batch_size: Number of stocks to commit at once
+        missing_cap_only: If True, only update stocks missing market cap
         
     Returns:
         Dictionary with update statistics
     """
-    # Find stocks where name equals ticker (not yet updated)
-    query = db.query(Stock).filter(Stock.name == Stock.ticker)
+    from sqlalchemy import or_
+    
+    if missing_cap_only:
+        # Find stocks missing market cap data
+        query = db.query(Stock).filter(
+            Stock.is_active == True,
+            or_(Stock.market_cap == None, Stock.market_cap == 0)
+        )
+    else:
+        # Find stocks where name equals ticker (not yet updated)
+        query = db.query(Stock).filter(Stock.name == Stock.ticker)
     
     if limit:
         query = query.limit(limit)
@@ -155,6 +166,11 @@ def main():
         help="Batch size for commits"
     )
     parser.add_argument(
+        "--missing-cap",
+        action="store_true",
+        help="Update stocks missing market cap data"
+    )
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Enable verbose logging"
@@ -166,13 +182,17 @@ def main():
     db = SessionLocal()
     
     try:
-        logger.info("Updating stock info from yfinance...")
+        if args.missing_cap:
+            logger.info("Updating stocks missing market cap from yfinance...")
+        else:
+            logger.info("Updating stock info from yfinance...")
         
         stats = update_stocks(
             db,
             limit=args.limit,
             dry_run=args.dry_run,
             batch_size=args.batch_size,
+            missing_cap_only=args.missing_cap,
         )
         
         logger.info("")

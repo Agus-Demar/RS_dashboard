@@ -20,6 +20,8 @@ from src.models import SessionLocal
 from src.services.data_service import (
     get_rs_matrix_data,
     get_sector_rs_matrix_data,
+    get_sctr_matrix_data,
+    get_sector_sctr_matrix_data,
     get_available_sectors,
     get_subindustry_stocks,
     get_data_stats,
@@ -75,26 +77,61 @@ def register_callbacks(app):
         Output("data-stats", "children"),
         Output("initial-loading-overlay", "style"),
         Output("rs-data-store", "data"),
+        Output("main-page-title", "children"),
+        Output("main-page-subtitle", "children"),
+        Output("color-legend", "children"),
         Input("sector-filter", "value"),
         Input("sort-method", "value"),
         Input("weeks-slider", "value"),
+        Input("main-metric-tabs", "active_tab"),
     )
     def update_heatmap(
         selected_sectors: Optional[List[str]],
         sort_method: str,
-        num_weeks: int
+        num_weeks: int,
+        active_tab: str
     ):
-        """Generate and update the RS heatmap."""
+        """Generate and update the RS or SCTR heatmap based on active tab."""
+        
+        # Determine if we're showing RS or SCTR
+        is_sctr = active_tab == "sctr"
+        metric_name = "SCTR" if is_sctr else "RS"
+        
+        # Set page title and subtitle based on active tab
+        if is_sctr:
+            page_title = "📊 Technical Rank (SCTR) Industry Dashboard"
+            page_subtitle = "StockCharts Technical Rank by GICS Sub-Industry | Weekly Analysis"
+            legend = [
+                html.Span("🔴 Lagging (0-40)", className="mx-3"),
+                html.Span("🟡 Neutral (40-60)", className="mx-3"),
+                html.Span("🟢 Leading (60-100)", className="mx-3"),
+            ]
+        else:
+            page_title = "📊 Relative Strength Industry Dashboard"
+            page_subtitle = "Mansfield RS by GICS Sub-Industry | Weekly Analysis"
+            legend = [
+                html.Span("🔴 Weak (Bottom 33%)", className="mx-3"),
+                html.Span("🟡 Neutral (Middle 34%)", className="mx-3"),
+                html.Span("🟢 Strong (Top 33%)", className="mx-3"),
+            ]
         
         db = SessionLocal()
         try:
-            # Get RS data
-            df = get_rs_matrix_data(
-                db=db,
-                num_weeks=num_weeks,
-                sectors=selected_sectors,
-                sort_by=sort_method
-            )
+            # Get data based on active tab
+            if is_sctr:
+                df = get_sctr_matrix_data(
+                    db=db,
+                    num_weeks=num_weeks,
+                    sectors=selected_sectors,
+                    sort_by=sort_method
+                )
+            else:
+                df = get_rs_matrix_data(
+                    db=db,
+                    num_weeks=num_weeks,
+                    sectors=selected_sectors,
+                    sort_by=sort_method
+                )
             
             # Get available sectors for filter
             sectors = get_available_sectors(db)
@@ -116,21 +153,24 @@ def register_callbacks(app):
                 # Return empty figure
                 empty_fig = go.Figure()
                 empty_fig.update_layout(
-                    title="No RS data available. Run the data pipeline first.",
+                    title=f"No {metric_name} data available. Run the data pipeline first.",
                     paper_bgcolor=COLORS["paper_bg"],
                     plot_bgcolor=COLORS["plot_bg"],
                     font=dict(color=COLORS["text"]),
                 )
-                return empty_fig, sector_options, stats_text, hide_overlay, None
+                return empty_fig, sector_options, stats_text, hide_overlay, None, page_title, page_subtitle, legend
             
             # Store subindustry name to code mapping for navigation
             subindustry_map = df[['subindustry_name', 'subindustry_code']].drop_duplicates()
             name_to_code = dict(zip(subindustry_map['subindustry_name'], subindustry_map['subindustry_code']))
             
             # Create heatmap figure with chart column on right
-            fig = create_heatmap_figure(df, num_weeks)
+            if is_sctr:
+                fig = create_sctr_heatmap_figure(df, num_weeks)
+            else:
+                fig = create_heatmap_figure(df, num_weeks)
             
-            return fig, sector_options, stats_text, hide_overlay, name_to_code
+            return fig, sector_options, stats_text, hide_overlay, name_to_code, page_title, page_subtitle, legend
             
         except Exception as e:
             logger.exception(f"Error updating heatmap: {e}")
@@ -140,7 +180,7 @@ def register_callbacks(app):
                 paper_bgcolor=COLORS["paper_bg"],
                 font=dict(color="#ef4444"),
             )
-            return error_fig, [], "Error loading data", {"display": "none"}, None
+            return error_fig, [], "Error loading data", {"display": "none"}, None, page_title, page_subtitle, legend
         finally:
             db.close()
     
@@ -149,24 +189,35 @@ def register_callbacks(app):
         Output("sector-data-store", "data"),
         Input("sort-method", "value"),
         Input("weeks-slider", "value"),
+        Input("main-metric-tabs", "active_tab"),
     )
-    def update_sector_heatmap(sort_method: str, num_weeks: int):
-        """Generate and update the sector-level RS heatmap."""
+    def update_sector_heatmap(sort_method: str, num_weeks: int, active_tab: str):
+        """Generate and update the sector-level RS or SCTR heatmap."""
+        
+        is_sctr = active_tab == "sctr"
+        metric_name = "SCTR" if is_sctr else "RS"
         
         db = SessionLocal()
         try:
-            # Get sector RS data
-            df = get_sector_rs_matrix_data(
-                db=db,
-                num_weeks=num_weeks,
-                sort_by=sort_method
-            )
+            # Get sector data based on active tab
+            if is_sctr:
+                df = get_sector_sctr_matrix_data(
+                    db=db,
+                    num_weeks=num_weeks,
+                    sort_by=sort_method
+                )
+            else:
+                df = get_sector_rs_matrix_data(
+                    db=db,
+                    num_weeks=num_weeks,
+                    sort_by=sort_method
+                )
             
             if df.empty:
                 # Return empty figure
                 empty_fig = go.Figure()
                 empty_fig.update_layout(
-                    title="No sector RS data available.",
+                    title=f"No sector {metric_name} data available.",
                     paper_bgcolor=COLORS["paper_bg"],
                     plot_bgcolor=COLORS["plot_bg"],
                     font=dict(color=COLORS["text"]),
@@ -179,7 +230,10 @@ def register_callbacks(app):
             name_to_code = dict(zip(sector_map['sector_name'], sector_map['sector_code']))
             
             # Create sector heatmap figure
-            fig = create_sector_heatmap_figure(df, num_weeks)
+            if is_sctr:
+                fig = create_sector_sctr_heatmap_figure(df, num_weeks)
+            else:
+                fig = create_sector_heatmap_figure(df, num_weeks)
             
             return fig, name_to_code
             
@@ -905,3 +959,385 @@ def create_heatmap_figure(df: pd.DataFrame, num_weeks: int) -> go.Figure:
     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor=COLORS["grid"])
     
     return fig
+
+
+def create_sector_sctr_heatmap_figure(df: pd.DataFrame, num_weeks: int) -> go.Figure:
+    """
+    Create the Plotly sector SCTR heatmap figure with chart column on right side.
+    
+    Args:
+        df: DataFrame with sector SCTR matrix data
+        num_weeks: Number of weeks to display
+    
+    Returns:
+        Plotly Figure object
+    """
+    from datetime import datetime
+    
+    # Ensure no duplicates before pivot (pivot_table handles aggregation)
+    pivot_df = df.pivot_table(
+        index='sector_name',
+        columns='week_label',
+        values='sctr_percentile',
+        aggfunc='mean'
+    )
+    
+    # Sort weeks: most recent FIRST (left side)
+    week_order = sorted(pivot_df.columns, key=lambda x: datetime.strptime(x, "%d/%m/%y"), reverse=True)
+    pivot_df = pivot_df[week_order]
+    
+    # Keep sector order from the sorted DataFrame
+    unique_sectors = list(dict.fromkeys(df['sector_name'].tolist()))
+    valid_sectors = [s for s in unique_sectors if s in pivot_df.index]
+    pivot_df = pivot_df.reindex(valid_sectors)
+    
+    # Add chart column on the RIGHT side with NaN values
+    chart_col_values = [np.nan] * len(pivot_df)
+    pivot_df[CHART_COLUMN] = chart_col_values
+    
+    # Column order: weeks first, then chart column on right
+    columns_order = week_order + [CHART_COLUMN]
+    pivot_df = pivot_df[columns_order]
+    
+    # Build hover text matrix
+    hover_text = []
+    for sector in pivot_df.index:
+        row_text = []
+        for week in pivot_df.columns:
+            if week == CHART_COLUMN:
+                etf = get_etf_for_sector(sector)
+                text = f"<b>📈 View {etf} Chart</b><br>{sector} Sector<br>Click to show TradingView"
+            else:
+                value = pivot_df.loc[sector, week]
+                if pd.isna(value):
+                    text = f"<b>{sector}</b><br>Week: {week}<br>No data"
+                else:
+                    strength = get_sctr_strength_label(value)
+                    text = (
+                        f"<b>{sector} Sector</b><br>"
+                        f"Week: {week}<br>"
+                        f"SCTR Percentile: {value:.0f}<br>"
+                        f"Strength: {strength}"
+                    )
+            row_text.append(text)
+        hover_text.append(row_text)
+    
+    # Create heatmap
+    fig = go.Figure(data=go.Heatmap(
+        z=pivot_df.values,
+        x=pivot_df.columns.tolist(),
+        y=pivot_df.index.tolist(),
+        colorscale=get_color_scale(),
+        zmin=0,
+        zmax=100,
+        hovertemplate="%{customdata}<extra></extra>",
+        customdata=hover_text,
+        xgap=1,
+        ygap=1,
+        showscale=False,
+    ))
+    
+    # Add invisible scatter trace to enable top x-axis labels
+    fig.add_trace(go.Scatter(
+        x=pivot_df.columns.tolist(),
+        y=[None] * len(pivot_df.columns),
+        xaxis="x2",
+        mode="markers",
+        marker=dict(opacity=0),
+        showlegend=False,
+        hoverinfo="skip",
+    ))
+    
+    # Calculate chart height
+    num_sectors = len(pivot_df)
+    chart_height = max(MIN_SECTOR_CHART_HEIGHT, num_sectors * ROW_HEIGHT + 160)
+    
+    # Build annotations for chart icons
+    chart_annotations = []
+    for sector in pivot_df.index:
+        chart_annotations.append(
+            dict(
+                text="📈",
+                x=CHART_COLUMN,
+                y=sector,
+                xref="x",
+                yref="y",
+                showarrow=False,
+                font=dict(size=FONT_SIZES["chart_icon"], color=COLORS["text"]),
+            )
+        )
+    
+    # Layout
+    fig.update_layout(
+        title=dict(
+            text="📊 Sector SCTR Overview (XL* ETFs)<br><sup>← Most Recent | Weeks | Older → | 📈 = Sector ETF Chart</sup>",
+            font=dict(size=FONT_SIZES["title"], color=COLORS["title"]),
+            x=0.5,
+            xanchor="center",
+            y=0.98,
+            yanchor="top",
+        ),
+        xaxis=dict(
+            title=None,
+            tickfont=dict(size=FONT_SIZES["axis_label"], color=COLORS["muted_text"]),
+            tickangle=45,
+            side="bottom",
+            dtick=1,
+            fixedrange=True,
+            showticklabels=True,
+        ),
+        xaxis2=dict(
+            title=None,
+            tickfont=dict(size=FONT_SIZES["axis_label"], color=COLORS["muted_text"]),
+            tickangle=-45,
+            side="top",
+            anchor="y",
+            overlaying="x",
+            fixedrange=True,
+            showticklabels=True,
+            tickmode="array",
+            tickvals=pivot_df.columns.tolist(),
+            ticktext=pivot_df.columns.tolist(),
+            range=[-0.5, len(pivot_df.columns) - 0.5],
+        ),
+        yaxis=dict(
+            title=None,
+            tickfont=dict(size=FONT_SIZES["stock_axis_label"], color=COLORS["muted_text"]),
+            autorange="reversed",
+            tickmode="linear",
+            dtick=1,
+            fixedrange=True,
+            ticklabelposition="outside",
+        ),
+        annotations=chart_annotations,
+        paper_bgcolor=COLORS["paper_bg"],
+        plot_bgcolor=COLORS["plot_bg"],
+        font=dict(color=COLORS["text"]),
+        height=chart_height,
+        margin=dict(
+            l=200,
+            r=MARGINS["right"],
+            t=100,
+            b=60,
+        ),
+    )
+    
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor=COLORS["grid"])
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor=COLORS["grid"])
+    
+    return fig
+
+
+def create_sctr_heatmap_figure(df: pd.DataFrame, num_weeks: int) -> go.Figure:
+    """
+    Create the Plotly SCTR heatmap figure with chart column on right side.
+    
+    Args:
+        df: DataFrame with SCTR matrix data (includes etf_ticker column)
+        num_weeks: Number of weeks to display
+    
+    Returns:
+        Plotly Figure object
+    """
+    from datetime import datetime
+    
+    # Create mapping of subindustry name to ETF ticker for hover text
+    etf_map = {}
+    if 'etf_ticker' in df.columns:
+        etf_data = df.drop_duplicates('subindustry_name')[['subindustry_name', 'etf_ticker']]
+        etf_map = dict(zip(etf_data['subindustry_name'], etf_data['etf_ticker']))
+    
+    # Pivot for heatmap: rows = sub-industries, columns = weeks
+    pivot_df = df.pivot(
+        index='subindustry_name',
+        columns='week_label',
+        values='sctr_percentile'
+    )
+    
+    # Sort weeks: most recent FIRST (left side)
+    week_order = sorted(pivot_df.columns, key=lambda x: datetime.strptime(x, "%d/%m/%y"), reverse=True)
+    pivot_df = pivot_df[week_order]
+    
+    # Keep sub-industry order from the sorted DataFrame
+    unique_subindustries = df.drop_duplicates('subindustry_name')['subindustry_name'].tolist()
+    pivot_df = pivot_df.reindex(unique_subindustries)
+    
+    # Add chart column on the RIGHT side
+    chart_col_values = [np.nan] * len(pivot_df)
+    pivot_df[CHART_COLUMN] = chart_col_values
+    
+    # Column order: weeks first, then chart column on right
+    columns_order = week_order + [CHART_COLUMN]
+    pivot_df = pivot_df[columns_order]
+    
+    # Build hover text matrix
+    hover_text = []
+    for industry in pivot_df.index:
+        row_text = []
+        etf_ticker = etf_map.get(industry, "")
+        for week in pivot_df.columns:
+            if week == CHART_COLUMN:
+                text = f"<b>📈 View {etf_ticker} Chart</b><br>{industry}<br>Click to show TradingView"
+            else:
+                value = pivot_df.loc[industry, week]
+                if pd.isna(value):
+                    text = f"<b>{industry}</b><br>ETF: {etf_ticker}<br>Week: {week}<br>No data<br><i>Click to view stocks</i>"
+                else:
+                    strength = get_sctr_strength_label(value)
+                    text = (
+                        f"<b>{industry}</b><br>"
+                        f"ETF: {etf_ticker}<br>"
+                        f"Week: {week}<br>"
+                        f"SCTR Percentile: {value:.0f}<br>"
+                        f"Strength: {strength}<br>"
+                        f"<i>Click to view stocks</i>"
+                    )
+            row_text.append(text)
+        hover_text.append(row_text)
+    
+    # Create heatmap
+    fig = go.Figure(data=go.Heatmap(
+        z=pivot_df.values,
+        x=pivot_df.columns.tolist(),
+        y=pivot_df.index.tolist(),
+        colorscale=get_color_scale(),
+        zmin=0,
+        zmax=100,
+        hovertemplate="%{customdata}<extra></extra>",
+        customdata=hover_text,
+        xgap=1,
+        ygap=1,
+        colorbar=dict(
+            title=dict(text="SCTR Percentile", side="right"),
+            tickvals=[0, 25, 50, 75, 100],
+            ticktext=["0 (Lagging)", "25", "50", "75", "100 (Leading)"],
+            len=0.75,
+        )
+    ))
+    
+    # Add invisible scatter trace to enable top x-axis labels
+    fig.add_trace(go.Scatter(
+        x=pivot_df.columns.tolist(),
+        y=[None] * len(pivot_df.columns),
+        xaxis="x2",
+        mode="markers",
+        marker=dict(opacity=0),
+        showlegend=False,
+        hoverinfo="skip",
+    ))
+    
+    # Calculate chart height
+    num_industries = len(pivot_df)
+    chart_height = max(MIN_MAIN_CHART_HEIGHT, num_industries * ROW_HEIGHT + MARGINS["top"] + MARGINS["bottom"])
+    
+    # Truncate long sub-industry names
+    y_labels = [
+        (name[:MAX_LABEL_LENGTH] + "...") if len(name) > MAX_LABEL_LENGTH else name
+        for name in pivot_df.index.tolist()
+    ]
+    
+    # Build annotations for chart icons
+    chart_annotations = []
+    for industry in pivot_df.index:
+        chart_annotations.append(
+            dict(
+                text="📈",
+                x=CHART_COLUMN,
+                y=industry,
+                xref="x",
+                yref="y",
+                showarrow=False,
+                font=dict(size=FONT_SIZES["chart_icon"], color=COLORS["text"]),
+            )
+        )
+    
+    # Layout
+    fig.update_layout(
+        title=dict(
+            text="📊 StockCharts Technical Rank (SCTR) by GICS Sub-Industry<br><sup>← Most Recent | Weeks | Older → | 📈 = ETF Chart</sup>",
+            font=dict(size=FONT_SIZES["title"], color=COLORS["title"]),
+            x=0.5,
+            xanchor="center",
+            y=0.99,
+            yanchor="top",
+        ),
+        xaxis=dict(
+            title=None,
+            tickfont=dict(size=FONT_SIZES["axis_label"], color=COLORS["muted_text"]),
+            tickangle=45,
+            side="bottom",
+            dtick=1,
+            fixedrange=True,
+            showticklabels=True,
+        ),
+        xaxis2=dict(
+            title=None,
+            tickfont=dict(size=FONT_SIZES["axis_label"], color=COLORS["muted_text"]),
+            tickangle=-45,
+            side="top",
+            anchor="y",
+            overlaying="x",
+            fixedrange=True,
+            showticklabels=True,
+            tickmode="array",
+            tickvals=pivot_df.columns.tolist(),
+            ticktext=pivot_df.columns.tolist(),
+            range=[-0.5, len(pivot_df.columns) - 0.5],
+        ),
+        yaxis=dict(
+            title=None,
+            tickfont=dict(size=FONT_SIZES["axis_label"], color=COLORS["muted_text"]),
+            autorange="reversed",
+            tickmode="linear",
+            dtick=1,
+            fixedrange=True,
+            ticklabelposition="outside",
+        ),
+        annotations=chart_annotations,
+        paper_bgcolor=COLORS["paper_bg"],
+        plot_bgcolor=COLORS["plot_bg"],
+        font=dict(color=COLORS["text"]),
+        height=chart_height,
+        margin=dict(
+            l=MARGINS["left"],
+            r=MARGINS["right"],
+            t=MARGINS["top"],
+            b=MARGINS["bottom"]
+        ),
+    )
+    
+    # Update y-axis with truncated labels
+    fig.update_yaxes(
+        ticktext=y_labels,
+        tickvals=pivot_df.index.tolist(),
+    )
+    
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor=COLORS["grid"])
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor=COLORS["grid"])
+    
+    return fig
+
+
+def get_sctr_strength_label(percentile: float) -> str:
+    """
+    Get SCTR strength label based on percentile.
+    
+    SCTR interpretation:
+    - 60-100: Leading (strong technical strength)
+    - 40-60: Neutral
+    - 0-40: Lagging (weak technical strength)
+    
+    Args:
+        percentile: SCTR percentile value (0-100)
+    
+    Returns:
+        Strength label string
+    """
+    if percentile is None:
+        return "N/A"
+    if percentile >= 60:
+        return "Leading"
+    elif percentile >= 40:
+        return "Neutral"
+    else:
+        return "Lagging"

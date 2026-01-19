@@ -1,11 +1,12 @@
 """
-GICS Sub-Industry model.
+StockCharts Industry model.
 
-Global Industry Classification Standard (GICS) hierarchy:
+Industry classification based on StockCharts.com sector drill-down structure:
 - Sector (11 sectors, 2-digit code)
-- Industry Group (25 groups, 4-digit code)
-- Industry (74 industries, 6-digit code)
-- Sub-Industry (163 sub-industries, 8-digit code)
+- Industry (130 industries, 6-digit code)
+
+This replaces the previous GICS-based 8-digit sub-industry codes with
+StockCharts-compatible 6-digit industry codes for RS/SCTR calculation.
 """
 from typing import TYPE_CHECKING, List
 
@@ -21,15 +22,15 @@ if TYPE_CHECKING:
 
 class GICSSubIndustry(Base):
     """
-    GICS Sub-Industry classification.
+    StockCharts Industry classification.
     
-    This is the most granular level of the GICS hierarchy.
-    Each sub-industry belongs to an industry, industry group, and sector.
+    Uses 6-digit StockCharts industry codes (e.g., "350100" for Biotechnology)
+    for consistent RS and SCTR calculations.
     """
     __tablename__ = "gics_subindustry"
     
-    # Primary key: 8-digit GICS code (e.g., "10101010")
-    code: Mapped[str] = mapped_column(String(8), primary_key=True)
+    # Primary key: 6-digit StockCharts industry code (e.g., "350100")
+    code: Mapped[str] = mapped_column(String(6), primary_key=True)
     
     # Sub-industry name
     name: Mapped[str] = mapped_column(String(100), nullable=False)

@@ -4,12 +4,16 @@ Industry Aggregator.
 Aggregates individual stock RS values into industry level RS.
 Uses market-cap weighting for more accurate representation.
 
-For industries with specific ETF proxies, uses the corresponding ETF 
-as a direct proxy for more accurate RS calculation.
+For industries with unique ETF proxies, uses the corresponding ETF 
+as a direct proxy for more accurate RS calculation. Industries that
+share an ETF with others use market-cap-weighted aggregation instead.
+
+IMPORTANT: Uses stockcharts_loader as the ground truth for industry/stock
+structure. The scraped data from StockCharts.com is the canonical source.
 """
 import logging
 from datetime import date, timedelta
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 import numpy as np
 import pandas as pd
@@ -18,9 +22,32 @@ from sqlalchemy.orm import Session
 from src.config import settings
 from src.models import Stock, StockPrice, GICSSubIndustry, RSWeekly
 from src.services.rs_calculator import MansfieldRSCalculator, calculate_percentile_ranks
-from src.data.stockcharts_industry_mapping import INDUSTRY_ETF_MAP as GICS_SUBINDUSTRY_ETF_MAP
+from src.data.stockcharts_loader import (
+    get_loader,
+    get_etf_for_industry,
+    should_use_aggregation,
+    get_shared_etfs as get_shared_etfs_from_loader,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def _get_shared_etfs() -> Set[str]:
+    """
+    Get ETFs that are used by multiple industries.
+    
+    Uses the StockCharts data loader as the source of truth.
+    Industries sharing an ETF should use aggregated stock prices
+    instead of ETF prices to ensure unique RS/SCTR values.
+    
+    Returns:
+        Set of ETF tickers that are shared by multiple industries
+    """
+    return get_shared_etfs_from_loader()
+
+
+# Cache shared ETFs at module load time (will load from scraped data)
+SHARED_ETFS = _get_shared_etfs()
 
 
 class SubIndustryAggregator:
@@ -57,19 +84,30 @@ class SubIndustryAggregator:
         """
         Get the ETF ticker to use as proxy for a sub-industry RS calculation.
         
-        Returns an ETF if it's a high-confidence representation of the sub-industry:
-        - The ETF is not a broad sector fallback (is_sector_fallback=False)
-        - The ETF specifically tracks the sub-industry or a closely related index
+        Uses the StockCharts data loader as the source of truth.
         
-        Examples of high-confidence ETFs:
+        Returns an ETF only if it meets ALL of these criteria:
+        - The ETF is not a broad sector fallback (is_sector_fallback=False)
+        - The ETF is NOT shared by multiple industries
+        - The ETF specifically tracks this sub-industry
+        
+        Industries sharing an ETF with others should use aggregated stock prices
+        to ensure unique RS/SCTR evolutions.
+        
+        Examples of unique ETFs (will be used):
         - XBI for Biotechnology
         - XOP for Oil & Gas E&P
-        - KBE for Banks
         - SMH for Semiconductors
-        - JETS for Passenger Airlines
+        - JETS for Airlines
+        
+        Examples of shared ETFs (will use aggregation instead):
+        - XRT (shared by retail industries)
+        - XHB (shared by homebuilding industries)
+        - KIE (shared by insurance industries)
+        - ITA (shared by Aerospace and Defense)
         
         Args:
-            subindustry_code: GICS sub-industry code
+            subindustry_code: 6-digit StockCharts industry code
         
         Returns:
             ETF ticker or None if should use aggregated calculation
@@ -77,15 +115,27 @@ class SubIndustryAggregator:
         if not self.use_industry_indices:
             return None
         
-        mapping = GICS_SUBINDUSTRY_ETF_MAP.get(subindustry_code)
-        if not mapping:
-            return None
+        # Use the StockCharts data loader as source of truth
+        etf = get_etf_for_industry(subindustry_code)
         
-        # Use ETF proxy if it's NOT a sector fallback (i.e., it's specific to the sub-industry)
-        if not mapping.is_sector_fallback:
-            return mapping.primary_etf
+        if etf is None:
+            # Log why we're using aggregation
+            if should_use_aggregation(subindustry_code):
+                loader = get_loader()
+                industry = loader.get_industry(subindustry_code)
+                if industry:
+                    if industry.is_sector_fallback:
+                        logger.debug(
+                            f"Industry {subindustry_code} ({industry.name}) uses sector fallback ETF, "
+                            f"using aggregation"
+                        )
+                    elif industry.primary_etf in loader.shared_etfs:
+                        logger.debug(
+                            f"ETF {industry.primary_etf} is shared by multiple industries, "
+                            f"using aggregation for {subindustry_code} ({industry.name})"
+                        )
         
-        return None
+        return etf
     
     def get_stock_prices(
         self,
@@ -139,10 +189,14 @@ class SubIndustryAggregator:
         start_date: date,
         end_date: date,
         method: str = "market_cap_weighted",
-        min_history_weeks: int = 52
+        min_history_weeks: int = 52,
+        max_stocks: int = 20
     ) -> pd.Series:
         """
         Calculate aggregated price series for a sub-industry.
+        
+        Uses top stocks by market cap with sanity checks to ensure
+        consistent price series without corrupted data.
         
         Args:
             subindustry_code: GICS sub-industry code
@@ -150,27 +204,28 @@ class SubIndustryAggregator:
             end_date: End date
             method: Aggregation method - 'market_cap_weighted' or 'equal_weighted'
             min_history_weeks: Minimum weeks of history required for a stock to be included
+            max_stocks: Maximum number of stocks to include
         
         Returns:
             Series of aggregated prices indexed by date
         """
-        # Get all stocks in sub-industry
+        from sqlalchemy import desc
+        
+        # Get stocks ordered by market cap (use a larger pool to filter from)
         stocks = self.db.query(Stock).filter(
             Stock.gics_subindustry_code == subindustry_code,
             Stock.is_active == True
-        ).all()
+        ).order_by(desc(Stock.market_cap)).limit(max_stocks * 5).all()
         
         if not stocks:
             logger.debug(f"No stocks found for sub-industry {subindustry_code}")
             return pd.Series(dtype=float)
         
-        # Calculate minimum required data points (approximately 5 trading days per week)
+        # Calculate minimum required data points
         min_data_points = min_history_weeks * 5
         
-        # Collect prices and weights, filtering out stocks with insufficient history
-        all_prices = []
-        weights = []
-        excluded_count = 0
+        # Collect valid price series with sanity checks
+        valid_stocks = []
         
         for stock in stocks:
             prices = self.get_stock_prices(stock.ticker, start_date, end_date)
@@ -179,31 +234,47 @@ class SubIndustryAggregator:
             
             # Filter out stocks with insufficient history
             if len(prices) < min_data_points:
-                excluded_count += 1
                 continue
             
-            all_prices.append(prices)
+            # Sanity check: reject stocks with extreme price swings
+            # Max price should not be more than 100x min price (likely data errors)
+            price_ratio = prices.max() / prices.min() if prices.min() > 0 else float('inf')
+            if price_ratio > 100:
+                logger.debug(f"Excluding {stock.ticker} from aggregation - extreme price ratio: {price_ratio:.1f}")
+                continue
             
-            if method == "market_cap_weighted":
-                weight = stock.market_cap if stock.market_cap else 1.0
-            else:
-                weight = 1.0
+            # Reject prices over $10000 (likely data errors for most stocks)
+            if prices.max() > 10000:
+                logger.debug(f"Excluding {stock.ticker} from aggregation - price too high: {prices.max():.2f}")
+                continue
             
-            weights.append(weight)
+            weight = stock.market_cap if (method == "market_cap_weighted" and stock.market_cap) else 1.0
+            
+            valid_stocks.append({
+                'ticker': stock.ticker,
+                'prices': prices,
+                'weight': weight,
+                'count': len(prices)
+            })
+            
+            if len(valid_stocks) >= max_stocks:
+                break
         
-        if excluded_count > 0:
-            logger.debug(
-                f"Sub-industry {subindustry_code}: excluded {excluded_count} stocks "
-                f"with <{min_history_weeks} weeks of data"
-            )
-        
-        if not all_prices:
+        if not valid_stocks:
+            logger.debug(f"No valid stocks for sub-industry {subindustry_code} after filtering")
             return pd.Series(dtype=float)
         
-        # Align all price series using inner join
-        prices_df = pd.concat(all_prices, axis=1, join='inner')
+        if len(valid_stocks) < 3:
+            logger.debug(f"Sub-industry {subindustry_code}: only {len(valid_stocks)} stocks available")
+        
+        # Use inner join for clean overlapping dates
+        prices_list = [d['prices'] for d in valid_stocks]
+        weights = [d['weight'] for d in valid_stocks]
+        
+        prices_df = pd.concat(prices_list, axis=1, join='inner')
         
         if prices_df.empty:
+            logger.debug(f"No overlapping price data for sub-industry {subindustry_code}")
             return pd.Series(dtype=float)
         
         # Normalize weights
@@ -225,9 +296,12 @@ class SubIndustryAggregator:
         """
         Calculate Mansfield RS for a sub-industry.
         
-        If the sub-industry has a StockCharts industry index symbol, uses the
-        primary ETF as a direct proxy for RS calculation. Otherwise, falls back
-        to aggregating individual stock prices.
+        Priority order for price data:
+        1. Unique industry ETF (not shared, not sector fallback)
+        2. Market-cap-weighted aggregation of constituent stocks
+        
+        Industries sharing an ETF with others use aggregation to ensure
+        unique RS evolutions. No sector ETF fallback is used.
         
         Args:
             subindustry_code: GICS sub-industry code
@@ -236,31 +310,31 @@ class SubIndustryAggregator:
             method: Aggregation method (used only for fallback calculation)
         
         Returns:
-            DataFrame with RS components and metadata
+            DataFrame with RS components and metadata (empty if no data available)
         """
-        # Check if we should use ETF proxy for this sub-industry
-        etf_ticker = self.get_subindustry_etf(subindustry_code)
+        subindustry_prices = pd.Series(dtype=float)
         use_etf = False
+        etf_ticker = None
         
-        if etf_ticker:
-            # Try to use ETF prices directly
-            etf_prices = self.get_stock_prices(etf_ticker, start_date, end_date)
-            if not etf_prices.empty and len(etf_prices) >= 200:  # Need ~1 year of data
+        # Step 1: Try unique industry ETF (not shared, not sector fallback)
+        unique_etf = self.get_subindustry_etf(subindustry_code)
+        if unique_etf:
+            etf_prices = self.get_stock_prices(unique_etf, start_date, end_date)
+            if not etf_prices.empty and len(etf_prices) >= 200:
                 subindustry_prices = etf_prices
                 use_etf = True
-                logger.debug(f"Using ETF {etf_ticker} for sub-industry {subindustry_code}")
-            else:
-                logger.debug(
-                    f"ETF {etf_ticker} has insufficient data for {subindustry_code}, "
-                    f"falling back to aggregated calculation"
-                )
+                etf_ticker = unique_etf
+                logger.debug(f"Using unique ETF {unique_etf} for industry {subindustry_code}")
         
-        if not use_etf:
-            # Fall back to aggregated sub-industry prices
+        # Step 2: Try aggregated stock prices if no unique ETF or insufficient data
+        if subindustry_prices.empty:
             subindustry_prices = self.calculate_subindustry_prices(
                 subindustry_code, start_date, end_date, method
             )
+            if not subindustry_prices.empty:
+                logger.debug(f"Using aggregated stock prices for industry {subindustry_code}")
         
+        # No sector ETF fallback - industries without stocks will have NaN values
         if subindustry_prices.empty:
             return pd.DataFrame()
         
@@ -297,12 +371,15 @@ class SubIndustryAggregator:
         """
         Calculate weekly RS for all sub-industries.
         
+        Includes ALL industries from the database. Industries without sufficient
+        data will have NaN values for RS metrics.
+        
         Args:
             week_end_date: Friday of the target week
             lookback_weeks: Weeks of history to include for SMA calculation
         
         Returns:
-            List of dicts with RS data for each sub-industry
+            List of dicts with RS data for each sub-industry (all industries included)
         """
         # Calculate date range
         end_date = week_end_date
@@ -313,8 +390,16 @@ class SubIndustryAggregator:
         subindustries = self.db.query(GICSSubIndustry).all()
         
         results = []
+        industries_with_data = 0
+        industries_without_data = 0
         
         for subindustry in subindustries:
+            # Count constituents for this industry
+            constituents_count = self.db.query(Stock).filter(
+                Stock.gics_subindustry_code == subindustry.code,
+                Stock.is_active == True
+            ).count()
+            
             try:
                 rs_df = self.calculate_subindustry_rs(
                     subindustry.code,
@@ -323,6 +408,18 @@ class SubIndustryAggregator:
                 )
                 
                 if rs_df.empty:
+                    # No data available - include with NaN values
+                    result = {
+                        'subindustry_code': subindustry.code,
+                        'week_end_date': week_end_date,
+                        'week_start_date': week_start_date,
+                        'rs_line': np.nan,
+                        'rs_line_sma_52w': np.nan,
+                        'mansfield_rs': np.nan,
+                        'constituents_count': constituents_count,
+                    }
+                    results.append(result)
+                    industries_without_data += 1
                     continue
                 
                 # Get value for target date (or closest prior date)
@@ -332,6 +429,18 @@ class SubIndustryAggregator:
                 valid_data = rs_df[rs_df.index <= target_date]
                 
                 if valid_data.empty:
+                    # No data for target date - include with NaN values
+                    result = {
+                        'subindustry_code': subindustry.code,
+                        'week_end_date': week_end_date,
+                        'week_start_date': week_start_date,
+                        'rs_line': np.nan,
+                        'rs_line_sma_52w': np.nan,
+                        'mansfield_rs': np.nan,
+                        'constituents_count': constituents_count,
+                    }
+                    results.append(result)
+                    industries_without_data += 1
                     continue
                 
                 row = valid_data.iloc[-1]
@@ -347,12 +456,24 @@ class SubIndustryAggregator:
                 }
                 
                 results.append(result)
+                industries_with_data += 1
                 
             except Exception as e:
                 logger.error(f"Error calculating RS for {subindustry.code}: {e}")
-                continue
+                # Include with NaN values on error
+                result = {
+                    'subindustry_code': subindustry.code,
+                    'week_end_date': week_end_date,
+                    'week_start_date': week_start_date,
+                    'rs_line': np.nan,
+                    'rs_line_sma_52w': np.nan,
+                    'mansfield_rs': np.nan,
+                    'constituents_count': constituents_count,
+                }
+                results.append(result)
+                industries_without_data += 1
         
-        # Calculate percentile ranks
+        # Calculate percentile ranks (only for industries with valid RS values)
         if results:
             rs_values = pd.Series({
                 r['subindustry_code']: r['mansfield_rs'] 
@@ -369,7 +490,10 @@ class SubIndustryAggregator:
                 else:
                     result['rs_percentile'] = None
         
-        logger.info(f"Calculated RS for {len(results)} sub-industries for week {week_end_date}")
+        logger.info(
+            f"Calculated RS for {len(results)} industries for week {week_end_date} "
+            f"({industries_with_data} with data, {industries_without_data} without)"
+        )
         return results
     
     def store_weekly_rs(self, week_end_date: date) -> int:

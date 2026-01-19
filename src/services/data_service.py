@@ -5,8 +5,9 @@ Provides functions to retrieve RS data formatted for the dashboard.
 """
 import logging
 from datetime import date, timedelta
-from typing import List, Optional
+from typing import List, Optional, Dict
 
+import numpy as np
 import pandas as pd
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
@@ -16,6 +17,119 @@ from src.models import RSWeekly, GICSSubIndustry, Stock
 from src.services.aggregator import get_last_friday, get_week_ranges
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# HELPER FUNCTIONS FOR SCTR WITH AGGREGATED PRICES
+# =============================================================================
+
+def _calculate_subindustry_aggregated_prices(
+    db: Session,
+    subindustry_code: str,
+    start_date: date,
+    end_date: date,
+    min_history_days: int = 200,
+    max_stocks: int = 20
+) -> pd.Series:
+    """
+    Calculate market-cap-weighted aggregated price series for a sub-industry.
+    
+    Uses individual stock prices weighted by market cap to create a synthetic
+    price series representing the sub-industry's performance.
+    
+    Includes sanity checks to filter out stocks with extreme/corrupted price data.
+    
+    Args:
+        db: Database session
+        subindustry_code: GICS sub-industry code
+        start_date: Start date for price data
+        end_date: End date for price data
+        min_history_days: Minimum trading days required for a stock to be included
+        max_stocks: Maximum number of stocks to include in aggregation
+    
+    Returns:
+        Series of aggregated prices indexed by date
+    """
+    from src.models import StockPrice
+    from sqlalchemy import desc
+    
+    # Get stocks ordered by market cap (use a larger pool to filter from)
+    stocks = db.query(Stock).filter(
+        Stock.gics_subindustry_code == subindustry_code,
+        Stock.is_active == True
+    ).order_by(desc(Stock.market_cap)).limit(max_stocks * 5).all()
+    
+    if not stocks:
+        logger.debug(f"No stocks found for sub-industry {subindustry_code}")
+        return pd.Series(dtype=float)
+    
+    # Collect valid price series with sanity checks
+    valid_stocks = []
+    
+    for stock in stocks:
+        # Get stock prices
+        prices_query = db.query(StockPrice).filter(
+            StockPrice.ticker == stock.ticker,
+            StockPrice.date >= start_date,
+            StockPrice.date <= end_date
+        ).order_by(StockPrice.date).all()
+        
+        if not prices_query:
+            continue
+        
+        # Filter out stocks with insufficient history
+        if len(prices_query) < min_history_days:
+            continue
+        
+        prices = pd.Series(
+            {p.date: p.adj_close for p in prices_query}
+        ).sort_index()
+        
+        # Sanity check: reject stocks with extreme price swings (likely data errors)
+        price_ratio = prices.max() / prices.min() if prices.min() > 0 else float('inf')
+        if price_ratio > 100:
+            logger.debug(f"Excluding {stock.ticker} from SCTR aggregation - extreme price ratio: {price_ratio:.1f}")
+            continue
+        
+        # Reject prices over $10000 (likely data errors for most stocks)
+        if prices.max() > 10000:
+            logger.debug(f"Excluding {stock.ticker} from SCTR aggregation - price too high: {prices.max():.2f}")
+            continue
+        
+        # Use market cap as weight, default to 1.0 if not available
+        weight = stock.market_cap if stock.market_cap else 1.0
+        
+        valid_stocks.append({
+            'ticker': stock.ticker,
+            'prices': prices,
+            'weight': weight
+        })
+        
+        if len(valid_stocks) >= max_stocks:
+            break
+    
+    if not valid_stocks:
+        logger.debug(f"No valid stocks for sub-industry {subindustry_code} after sanity checks")
+        return pd.Series(dtype=float)
+    
+    # Use inner join for clean overlapping dates
+    prices_list = [s['prices'] for s in valid_stocks]
+    weights = [s['weight'] for s in valid_stocks]
+    
+    prices_df = pd.concat(prices_list, axis=1, join='inner')
+    
+    if prices_df.empty:
+        logger.debug(f"No overlapping price data for sub-industry {subindustry_code}")
+        return pd.Series(dtype=float)
+    
+    # Normalize weights to sum to 1
+    weights_array = np.array(weights)
+    weights_array = weights_array / weights_array.sum()
+    
+    # Calculate market-cap-weighted average price
+    weighted_prices = (prices_df * weights_array).sum(axis=1)
+    
+    return weighted_prices
 
 
 def get_rs_matrix_data(
@@ -1109,6 +1223,654 @@ def _sort_stocks(df: pd.DataFrame, sort_by: str) -> pd.DataFrame:
             
     else:  # 'alpha' or default
         # Alphabetical by stock name
+        df = df.sort_values('stock_name')
+    
+    return df
+
+
+# ============================================
+# SCTR (StockCharts Technical Rank) Functions
+# ============================================
+
+def get_sector_sctr_matrix_data(
+    db: Session,
+    num_weeks: int = None,
+    sort_by: str = "latest"
+) -> pd.DataFrame:
+    """
+    Get sector-level SCTR data calculated from sector ETFs (XL* series).
+    
+    Calculates SCTR for each sector ETF (XLE, XLB, XLI, etc.),
+    then ranks them as percentiles across all sectors for each week.
+    
+    Args:
+        db: Database session
+        num_weeks: Number of weeks to include (default from settings)
+        sort_by: Sort method - 'latest', 'change', or 'alpha'
+    
+    Returns:
+        DataFrame with columns:
+        - sector_code
+        - sector_name
+        - week_label
+        - week_end_date
+        - sctr_percentile (from sector ETF SCTR score)
+    """
+    from src.models import StockPrice
+    from src.services.sctr_calculator import SCTRCalculator, calculate_sctr_percentile_ranks
+    from src.config import settings
+    import numpy as np
+    
+    if num_weeks is None:
+        num_weeks = settings.DEFAULT_WEEKS_DISPLAY
+    
+    # Sector ETF mapping (sector_name -> ETF ticker)
+    SECTOR_ETFS = {
+        "Energy": ("10", "XLE"),
+        "Materials": ("15", "XLB"),
+        "Industrials": ("20", "XLI"),
+        "Consumer Discretionary": ("25", "XLY"),
+        "Consumer Staples": ("30", "XLP"),
+        "Health Care": ("35", "XLV"),
+        "Financials": ("40", "XLF"),
+        "Information Technology": ("45", "XLK"),
+        "Communication Services": ("50", "XLC"),
+        "Utilities": ("55", "XLU"),
+        "Real Estate": ("60", "XLRE"),
+    }
+    
+    # Get latest available week from RS data for consistency
+    latest_rs_week = get_latest_available_week(db)
+    if not latest_rs_week:
+        logger.warning("No RS data available in database")
+        return pd.DataFrame()
+    
+    end_date = latest_rs_week
+    # Need 250+ days of history for SCTR calculation (200-day EMA + buffer)
+    start_date = end_date - timedelta(days=num_weeks * 7 + 300)
+    
+    # Generate week end dates (Fridays)
+    week_end_dates = []
+    current_friday = end_date
+    for i in range(num_weeks):
+        week_end_dates.append(current_friday - timedelta(weeks=i))
+    week_end_dates.reverse()
+    
+    # Initialize SCTR calculator
+    sctr_calc = SCTRCalculator()
+    
+    # Calculate SCTR for each sector ETF
+    sector_sctr_data = []
+    
+    for sector_name, (sector_code, etf_ticker) in SECTOR_ETFS.items():
+        # Get ETF prices
+        etf_prices_query = db.query(StockPrice).filter(
+            StockPrice.ticker == etf_ticker,
+            StockPrice.date >= start_date,
+            StockPrice.date <= end_date
+        ).order_by(StockPrice.date).all()
+        
+        if not etf_prices_query:
+            logger.warning(f"No prices found for sector ETF {etf_ticker} ({sector_name})")
+            continue
+        
+        etf_prices = pd.Series(
+            {p.date: p.adj_close for p in etf_prices_query}
+        ).sort_index()
+        
+        # Calculate full SCTR history
+        sctr_scores = sctr_calc.calculate_sctr_score(etf_prices)
+        
+        if sctr_scores.empty or sctr_scores.isna().all():
+            logger.warning(f"Could not calculate SCTR for {etf_ticker} ({sector_name})")
+            continue
+        
+        # Extract SCTR score for each week end date
+        for week_end in week_end_dates:
+            # Find the closest date <= week_end
+            valid_dates = sctr_scores.index[sctr_scores.index <= week_end]
+            if len(valid_dates) == 0:
+                continue
+            
+            closest_date = valid_dates[-1]
+            sctr_score = sctr_scores.loc[closest_date]
+            
+            if pd.notna(sctr_score):
+                sector_sctr_data.append({
+                    'sector_code': sector_code,
+                    'sector_name': sector_name,
+                    'week_end_date': week_end,
+                    'sctr_score': sctr_score,
+                    'etf_ticker': etf_ticker,
+                })
+    
+    if not sector_sctr_data:
+        return pd.DataFrame()
+    
+    # Convert to DataFrame
+    df = pd.DataFrame(sector_sctr_data)
+    
+    # Calculate percentile ranks within each week
+    df['sctr_percentile'] = df.groupby('week_end_date')['sctr_score'].transform(
+        lambda x: x.rank(pct=True) * 100
+    ).round().astype(int)
+    
+    # Create week labels
+    df['week_label'] = df['week_end_date'].apply(lambda d: d.strftime("%d/%m/%y"))
+    
+    # Drop intermediate columns
+    df = df.drop(columns=['sctr_score', 'etf_ticker'])
+    
+    # Sort sectors
+    df = _sort_sectors_sctr(df, sort_by)
+    
+    return df
+
+
+def _sort_sectors_sctr(df: pd.DataFrame, sort_by: str) -> pd.DataFrame:
+    """Sort sector SCTR DataFrame by specified method."""
+    if df.empty:
+        return df
+    
+    all_sectors = list(df['sector_code'].unique())
+    
+    if sort_by == "latest":
+        latest_week = df['week_end_date'].max()
+        latest_data = df[df['week_end_date'] == latest_week].copy()
+        sector_sctr = latest_data.groupby('sector_code')['sctr_percentile'].mean().sort_values(ascending=False)
+        sort_order = list(sector_sctr.index)
+        
+        seen = set(sort_order)
+        for s in all_sectors:
+            if s not in seen:
+                sort_order.append(s)
+                seen.add(s)
+        
+        sort_order = list(dict.fromkeys(sort_order))
+        
+        df['sort_key'] = pd.Categorical(
+            df['sector_code'],
+            categories=sort_order,
+            ordered=True
+        )
+        df = df.sort_values('sort_key').drop('sort_key', axis=1)
+        
+    elif sort_by == "change":
+        weeks = sorted(df['week_end_date'].unique(), reverse=True)
+        if len(weeks) >= 4:
+            newest = weeks[0]
+            oldest = weeks[3]
+            
+            newest_data = df[df['week_end_date'] == newest].groupby('sector_code')['sctr_percentile'].mean()
+            oldest_data = df[df['week_end_date'] == oldest].groupby('sector_code')['sctr_percentile'].mean()
+            
+            common_sectors = newest_data.index.intersection(oldest_data.index)
+            if len(common_sectors) > 0:
+                change = newest_data.loc[common_sectors] - oldest_data.loc[common_sectors]
+                sort_order = list(change.sort_values(ascending=False).index)
+                
+                seen = set(sort_order)
+                for s in all_sectors:
+                    if s not in seen:
+                        sort_order.append(s)
+                        seen.add(s)
+                
+                sort_order = list(dict.fromkeys(sort_order))
+                
+                df['sort_key'] = pd.Categorical(
+                    df['sector_code'],
+                    categories=sort_order,
+                    ordered=True
+                )
+                df = df.sort_values('sort_key').drop('sort_key', axis=1)
+            else:
+                df = df.sort_values('sector_name')
+        else:
+            df = df.sort_values('sector_name')
+    
+    else:
+        df = df.sort_values('sector_name')
+    
+    return df
+
+
+def get_sctr_matrix_data(
+    db: Session,
+    num_weeks: int = None,
+    sectors: Optional[List[str]] = None,
+    sort_by: str = "latest"
+) -> pd.DataFrame:
+    """
+    Get industry SCTR data using StockCharts scraped data as ground truth.
+    
+    Uses stockcharts_loader.py (scraped data) as the source of truth:
+    - For industries with unique ETFs (not shared, not sector fallback): uses ETF prices
+    - For industries sharing ETFs or with sector fallback: uses market-cap-weighted aggregation
+    
+    This ensures unique SCTR evolutions for each industry and consistency with RS calculation.
+    
+    Args:
+        db: Database session
+        num_weeks: Number of weeks to include
+        sectors: Optional list of sector names to filter by
+        sort_by: Sort method - 'latest', 'change', 'sector', or 'alpha'
+    
+    Returns:
+        DataFrame with columns:
+        - subindustry_code (6-digit StockCharts industry code)
+        - subindustry_name
+        - sector_name
+        - week_label
+        - week_end_date
+        - sctr_percentile
+        - etf_ticker (the ETF or "AGGREGATED" for market-cap-weighted calculation)
+    """
+    from src.models import StockPrice
+    from src.services.sctr_calculator import SCTRCalculator, calculate_sctr_percentile_ranks
+    # Use StockCharts data loader as ground truth (scraped data)
+    from src.data.stockcharts_loader import get_loader, get_etf_for_industry, should_use_aggregation
+    from src.config import settings
+    
+    if num_weeks is None:
+        num_weeks = settings.DEFAULT_WEEKS_DISPLAY
+    
+    # Get all industries from database
+    query = db.query(GICSSubIndustry)
+    if sectors:
+        query = query.filter(GICSSubIndustry.sector_name.in_(sectors))
+    subindustries = query.all()
+    
+    if not subindustries:
+        return pd.DataFrame()
+    
+    # Get latest available week
+    latest_rs_week = get_latest_available_week(db)
+    if not latest_rs_week:
+        return pd.DataFrame()
+    
+    end_date = latest_rs_week
+    start_date = end_date - timedelta(days=num_weeks * 7 + 300)
+    
+    # Generate week end dates
+    week_end_dates = []
+    current_friday = end_date
+    for i in range(num_weeks):
+        week_end_dates.append(current_friday - timedelta(weeks=i))
+    week_end_dates.reverse()
+    
+    # Initialize SCTR calculator
+    sctr_calc = SCTRCalculator()
+    
+    # Get the StockCharts data loader for ground truth
+    loader = get_loader()
+    shared_etfs = loader.shared_etfs
+    
+    if shared_etfs:
+        logger.debug(f"SCTR: {len(shared_etfs)} ETFs shared by multiple industries, using aggregation for those")
+    
+    # Build industry -> ETF mapping using StockCharts loader
+    # Use unique ETFs only (not shared, not sector fallback) - same logic as RS
+    subindustry_etf_map: Dict[str, Optional[str]] = {}
+    use_aggregated_map: Dict[str, bool] = {}
+    
+    for sub in subindustries:
+        # Use the loader to get the appropriate ETF (returns None if should use aggregation)
+        etf = get_etf_for_industry(sub.code)
+        use_agg = should_use_aggregation(sub.code)
+        
+        subindustry_etf_map[sub.code] = etf
+        use_aggregated_map[sub.code] = use_agg
+        
+        if use_agg:
+            industry = loader.get_industry(sub.code)
+            if industry:
+                if industry.is_sector_fallback:
+                    logger.debug(f"Industry {sub.code} ({sub.name}) uses sector fallback, will use aggregated prices")
+                elif industry.primary_etf in shared_etfs:
+                    logger.debug(f"Industry {sub.code} ({sub.name}) shares ETF {industry.primary_etf}, will use aggregated prices")
+            else:
+                logger.debug(f"Industry {sub.code} ({sub.name}) not in loader, will use aggregated prices")
+    
+    # Count how many will use each method
+    etf_count = sum(1 for v in use_aggregated_map.values() if not v)
+    agg_count = sum(1 for v in use_aggregated_map.values() if v)
+    logger.info(f"SCTR calculation: {etf_count} industries using unique ETF prices, {agg_count} using aggregated prices")
+    
+    # Cache for ETF prices
+    etf_prices_cache: Dict[str, pd.Series] = {}
+    
+    # Fetch prices for ETFs that will be used
+    for sub_code, etf_ticker in subindustry_etf_map.items():
+        if etf_ticker and not use_aggregated_map.get(sub_code, True) and etf_ticker not in etf_prices_cache:
+            etf_prices_query = db.query(StockPrice).filter(
+                StockPrice.ticker == etf_ticker,
+                StockPrice.date >= start_date,
+                StockPrice.date <= end_date
+            ).order_by(StockPrice.date).all()
+            
+            if etf_prices_query:
+                etf_prices_cache[etf_ticker] = pd.Series(
+                    {p.date: p.adj_close for p in etf_prices_query}
+                ).sort_index()
+            else:
+                logger.warning(f"No price data for ETF {etf_ticker}")
+    
+    # Cache for SCTR scores
+    sctr_cache: Dict[str, pd.Series] = {}  # Key: subindustry_code
+    
+    # Calculate SCTR for each sub-industry
+    for sub in subindustries:
+        etf_ticker = subindustry_etf_map.get(sub.code)
+        use_aggregated = use_aggregated_map.get(sub.code, True)
+        
+        if use_aggregated:
+            # Use market-cap-weighted aggregated prices
+            prices = _calculate_subindustry_aggregated_prices(
+                db, sub.code, start_date, end_date, min_history_days=200
+            )
+            if prices.empty:
+                logger.debug(f"No aggregated prices for {sub.name} ({sub.code})")
+                continue
+        else:
+            # Use specific ETF prices
+            prices = etf_prices_cache.get(etf_ticker)
+            if prices is None or prices.empty:
+                logger.debug(f"No ETF prices for {sub.name} (ETF: {etf_ticker})")
+                continue
+        
+        # Calculate SCTR scores
+        sctr_scores = sctr_calc.calculate_sctr_score(prices)
+        if not sctr_scores.empty and not sctr_scores.isna().all():
+            sctr_cache[sub.code] = sctr_scores
+    
+    # Build results for each sub-industry
+    all_results = []
+    
+    for sub in subindustries:
+        etf_ticker = subindustry_etf_map.get(sub.code)
+        use_aggregated = use_aggregated_map.get(sub.code, True)
+        display_ticker = "AGGREGATED" if use_aggregated else etf_ticker
+        
+        sctr_scores = sctr_cache.get(sub.code)
+        
+        if sctr_scores is not None and not sctr_scores.empty:
+            for week_end in week_end_dates:
+                valid_dates = sctr_scores.index[sctr_scores.index <= week_end]
+                if len(valid_dates) == 0:
+                    all_results.append({
+                        'subindustry_code': sub.code,
+                        'subindustry_name': sub.name,
+                        'sector_name': sub.sector_name,
+                        'sector_code': sub.sector_code,
+                        'week_end_date': week_end,
+                        'sctr_score': np.nan,
+                        'etf_ticker': display_ticker,
+                    })
+                else:
+                    closest_date = valid_dates[-1]
+                    sctr_score = sctr_scores.loc[closest_date]
+                    all_results.append({
+                        'subindustry_code': sub.code,
+                        'subindustry_name': sub.name,
+                        'sector_name': sub.sector_name,
+                        'sector_code': sub.sector_code,
+                        'week_end_date': week_end,
+                        'sctr_score': sctr_score if pd.notna(sctr_score) else np.nan,
+                        'etf_ticker': display_ticker,
+                    })
+        else:
+            # No SCTR data available - include with NaN values
+            logger.debug(f"No SCTR data for {sub.name} ({sub.code})")
+            for week_end in week_end_dates:
+                all_results.append({
+                    'subindustry_code': sub.code,
+                    'subindustry_name': sub.name,
+                    'sector_name': sub.sector_name,
+                    'sector_code': sub.sector_code,
+                    'week_end_date': week_end,
+                    'sctr_score': np.nan,
+                    'etf_ticker': display_ticker if display_ticker else "N/A",
+                })
+    
+    if not all_results:
+        return pd.DataFrame()
+    
+    df = pd.DataFrame(all_results)
+    
+    # Calculate percentile ranks within each week (NaN values stay as NaN)
+    df['sctr_percentile'] = df.groupby('week_end_date')['sctr_score'].transform(
+        lambda x: x.rank(pct=True) * 100
+    )
+    # Round and convert to nullable int (preserves NaN)
+    df['sctr_percentile'] = df['sctr_percentile'].round()
+    
+    df['week_label'] = df['week_end_date'].apply(lambda d: d.strftime("%d/%m/%y"))
+    df = df.drop(columns=['sctr_score'])
+    
+    # Sort subindustries
+    df = _sort_subindustries_sctr(df, sort_by)
+    
+    return df
+
+
+def _sort_subindustries_sctr(df: pd.DataFrame, sort_by: str) -> pd.DataFrame:
+    """Sort SCTR DataFrame by specified method."""
+    if df.empty:
+        return df
+    
+    if sort_by == "latest":
+        latest_week = df['week_end_date'].max()
+        latest_data = df[df['week_end_date'] == latest_week].set_index('subindustry_code')
+        sort_order = latest_data['sctr_percentile'].sort_values(ascending=False).index.tolist()
+        
+        df['sort_key'] = pd.Categorical(
+            df['subindustry_code'],
+            categories=sort_order,
+            ordered=True
+        )
+        df = df.sort_values('sort_key').drop('sort_key', axis=1)
+        
+    elif sort_by == "change":
+        weeks = sorted(df['week_end_date'].unique(), reverse=True)
+        if len(weeks) >= 4:
+            newest = weeks[0]
+            oldest = weeks[3]
+            
+            newest_data = df[df['week_end_date'] == newest].set_index('subindustry_code')
+            oldest_data = df[df['week_end_date'] == oldest].set_index('subindustry_code')
+            
+            change = newest_data['sctr_percentile'] - oldest_data['sctr_percentile']
+            sort_order = change.sort_values(ascending=False).index.tolist()
+            
+            df['sort_key'] = pd.Categorical(
+                df['subindustry_code'],
+                categories=sort_order,
+                ordered=True
+            )
+            df = df.sort_values('sort_key').drop('sort_key', axis=1)
+            
+    elif sort_by == "sector":
+        df = df.sort_values(['sector_name', 'subindustry_name'])
+        
+    else:  # 'alpha'
+        df = df.sort_values('subindustry_name')
+    
+    return df
+
+
+def get_stock_sctr_matrix_data(
+    db: Session,
+    subindustry_code: str,
+    num_weeks: int = None,
+    sort_by: str = "latest"
+) -> pd.DataFrame:
+    """
+    Calculate individual stock SCTR data for a sub-industry.
+    
+    Args:
+        db: Database session
+        subindustry_code: GICS sub-industry code
+        num_weeks: Number of weeks to include
+        sort_by: Sort method - 'latest', 'change', or 'alpha'
+    
+    Returns:
+        DataFrame with columns:
+        - ticker
+        - stock_name
+        - week_label
+        - week_end_date
+        - sctr_score
+        - sctr_percentile
+    """
+    from src.models import StockPrice
+    from src.services.sctr_calculator import SCTRCalculator, calculate_sctr_percentile_ranks
+    from src.config import settings
+    
+    if num_weeks is None:
+        num_weeks = settings.DEFAULT_WEEKS_DISPLAY
+    
+    # Get week dates from RSWeekly table for consistency
+    available_weeks = db.query(RSWeekly.week_end_date).distinct().order_by(
+        desc(RSWeekly.week_end_date)
+    ).limit(num_weeks).all()
+    
+    if not available_weeks:
+        return pd.DataFrame()
+    
+    week_dates = [w[0] for w in available_weeks]
+    week_ranges = [
+        {'week_end': wd, 'label': wd.strftime("%d/%m/%y")}
+        for wd in week_dates
+    ]
+    
+    end_date = week_dates[0]
+    oldest_display_week = week_dates[-1]
+    start_date = oldest_display_week - timedelta(days=300)  # 250+ days for SCTR
+    
+    # Get stocks in sub-industry
+    stocks = get_subindustry_stocks(db, subindustry_code)
+    
+    if not stocks:
+        return pd.DataFrame()
+    
+    # Initialize calculator
+    sctr_calc = SCTRCalculator()
+    all_results = []
+    
+    for stock in stocks:
+        # Get stock prices
+        stock_prices = db.query(StockPrice).filter(
+            StockPrice.ticker == stock['ticker'],
+            StockPrice.date >= start_date,
+            StockPrice.date <= end_date
+        ).order_by(StockPrice.date).all()
+        
+        if not stock_prices:
+            continue
+        
+        stock_series = pd.Series(
+            {p.date: p.adj_close for p in stock_prices}
+        ).sort_index()
+        
+        try:
+            sctr_scores = sctr_calc.calculate_sctr_score(stock_series)
+            
+            if sctr_scores.empty or sctr_scores.isna().all():
+                continue
+            
+            for week in week_ranges:
+                week_end = week['week_end']
+                week_label = week['label']
+                
+                valid_dates = [d for d in sctr_scores.index if d <= week_end]
+                if not valid_dates:
+                    continue
+                
+                closest_date = max(valid_dates)
+                sctr_score = sctr_scores.loc[closest_date]
+                
+                if pd.isna(sctr_score):
+                    sctr_score = None
+                
+                all_results.append({
+                    'ticker': stock['ticker'],
+                    'stock_name': stock['name'],
+                    'week_end_date': week_end,
+                    'week_label': week_label,
+                    'sctr_score': sctr_score,
+                    'sctr_percentile': None,
+                })
+        except Exception as e:
+            logger.warning(f"Error calculating SCTR for {stock['ticker']}: {e}")
+            continue
+    
+    if not all_results:
+        return pd.DataFrame()
+    
+    df = pd.DataFrame(all_results)
+    
+    # Calculate percentile ranks per week
+    for week_end in df['week_end_date'].unique():
+        week_mask = df['week_end_date'] == week_end
+        week_scores = df.loc[week_mask, 'sctr_score'].dropna()
+        
+        if not week_scores.empty:
+            percentiles = calculate_sctr_percentile_ranks(week_scores)
+            for idx in percentiles.index:
+                df.loc[idx, 'sctr_percentile'] = int(percentiles[idx])
+    
+    # Sort stocks
+    df = _sort_stocks_sctr(df, sort_by)
+    
+    return df
+
+
+def _sort_stocks_sctr(df: pd.DataFrame, sort_by: str) -> pd.DataFrame:
+    """Sort stock SCTR DataFrame by specified method."""
+    if df.empty:
+        return df
+    
+    if sort_by == "latest":
+        latest_week = df['week_end_date'].max()
+        latest_data = df[df['week_end_date'] == latest_week].set_index('ticker')
+        latest_data['sort_val'] = latest_data['sctr_percentile'].fillna(-999)
+        sort_order = latest_data['sort_val'].sort_values(ascending=False).index.tolist()
+        
+        df['sort_key'] = pd.Categorical(
+            df['ticker'],
+            categories=sort_order,
+            ordered=True
+        )
+        df = df.sort_values('sort_key').drop('sort_key', axis=1)
+        
+    elif sort_by == "change":
+        weeks = sorted(df['week_end_date'].unique(), reverse=True)
+        if len(weeks) >= 4:
+            newest = weeks[0]
+            oldest = weeks[3]
+            
+            newest_data = df[df['week_end_date'] == newest].set_index('ticker')
+            oldest_data = df[df['week_end_date'] == oldest].set_index('ticker')
+            
+            common_tickers = newest_data.index.intersection(oldest_data.index)
+            if len(common_tickers) > 0:
+                change = (newest_data.loc[common_tickers, 'sctr_percentile'] - 
+                         oldest_data.loc[common_tickers, 'sctr_percentile'])
+                sort_order = change.sort_values(ascending=False).index.tolist()
+                
+                all_tickers = df['ticker'].unique().tolist()
+                for t in all_tickers:
+                    if t not in sort_order:
+                        sort_order.append(t)
+                
+                df['sort_key'] = pd.Categorical(
+                    df['ticker'],
+                    categories=sort_order,
+                    ordered=True
+                )
+                df = df.sort_values('sort_key').drop('sort_key', axis=1)
+            
+    else:  # 'alpha'
         df = df.sort_values('stock_name')
     
     return df

@@ -153,7 +153,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Chemicals",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="NQUSB5520",      # Global X Lithium & Battery Tech - specific commodity
+        primary_etf="XLB",      # Materials Select Sector SPDR - commodity chemicals
         alt_etf="VAW",
         index_name="Solactive Global Lithium Index"
     ),
@@ -164,8 +164,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Chemicals",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="NQUSB55201000",      # Vanguard Materials ETF - more specific than XLB
-        alt_etf="IYM",          # iShares U.S. Basic Materials ETF
+        primary_etf="IYM",      # iShares U.S. Basic Materials ETF
+        alt_etf="VAW",
         index_name="MSCI US IMI Materials 25/50 Index"
     ),
     "15101030": SubIndustryETF(
@@ -197,7 +197,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Chemicals",
         sector_code="15",
         sector_name="Materials",
-        primary_etf="NQUSB55201020",      # Invesco Dynamic Basic Materials
+        primary_etf="XLB",      # Materials Select Sector SPDR - specialty chemicals
         alt_etf="VAW",
         index_name="Dynamic Basic Materials Intellidex Index"
     ),
@@ -393,8 +393,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Electrical Equipment",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="NQUSB50202010",     # First Trust NASDAQ Clean Edge Smart Grid
-        alt_etf="QCLN",
+        primary_etf="QCLN",     # First Trust NASDAQ Clean Edge Green Energy
+        alt_etf="ICLN",
         index_name="NASDAQ OMX Clean Edge Smart Grid Infrastructure Index"
     ),
     "20104020": SubIndustryETF(
@@ -430,8 +430,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Machinery",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="NQUSB50204020",     # Global X U.S. Infrastructure Development
-        alt_etf="VIS",
+        primary_etf="PAVE",     # Global X U.S. Infrastructure Development
+        alt_etf="XLI",
         index_name="Indxx U.S. Infrastructure Development Index"
     ),
     "20106015": SubIndustryETF(
@@ -441,8 +441,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Machinery",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="NQUSB50204010",      # VanEck Agribusiness
-        alt_etf="VEGI",
+        primary_etf="MOO",      # VanEck Agribusiness ETF
+        alt_etf="XLI",
         index_name="MVIS Global Agribusiness Index"
     ),
     "20106020": SubIndustryETF(
@@ -452,8 +452,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Machinery",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="NQUSB50204000",      # First Trust Water ETF (water machinery)
-        alt_etf="VIS",
+        primary_etf="XLI",      # Industrial Select Sector SPDR
+        alt_etf="FIDU",
         index_name="ISE Clean Edge Water Index"
     ),
     
@@ -465,8 +465,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Trading Companies & Distributors",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="WEGMLS4",     # Invesco S&P SmallCap Industrials ETF
-        alt_etf="VIS",          # Vanguard Industrials ETF
+        primary_etf="XLI",     # Industrial Select Sector SPDR
+        alt_etf="FIDU",          # Fidelity MSCI Industrials Index ETF
         index_name="S&P SmallCap 600 Capped Industrials Index"
     ),
     
@@ -478,8 +478,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Commercial Services & Supplies",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="NQUSB50205030",      # Invesco Dynamic Media - covers printing/media
-        alt_etf="VIS",
+        primary_etf="XLI",      # Industrial Select Sector SPDR
+        alt_etf="FIDU",
         index_name="Dynamic Media Intellidex Index"
     ),
     "20201050": SubIndustryETF(
@@ -500,8 +500,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Commercial Services & Supplies",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="NQUSB50205020",     # 3D Printing ETF - includes office equipment
-        alt_etf="VIS",
+        primary_etf="XLI",     # Industrial Select Sector SPDR
+        alt_etf="FIDU",
         index_name="The 3D Printing Index"
     ),
     "20201070": SubIndustryETF(
@@ -511,8 +511,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Commercial Services & Supplies",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="NQUSB502050",     # Pacer Data & Infrastructure Real Estate
-        alt_etf="VIS",          # Vanguard Industrials ETF
+        primary_etf="XLI",     # Industrial Select Sector SPDR
+        alt_etf="FIDU",          # Fidelity MSCI Industrials Index ETF
         index_name="Benchmark Data & Infrastructure Real Estate SCTR Index"
     ),
     "20201080": SubIndustryETF(
@@ -522,8 +522,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Commercial Services & Supplies",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="NQUSB50205040",     # First Trust NASDAQ Cybersecurity
-        alt_etf="HACK",
+        primary_etf="HACK",     # First Trust NASDAQ Cybersecurity
+        alt_etf="XLI",
         index_name="Nasdaq CTA Cybersecurity Index"
     ),
     
@@ -535,8 +535,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Professional Services",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XPRO",     # Invesco S&P Emerging Markets Low Volatility ETF (use PWBK Work ETF)
-        alt_etf="VIS",
+        primary_etf="XLI",     # Industrial Select Sector SPDR
+        alt_etf="FIDU",
         index_name="S&P Professional Services Select Industry Index"
     ),
     "20202020": SubIndustryETF(
@@ -546,7 +546,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Professional Services",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="XWEB",     # SPDR S&P Internet ETF - covers IT consulting
+        primary_etf="XSW",     # SPDR S&P Internet ETF - covers IT consulting
         alt_etf="IGV",
         index_name="S&P Internet Select Industry Index"
     ),
@@ -557,7 +557,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Professional Services",
         sector_code="20",
         sector_name="Industrials",
-        primary_etf="SKYY",     # First Trust Cloud Computing
+        primary_etf="DTCR",     # First Trust Cloud Computing
         alt_etf="WCLD",
         index_name="ISE CTA Cloud Computing Index"
     ),
@@ -597,7 +597,7 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         sector_code="20",
         sector_name="Industrials",
         primary_etf="SEA",      # U.S. Global Sea to Sky Cargo
-        alt_etf="BOAT",
+        alt_etf="IYT",
         index_name="U.S. Global Sea to Sky Cargo Index"
     ),
     
@@ -1096,8 +1096,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Food Products",
         sector_code="30",
         sector_name="Consumer Staples",
-        primary_etf="FUD",
-        alt_etf="VDC",
+        primary_etf="VDC",     # Vanguard Consumer Staples ETF
+        alt_etf="XLP",
         index_name="Dynamic Food & Beverage Intellidex Index"
     ),
     
@@ -1567,8 +1567,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Technology Hardware, Storage & Peripherals",
         sector_code="45",
         sector_name="Information Technology",
-        primary_etf="XTH",      # SPDR S&P Technology Hardware
-        alt_etf="QTEC",
+        primary_etf="QTEC",      # First Trust NASDAQ-100 Technology
+        alt_etf="XLK",
         index_name="S&P Technology Hardware Select Industry Index"
     ),
     
@@ -1738,8 +1738,8 @@ GICS_SUBINDUSTRY_ETF_MAP: Dict[str, SubIndustryETF] = {
         industry_name="Entertainment",
         sector_code="50",
         sector_name="Communication Services",
-        primary_etf="IEME",
-        alt_etf="PBS",
+        primary_etf="XLC",     # Communication Services Select Sector SPDR
+        alt_etf="VOX",
         index_name="Dynamic Leisure & Entertainment Intellidex Index"
     ),
     "50202020": SubIndustryETF(

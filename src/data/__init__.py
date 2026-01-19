@@ -5,7 +5,19 @@ This module provides:
 - StockCharts industry to ETF/Index mappings
 - Reference data structures for financial classifications
 - Additional ticker lists organized by industry
+- StockCharts data loader for ground truth industry/stock structure
 """
+
+from src.data.stockcharts_loader import (
+    StockChartsDataLoader,
+    Industry,
+    Sector,
+    get_loader,
+    get_industry,
+    get_etf_for_industry,
+    should_use_aggregation,
+    get_shared_etfs,
+)
 
 from src.data.stockcharts_industry_mapping import (
     INDUSTRY_ETF_MAP,
@@ -53,7 +65,16 @@ from src.data.additional_tickers import (
 SubIndustryETF = IndustryETF
 
 __all__ = [
-    # New naming
+    # StockCharts data loader (ground truth)
+    "StockChartsDataLoader",
+    "Industry",
+    "Sector",
+    "get_loader",
+    "get_industry",
+    "get_etf_for_industry",
+    "should_use_aggregation",
+    "get_shared_etfs",
+    # Industry ETF mappings
     "INDUSTRY_ETF_MAP",
     "SECTOR_ETFS",
     "SECTOR_NAMES",

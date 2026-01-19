@@ -133,6 +133,29 @@ def create_layout(subindustry_code: str = None):
             ], md=6),
         ], className="mb-4 p-3 bg-dark rounded"),
         
+        # Metric Toggle Tabs (RS vs SCTR)
+        dbc.Row([
+            dbc.Col([
+                dbc.Tabs(
+                    id="stock-metric-tabs",
+                    active_tab="rs",
+                    className="mb-3",
+                    children=[
+                        dbc.Tab(
+                            label="Relative Strength (RS)",
+                            tab_id="rs",
+                            label_style={"fontWeight": "bold"},
+                        ),
+                        dbc.Tab(
+                            label="Technical Rank (SCTR)",
+                            tab_id="sctr",
+                            label_style={"fontWeight": "bold"},
+                        ),
+                    ]
+                ),
+            ])
+        ]),
+        
         # Loading indicator and Stock Heatmap
         dbc.Row([
             dbc.Col([
@@ -171,14 +194,18 @@ def create_layout(subindustry_code: str = None):
             ])
         ]),
         
-        # Color Legend
+        # Color Legend (dynamic based on RS/SCTR tab)
         dbc.Row([
             dbc.Col([
-                html.Div([
-                    html.Span("🔴 Weak (Bottom 33%)", className="mx-3"),
-                    html.Span("🟡 Neutral (Middle 34%)", className="mx-3"),
-                    html.Span("🟢 Strong (Top 33%)", className="mx-3"),
-                ], className="text-center my-3")
+                html.Div(
+                    id="stock-color-legend",
+                    children=[
+                        html.Span("🔴 Weak (Bottom 33%)", className="mx-3"),
+                        html.Span("🟡 Neutral (Middle 34%)", className="mx-3"),
+                        html.Span("🟢 Strong (Top 33%)", className="mx-3"),
+                    ],
+                    className="text-center my-3"
+                )
             ])
         ]),
         
