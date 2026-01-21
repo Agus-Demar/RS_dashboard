@@ -893,6 +893,8 @@ def get_stock_price_with_rs(
     - RSI SMA 9 = 9-period SMA of RSI
     - RSI EMA 45 = 45-period EMA of RSI
     
+    If the stock is missing recent data, it will be fetched from yfinance.
+    
     Args:
         db: Database session
         ticker: Stock ticker symbol
@@ -906,16 +908,71 @@ def get_stock_price_with_rs(
     """
     from src.models import StockPrice
     from src.config import settings
+    from src.ingestion.sources.yfinance_source import yfinance_source
+    from datetime import date as date_type
     
-    # Get actual latest date from stock's price data (not just last Friday)
-    latest_price = db.query(StockPrice.date).filter(
+    # Get the target end date from benchmark (SPY) - this is our reference for "latest available"
+    benchmark_latest = db.query(StockPrice.date).filter(
+        StockPrice.ticker == settings.BENCHMARK_TICKER
+    ).order_by(desc(StockPrice.date)).first()
+    
+    if not benchmark_latest:
+        return pd.DataFrame()
+    
+    target_end_date = benchmark_latest[0]
+    
+    # Get the stock's latest date
+    stock_latest = db.query(StockPrice.date).filter(
         StockPrice.ticker == ticker
     ).order_by(desc(StockPrice.date)).first()
     
-    if not latest_price:
+    if not stock_latest:
         return pd.DataFrame()
     
-    end_date = latest_price[0]
+    stock_latest_date = stock_latest[0]
+    
+    # Check if stock is missing recent data compared to benchmark
+    if stock_latest_date < target_end_date:
+        # Stock is missing data - fetch from yfinance
+        missing_start = stock_latest_date + timedelta(days=1)
+        missing_end = target_end_date
+        logger.info(f"Stock {ticker} missing data from {missing_start} to {missing_end}, fetching...")
+        
+        try:
+            new_stock_prices = yfinance_source.fetch_price_history(
+                ticker,
+                missing_start,
+                missing_end
+            )
+            
+            if not new_stock_prices.empty:
+                # Store new stock prices in database
+                for _, row in new_stock_prices.iterrows():
+                    existing = db.query(StockPrice).filter(
+                        StockPrice.ticker == ticker,
+                        StockPrice.date == row['date']
+                    ).first()
+                    
+                    if not existing:
+                        price = StockPrice(
+                            ticker=ticker,
+                            date=row['date'],
+                            open=row.get('open'),
+                            high=row.get('high'),
+                            low=row.get('low'),
+                            close=row['close'],
+                            adj_close=row.get('adj_close', row['close']),
+                            volume=int(row['volume']) if 'volume' in row and row['volume'] else None,
+                        )
+                        db.add(price)
+                
+                db.commit()
+                logger.info(f"Added {len(new_stock_prices)} new price records for {ticker}")
+        except Exception as e:
+            logger.warning(f"Could not fetch missing data for {ticker}: {e}")
+    
+    # Now get all data with the target end date
+    end_date = target_end_date
     # Need ~65 weeks of data to have enough for 52-week EMA calculation
     start_date = end_date - timedelta(weeks=num_weeks + 60)
     
@@ -955,7 +1012,7 @@ def get_stock_price_with_rs(
         'benchmark_close': p.adj_close,
     } for p in benchmark_prices]).set_index('date')
     
-    # Merge on date (inner join to only keep common dates)
+    # Merge on date (inner join - only dates with real data for both)
     df = stock_df.join(benchmark_df, how='inner')
     
     if df.empty:
@@ -1008,6 +1065,8 @@ def get_stock_price_with_rs_weekly(
     Then recalculates RS and RSI indicators using the same numeric periods
     as daily (EMA 13, EMA 52 for RS; RSI 14, SMA 9, EMA 45 for RSI).
     
+    If the stock is missing recent data, it will be fetched from yfinance.
+    
     Args:
         db: Database session
         ticker: Stock ticker symbol
@@ -1022,16 +1081,70 @@ def get_stock_price_with_rs_weekly(
     """
     from src.models import StockPrice
     from src.config import settings
+    from src.ingestion.sources.yfinance_source import yfinance_source
     
-    # Get actual latest date from stock's price data
-    latest_price = db.query(StockPrice.date).filter(
+    # Get the target end date from benchmark (SPY) - this is our reference for "latest available"
+    benchmark_latest = db.query(StockPrice.date).filter(
+        StockPrice.ticker == settings.BENCHMARK_TICKER
+    ).order_by(desc(StockPrice.date)).first()
+    
+    if not benchmark_latest:
+        return pd.DataFrame()
+    
+    target_end_date = benchmark_latest[0]
+    
+    # Get the stock's latest date
+    stock_latest = db.query(StockPrice.date).filter(
         StockPrice.ticker == ticker
     ).order_by(desc(StockPrice.date)).first()
     
-    if not latest_price:
+    if not stock_latest:
         return pd.DataFrame()
     
-    end_date = latest_price[0]
+    stock_latest_date = stock_latest[0]
+    
+    # Check if stock is missing recent data compared to benchmark
+    if stock_latest_date < target_end_date:
+        # Stock is missing data - fetch from yfinance
+        missing_start = stock_latest_date + timedelta(days=1)
+        missing_end = target_end_date
+        logger.info(f"Stock {ticker} missing data from {missing_start} to {missing_end}, fetching...")
+        
+        try:
+            new_stock_prices = yfinance_source.fetch_price_history(
+                ticker,
+                missing_start,
+                missing_end
+            )
+            
+            if not new_stock_prices.empty:
+                # Store new stock prices in database
+                for _, row in new_stock_prices.iterrows():
+                    existing = db.query(StockPrice).filter(
+                        StockPrice.ticker == ticker,
+                        StockPrice.date == row['date']
+                    ).first()
+                    
+                    if not existing:
+                        price = StockPrice(
+                            ticker=ticker,
+                            date=row['date'],
+                            open=row.get('open'),
+                            high=row.get('high'),
+                            low=row.get('low'),
+                            close=row['close'],
+                            adj_close=row.get('adj_close', row['close']),
+                            volume=int(row['volume']) if 'volume' in row and row['volume'] else None,
+                        )
+                        db.add(price)
+                
+                db.commit()
+                logger.info(f"Added {len(new_stock_prices)} new price records for {ticker}")
+        except Exception as e:
+            logger.warning(f"Could not fetch missing data for {ticker}: {e}")
+    
+    # Now get all data with the target end date
+    end_date = target_end_date
     # Need extra history for indicator warm-up (52 weeks for EMA + buffer)
     start_date = end_date - timedelta(weeks=num_weeks + 60)
     
@@ -1090,7 +1203,7 @@ def get_stock_price_with_rs_weekly(
         'benchmark_close': 'last',
     }).dropna()
     
-    # Merge on date (inner join to only keep common dates)
+    # Merge on date (inner join - only dates with real data for both)
     df = weekly_stock.join(weekly_benchmark, how='inner')
     
     if df.empty:

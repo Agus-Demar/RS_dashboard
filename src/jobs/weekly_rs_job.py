@@ -48,13 +48,14 @@ def run_weekly_data_update() -> dict:
     }
     
     try:
-        # Step 1: Refresh prices for the past 7 days
+        # Step 1: Refresh any missing prices (smart detection)
         logger.info("-" * 40)
-        logger.info("Step 1: Refreshing price data...")
+        logger.info("Step 1: Refreshing missing price data...")
         logger.info("-" * 40)
         
-        from src.jobs.daily_prices_job import run_price_refresh_job
-        price_result = run_price_refresh_job(days_back=7, db_session=db)
+        from src.jobs.daily_prices_job import run_missing_prices_job
+        # Use 14 days lookback to catch any gaps from the past two weeks
+        price_result = run_missing_prices_job(lookback_days=14, db_session=db)
         
         result['prices_added'] = price_result.get('prices_added', 0)
         result['stocks_updated'] = price_result.get('stocks_updated', 0)
