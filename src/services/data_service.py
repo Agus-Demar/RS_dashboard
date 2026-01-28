@@ -5,7 +5,7 @@ Provides functions to retrieve RS data formatted for the dashboard.
 """
 import logging
 from datetime import date, timedelta
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -17,6 +17,35 @@ from src.models import RSWeekly, GICSSubIndustry, Stock
 from src.services.aggregator import get_last_friday, get_week_ranges
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# SCTR CACHE
+# =============================================================================
+
+# Global cache for SCTR scores to avoid recalculation
+# Key: (identifier, start_date, end_date) -> Value: pd.Series of SCTR scores
+_sctr_cache: Dict[Tuple[str, date, date], pd.Series] = {}
+
+
+def _get_cached_sctr_scores(identifier: str, start_date: date, end_date: date) -> Optional[pd.Series]:
+    """Get cached SCTR scores if available."""
+    cache_key = (identifier, start_date, end_date)
+    return _sctr_cache.get(cache_key)
+
+
+def _cache_sctr_scores(identifier: str, start_date: date, end_date: date, scores: pd.Series) -> None:
+    """Cache SCTR scores for future use."""
+    cache_key = (identifier, start_date, end_date)
+    _sctr_cache[cache_key] = scores
+    logger.debug(f"Cached SCTR scores for {identifier} ({len(scores)} points)")
+
+
+def clear_sctr_cache() -> None:
+    """Clear the SCTR cache. Useful for testing or when data is updated."""
+    global _sctr_cache
+    _sctr_cache.clear()
+    logger.info("SCTR cache cleared")
 
 
 # =============================================================================
@@ -1416,27 +1445,37 @@ def get_sector_sctr_matrix_data(
     sector_sctr_data = []
     
     for sector_name, (sector_code, etf_ticker) in SECTOR_ETFS.items():
-        # Get ETF prices
-        etf_prices_query = db.query(StockPrice).filter(
-            StockPrice.ticker == etf_ticker,
-            StockPrice.date >= start_date,
-            StockPrice.date <= end_date
-        ).order_by(StockPrice.date).all()
+        # Check cache first
+        sctr_scores = _get_cached_sctr_scores(f"sector_{etf_ticker}", start_date, end_date)
         
-        if not etf_prices_query:
-            logger.warning(f"No prices found for sector ETF {etf_ticker} ({sector_name})")
-            continue
-        
-        etf_prices = pd.Series(
-            {p.date: p.adj_close for p in etf_prices_query}
-        ).sort_index()
-        
-        # Calculate full SCTR history
-        sctr_scores = sctr_calc.calculate_sctr_score(etf_prices)
-        
-        if sctr_scores.empty or sctr_scores.isna().all():
-            logger.warning(f"Could not calculate SCTR for {etf_ticker} ({sector_name})")
-            continue
+        if sctr_scores is None:
+            # Not in cache, calculate it
+            # Get ETF prices
+            etf_prices_query = db.query(StockPrice).filter(
+                StockPrice.ticker == etf_ticker,
+                StockPrice.date >= start_date,
+                StockPrice.date <= end_date
+            ).order_by(StockPrice.date).all()
+            
+            if not etf_prices_query:
+                logger.warning(f"No prices found for sector ETF {etf_ticker} ({sector_name})")
+                continue
+            
+            etf_prices = pd.Series(
+                {p.date: p.adj_close for p in etf_prices_query}
+            ).sort_index()
+            
+            # Calculate full SCTR history
+            sctr_scores = sctr_calc.calculate_sctr_score(etf_prices)
+            
+            if sctr_scores.empty or sctr_scores.isna().all():
+                logger.warning(f"Could not calculate SCTR for {etf_ticker} ({sector_name})")
+                continue
+            
+            # Cache the result
+            _cache_sctr_scores(f"sector_{etf_ticker}", start_date, end_date, sctr_scores)
+        else:
+            logger.debug(f"Using cached SCTR scores for sector {etf_ticker}")
         
         # Extract SCTR score for each week end date
         for week_end in week_end_dates:
@@ -1668,7 +1707,7 @@ def get_sctr_matrix_data(
             else:
                 logger.warning(f"No price data for ETF {etf_ticker}")
     
-    # Cache for SCTR scores
+    # Cache for SCTR scores (local to this function call)
     sctr_cache: Dict[str, pd.Series] = {}  # Key: subindustry_code
     
     # Calculate SCTR for each sub-industry
@@ -1676,23 +1715,38 @@ def get_sctr_matrix_data(
         etf_ticker = subindustry_etf_map.get(sub.code)
         use_aggregated = use_aggregated_map.get(sub.code, True)
         
-        if use_aggregated:
-            # Use market-cap-weighted aggregated prices
-            prices = _calculate_subindustry_aggregated_prices(
-                db, sub.code, start_date, end_date, min_history_days=200
-            )
-            if prices.empty:
-                logger.debug(f"No aggregated prices for {sub.name} ({sub.code})")
-                continue
-        else:
-            # Use specific ETF prices
-            prices = etf_prices_cache.get(etf_ticker)
-            if prices is None or prices.empty:
-                logger.debug(f"No ETF prices for {sub.name} (ETF: {etf_ticker})")
-                continue
+        # Check global cache first
+        cache_id = f"industry_{sub.code}_{'agg' if use_aggregated else etf_ticker}"
+        sctr_scores = _get_cached_sctr_scores(cache_id, start_date, end_date)
         
-        # Calculate SCTR scores
-        sctr_scores = sctr_calc.calculate_sctr_score(prices)
+        if sctr_scores is None:
+            # Not in cache, calculate it
+            if use_aggregated:
+                # Use market-cap-weighted aggregated prices
+                prices = _calculate_subindustry_aggregated_prices(
+                    db, sub.code, start_date, end_date, min_history_days=200
+                )
+                if prices.empty:
+                    logger.debug(f"No aggregated prices for {sub.name} ({sub.code})")
+                    continue
+            else:
+                # Use specific ETF prices
+                prices = etf_prices_cache.get(etf_ticker)
+                if prices is None or prices.empty:
+                    logger.debug(f"No ETF prices for {sub.name} (ETF: {etf_ticker})")
+                    continue
+            
+            # Calculate SCTR scores
+            sctr_scores = sctr_calc.calculate_sctr_score(prices)
+            if sctr_scores.empty or sctr_scores.isna().all():
+                logger.debug(f"Could not calculate SCTR for {sub.name} ({sub.code})")
+                continue
+            
+            # Cache the result
+            _cache_sctr_scores(cache_id, start_date, end_date, sctr_scores)
+        else:
+            logger.debug(f"Using cached SCTR scores for industry {sub.code}")
+        
         if not sctr_scores.empty and not sctr_scores.isna().all():
             sctr_cache[sub.code] = sctr_scores
     
@@ -1871,23 +1925,42 @@ def get_stock_sctr_matrix_data(
     all_results = []
     
     for stock in stocks:
-        # Get stock prices
-        stock_prices = db.query(StockPrice).filter(
-            StockPrice.ticker == stock['ticker'],
-            StockPrice.date >= start_date,
-            StockPrice.date <= end_date
-        ).order_by(StockPrice.date).all()
+        ticker = stock['ticker']
         
-        if not stock_prices:
-            continue
+        # Check cache first
+        sctr_scores = _get_cached_sctr_scores(f"stock_{ticker}", start_date, end_date)
         
-        stock_series = pd.Series(
-            {p.date: p.adj_close for p in stock_prices}
-        ).sort_index()
+        if sctr_scores is None:
+            # Not in cache, calculate it
+            # Get stock prices
+            stock_prices = db.query(StockPrice).filter(
+                StockPrice.ticker == ticker,
+                StockPrice.date >= start_date,
+                StockPrice.date <= end_date
+            ).order_by(StockPrice.date).all()
+            
+            if not stock_prices:
+                continue
+            
+            stock_series = pd.Series(
+                {p.date: p.adj_close for p in stock_prices}
+            ).sort_index()
+            
+            try:
+                sctr_scores = sctr_calc.calculate_sctr_score(stock_series)
+                
+                if sctr_scores.empty or sctr_scores.isna().all():
+                    continue
+                
+                # Cache the result
+                _cache_sctr_scores(f"stock_{ticker}", start_date, end_date, sctr_scores)
+            except Exception as e:
+                logger.warning(f"Error calculating SCTR for {ticker}: {e}")
+                continue
+        else:
+            logger.debug(f"Using cached SCTR scores for stock {ticker}")
         
         try:
-            sctr_scores = sctr_calc.calculate_sctr_score(stock_series)
-            
             if sctr_scores.empty or sctr_scores.isna().all():
                 continue
             

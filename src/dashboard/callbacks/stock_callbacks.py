@@ -952,10 +952,11 @@ def create_price_rs_chart(df: pd.DataFrame, ticker: str, stock_name: str, timefr
         linecolor=COLORS["grid"],
     )
     
-    # Specific styling for price chart (row 1)
+    # Specific styling for price chart (row 1) - with log scale
     fig.update_yaxes(
         title_text="Price ($)",
         title_font=dict(size=10, color=COLORS["muted_text"]),
+        type="log",  # Set logarithmic scale for price chart
         row=1, col=1
     )
     
